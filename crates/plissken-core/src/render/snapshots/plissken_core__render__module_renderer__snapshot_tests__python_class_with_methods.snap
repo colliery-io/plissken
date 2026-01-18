@@ -7,7 +7,7 @@ expression: "&pages[0].content"
 
 ## Classes
 
-### `class User`
+### `models.User`
 
 **Inherits from:** BaseModel
 

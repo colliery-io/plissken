@@ -7,7 +7,7 @@ expression: "&pages[0].content"
 
 ## Classes
 
-### `class Status`
+### `enums.Status`
 
 **Inherits from:** Enum
 

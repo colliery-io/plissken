@@ -9,7 +9,7 @@ Utility functions
 
 ## Functions
 
-### `process`
+### `utils.process`
 
 <div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
 <code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">process</span>(data: bytes) -> <span style="color: #757575;">str</span></code>

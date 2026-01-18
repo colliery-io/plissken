@@ -527,22 +527,31 @@ fn parse_google_raises(lines: &[&str], start: usize) -> (Vec<RaisesDoc>, usize) 
 fn parse_google_examples(lines: &[&str], start: usize) -> (Vec<String>, usize) {
     let mut examples = Vec::new();
     let mut current_example = Vec::new();
+    let mut in_code_block = false;
     let mut i = start;
 
     while i < lines.len() {
         let line = lines[i];
         let trimmed = line.trim();
 
-        // Check for new section header
-        if trimmed.ends_with(':') && !trimmed.contains(' ') {
+        // Check for new section header (but not if we're in a code block)
+        if !in_code_block && trimmed.ends_with(':') && !trimmed.contains(' ') {
             let section = &trimmed[..trimmed.len() - 1].to_lowercase();
             if is_known_section(section) {
                 break;
             }
         }
 
-        // Empty line might separate examples
-        if trimmed.is_empty() {
+        // Track code fence blocks
+        if trimmed.starts_with("```") {
+            in_code_block = !in_code_block;
+            current_example.push(line.to_string());
+            i += 1;
+            continue;
+        }
+
+        // Empty line outside code block might separate examples
+        if trimmed.is_empty() && !in_code_block {
             if !current_example.is_empty() {
                 examples.push(current_example.join("\n"));
                 current_example.clear();
@@ -1383,6 +1392,36 @@ Example:
 
         assert_eq!(result.examples.len(), 1);
         assert!(result.examples[0].contains(">>> x = do_something()"));
+    }
+
+    #[test]
+    fn test_parse_google_examples_with_code_fence() {
+        // Test that code fences inside examples are preserved as a single example
+        // and not split at empty lines within the fence
+        let docstring = r#"A data processing pipeline.
+
+Example:
+    ```python
+    from separate_bindings import Pipeline, DataBatch
+
+    pipeline = Pipeline("etl")
+    pipeline.add_stage("transform", lambda batch: batch)
+
+    result = pipeline.run(DataBatch.from_dicts([{"a": 1}]))
+    print(f"Processed {result.rows_out} rows")
+    ```
+"#;
+
+        let result = parse_docstring(docstring);
+
+        // Should be exactly one example, not split at the empty lines
+        assert_eq!(result.examples.len(), 1);
+        // Should contain the code fence markers
+        assert!(result.examples[0].contains("```python"));
+        assert!(result.examples[0].contains("```"));
+        // Should contain all the code
+        assert!(result.examples[0].contains("Pipeline"));
+        assert!(result.examples[0].contains("rows_out"));
     }
 
     #[test]

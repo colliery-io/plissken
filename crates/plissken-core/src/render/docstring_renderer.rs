@@ -158,7 +158,9 @@ pub fn render_examples(examples: &[String]) -> String {
     let mut output = String::from("**Examples:**\n\n");
 
     for example in examples {
-        let trimmed = example.trim();
+        // Dedent the example to remove common leading whitespace
+        let dedented = dedent_code(example);
+        let trimmed = dedented.trim();
 
         // If example already has code fences, include directly
         if trimmed.starts_with("```") {
@@ -166,12 +168,44 @@ pub fn render_examples(examples: &[String]) -> String {
             output.push_str("\n\n");
         } else {
             // Wrap in code fence with detected language
-            let lang = detect_example_language(example);
+            let lang = detect_example_language(&dedented);
             output.push_str(&format!("```{}\n{}\n```\n\n", lang, trimmed));
         }
     }
 
     output.trim_end().to_string()
+}
+
+/// Remove common leading whitespace from all lines in a code block.
+///
+/// This handles indented docstring examples where all lines have
+/// a consistent leading indent that should be removed.
+fn dedent_code(code: &str) -> String {
+    let lines: Vec<&str> = code.lines().collect();
+    if lines.is_empty() {
+        return String::new();
+    }
+
+    // Find the minimum indent of non-empty lines
+    let min_indent = lines
+        .iter()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.len() - line.trim_start().len())
+        .min()
+        .unwrap_or(0);
+
+    // Remove that many leading spaces from each line
+    lines
+        .iter()
+        .map(|line| {
+            if line.len() >= min_indent {
+                &line[min_indent..]
+            } else {
+                line.trim_start()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Detect the programming language of an example code block.
@@ -401,6 +435,42 @@ mod tests {
         // Should have two code blocks
         let block_count = output.matches("```python").count();
         assert_eq!(block_count, 2);
+    }
+
+    #[test]
+    fn test_dedent_code() {
+        // Test dedenting code with consistent indentation
+        let indented = "    line 1\n    line 2\n    line 3";
+        let result = super::dedent_code(indented);
+        assert_eq!(result, "line 1\nline 2\nline 3");
+
+        // Test with empty lines preserved
+        let with_empty = "    line 1\n\n    line 2";
+        let result = super::dedent_code(with_empty);
+        assert_eq!(result, "line 1\n\nline 2");
+
+        // Test with code fence that has 4-space indent
+        let fenced = "    ```python\n    code here\n    ```";
+        let result = super::dedent_code(fenced);
+        assert_eq!(result, "```python\ncode here\n```");
+    }
+
+    #[test]
+    fn test_render_examples_with_indented_code_fence() {
+        // Example that starts with indented code fences (common from Rust docstrings)
+        let examples = vec![
+            "    ```python\n    from mylib import Thing\n\n    thing = Thing()\n    ```"
+                .to_string(),
+        ];
+
+        let output = render_examples(&examples);
+
+        // Should dedent and produce clean output
+        assert!(output.contains("```python\nfrom mylib import Thing"));
+        assert!(output.contains("thing = Thing()"));
+        // Should NOT have double code fences
+        let fence_count = output.matches("```python").count();
+        assert_eq!(fence_count, 1, "Should have exactly one ```python fence");
     }
 
     #[test]

@@ -158,10 +158,9 @@ impl<'a> ModuleRenderer<'a> {
         let mut builder = ModulePageBuilder::new();
         let layout = PageLayout::new();
 
-        // Module header with source badge
+        // Module header with source badge - use full namespace path
         let source_badge = self.source_badge(&module.source_type)?;
-        let module_name = module.path.split('.').next_back().unwrap_or(&module.path);
-        builder.add_header(module_name, &source_badge);
+        builder.add_header(&module.path, &source_badge);
 
         // Module docstring
         if let Some(ref docstring) = module.docstring {
@@ -209,8 +208,8 @@ impl<'a> ModuleRenderer<'a> {
         let mut content = String::new();
         let is_binding = class.rust_impl.is_some();
 
-        // Class header (h3 since Classes is h2)
-        content.push_str(&format!("### `class {}`\n\n", class.name));
+        // Class header (h3 since Classes is h2) - use full namespace path, no "class" prefix
+        content.push_str(&format!("### `{}.{}`\n\n", module_path, class.name));
 
         // Base classes
         if !class.bases.is_empty() {
@@ -301,8 +300,8 @@ impl<'a> ModuleRenderer<'a> {
         let mut content = String::new();
         let is_binding = func.rust_impl.is_some();
 
-        // Function header (h3 since Functions is h2)
-        content.push_str(&format!("### `{}`", func.name));
+        // Function header (h3 since Functions is h2) - use full namespace path
+        content.push_str(&format!("### `{}.{}`", module_path, func.name));
 
         // Additional badges
         if func.is_async {
@@ -458,7 +457,8 @@ impl<'a> ModuleRenderer<'a> {
         } else {
             String::new()
         };
-        content.push_str(&format!("# {}`class {}`\n\n", badge, class.name));
+        // Use full namespace path for class page, no "class" prefix
+        content.push_str(&format!("# {}`{}.{}`\n\n", badge, module_path, class.name));
 
         // Breadcrumb back to module
         content.push_str(&format!("*Module: [{}](index.md)*\n\n", module_path));
@@ -556,7 +556,8 @@ impl<'a> ModuleRenderer<'a> {
         } else {
             String::new()
         };
-        content.push_str(&format!("# {}`{}`", badge, func.name));
+        // Use full namespace path for function page
+        content.push_str(&format!("# {}`{}.{}`", badge, module_path, func.name));
 
         // Additional badges
         if func.is_async {
@@ -847,10 +848,9 @@ impl<'a> ModuleRenderer<'a> {
         let mut builder = ModulePageBuilder::new();
         let layout = PageLayout::new();
 
-        // Module header with source badge
+        // Module header with source badge - use full namespace path
         let rust_badge = self.renderer.badge_source("rust")?;
-        let module_name = module.path.split("::").last().unwrap_or(&module.path);
-        builder.add_header(module_name, &rust_badge);
+        builder.add_header(&module.path, &rust_badge);
 
         // Module doc comment
         if let Some(ref doc) = module.doc_comment {
@@ -900,7 +900,7 @@ impl<'a> ModuleRenderer<'a> {
         let is_pyclass = s.pyclass.is_some();
 
         // For pyclass, show as "class" (Python-style), otherwise "struct"
-        let type_name = if is_pyclass { "class" } else { "struct" };
+        let _type_name = if is_pyclass { "class" } else { "struct" };
 
         // Get Python name if different from Rust name
         let display_name = s
@@ -909,9 +909,9 @@ impl<'a> ModuleRenderer<'a> {
             .and_then(|pc| pc.name.as_ref())
             .unwrap_or(&s.name);
 
-        // Struct/class header (h3 since Structs is h2)
+        // Struct/class header (h3 since Structs is h2) - use full namespace path, no type prefix
         // Badge on new line after heading to not affect anchor generation
-        content.push_str(&format!("### `{} {}`", type_name, display_name));
+        content.push_str(&format!("### `{}::{}`", module_path, display_name));
         if !is_pyclass && let Some(ref generics) = s.generics {
             content.push_str(generics);
         }
@@ -1002,12 +1002,12 @@ impl<'a> ModuleRenderer<'a> {
     fn render_rust_enum_inline(
         &self,
         e: &RustEnum,
-        _module_path: &str,
+        module_path: &str,
     ) -> Result<String, tera::Error> {
         let mut content = String::new();
 
-        // Enum header (h3 since Enums is h2)
-        content.push_str(&format!("### `enum {}`", e.name));
+        // Enum header (h3 since Enums is h2) - use full namespace path, no type prefix
+        content.push_str(&format!("### `{}::{}`", module_path, e.name));
         if let Some(ref generics) = e.generics {
             content.push_str(generics);
         }
@@ -1048,7 +1048,8 @@ impl<'a> ModuleRenderer<'a> {
         let is_binding = func.pyfunction.is_some();
 
         // Function header with badge on separate line for proper anchor generation
-        content.push_str(&format!("### `fn {}`\n\n", func.name));
+        // Use full namespace path, no "fn" prefix (context is obvious from section)
+        content.push_str(&format!("### `{}::{}`\n\n", module_path, func.name));
         if is_binding {
             content.push_str(&self.renderer.badge_source("binding")?);
         } else {
@@ -1204,7 +1205,7 @@ impl<'a> ModuleRenderer<'a> {
         let is_pyclass = s.pyclass.is_some();
 
         // For pyclass, show as "class" (Python-style), otherwise "struct"
-        let type_name = if is_pyclass { "class" } else { "struct" };
+        let _type_name = if is_pyclass { "class" } else { "struct" };
 
         // Get Python name if different from Rust name
         let display_name = s
@@ -1219,7 +1220,8 @@ impl<'a> ModuleRenderer<'a> {
         } else {
             format!("{} ", self.visibility_badge(&s.visibility)?)
         };
-        content.push_str(&format!("# {}`{} {}`", badge, type_name, display_name));
+        // Use full namespace path for struct/class page, no type prefix
+        content.push_str(&format!("# {}`{}::{}`", badge, module_path, display_name));
         if !is_pyclass && let Some(ref generics) = s.generics {
             content.push_str(generics);
         }
@@ -1310,8 +1312,8 @@ impl<'a> ModuleRenderer<'a> {
     ) -> Result<RenderedPage, tera::Error> {
         let mut content = String::new();
 
-        // Enum header (h1 since it's the page title)
-        content.push_str(&format!("# `enum {}`", e.name));
+        // Enum header (h1 since it's the page title) - use full namespace path, no type prefix
+        content.push_str(&format!("# `{}::{}`", module_path, e.name));
         if let Some(ref generics) = e.generics {
             content.push_str(generics);
         }
@@ -1362,7 +1364,8 @@ impl<'a> ModuleRenderer<'a> {
         } else {
             format!("{} ", self.visibility_badge(&func.visibility)?)
         };
-        content.push_str(&format!("# {}`fn {}`\n\n", badge, func.name));
+        // Use full namespace path for function page, no "fn" prefix
+        content.push_str(&format!("# {}`{}::{}`\n\n", badge, module_path, func.name));
 
         // Breadcrumb back to module
         content.push_str(&format!("*Module: [{}](index.md)*\n\n", module_path));
@@ -1801,8 +1804,8 @@ mod tests {
         let page = &pages[0];
         assert!(page.path.to_string_lossy().ends_with("models.md"));
         assert!(page.content.contains("## Classes"));
-        // Class rendered inline (h3 since Classes is h2)
-        assert!(page.content.contains("### `class User`"));
+        // Class rendered inline (h3 since Classes is h2) - now with full namespace path (no type prefix)
+        assert!(page.content.contains("### `myapp.models.User`"));
         assert!(page.content.contains("**Inherits from:** BaseModel"));
         assert!(page.content.contains("#### Methods"));
         assert!(page.content.contains("`get_name`"));
@@ -1826,7 +1829,8 @@ mod tests {
         assert_eq!(pages.len(), 1, "Should produce a single page");
         let page = &pages[0];
         assert!(page.content.contains("Binding"));
-        assert!(page.content.contains("class NativeClass"));
+        // Now with full namespace path (no type prefix)
+        assert!(page.content.contains("binding_module.NativeClass"));
     }
 
     #[test]
@@ -1918,8 +1922,8 @@ mod tests {
         assert_eq!(pages.len(), 1, "Should produce a single page");
         let page = &pages[0];
         assert!(page.content.contains("## Structs"));
-        // Struct rendered inline (h3 since Structs is h2)
-        assert!(page.content.contains("### `struct Config`"));
+        // Struct rendered inline (h3 since Structs is h2) - now with full namespace path (no type prefix)
+        assert!(page.content.contains("### `crate::models::Config`"));
         assert!(page.content.contains("<T>")); // generics
         assert!(page.content.contains("**Derives:** `Debug`, `Clone`"));
         assert!(page.content.contains("#### Fields"));
@@ -1959,10 +1963,10 @@ mod tests {
         // Inline format: single page per module
         assert_eq!(pages.len(), 1, "Should produce a single page");
         let page = &pages[0];
-        // PyClass struct should display as "class" with Python name
+        // PyClass struct should display with full namespace path and Python name (no type prefix)
         assert!(
-            page.content.contains("`class Data`"),
-            "Should render pyclass as class with Python name, got: {}",
+            page.content.contains("`crate::bindings::Data`"),
+            "Should render pyclass with namespace path and Python name, got: {}",
             page.content
         );
         assert!(page.content.contains("Binding"));
@@ -2024,8 +2028,8 @@ mod tests {
         assert_eq!(pages.len(), 1, "Should produce a single page");
         let page = &pages[0];
         assert!(page.content.contains("## Enums"));
-        // Enum rendered inline
-        assert!(page.content.contains("### `enum Status`"));
+        // Enum rendered inline - now with full namespace path (no type prefix)
+        assert!(page.content.contains("### `crate::types::Status`"));
         assert!(page.content.contains("#### Variants"));
         assert!(page.content.contains("**`Pending`** - Waiting to start"));
         assert!(

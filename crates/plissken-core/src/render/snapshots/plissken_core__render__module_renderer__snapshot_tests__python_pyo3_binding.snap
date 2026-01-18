@@ -9,7 +9,7 @@ Native bindings for data processing
 
 ## Classes
 
-### `class DataProcessor`
+### `native.DataProcessor`
 
 > **Rust Implementation**: [crate::data::DataProcessor](rust/crate/data.md#class-dataprocessor)
 
