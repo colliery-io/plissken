@@ -164,8 +164,9 @@ test_mdbook() {
     fi
 
     # Render documentation with mdbook template
+    # Note: mdbook template creates full project structure (book.toml, src/, theme/)
     log_info "Rendering docs with mdbook template..."
-    "$PLISSKEN" render "$FIXTURE_DIR" -o "$SRC_DIR" -t mdbook
+    "$PLISSKEN" render "$FIXTURE_DIR" -o "$MDBOOK_DIR" -t mdbook
 
     # Verify rendered files exist
     local REQUIRED_FILES=(
