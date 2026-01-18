@@ -141,7 +141,6 @@ pub enum PlisskenError {
     },
 }
 
-
 /// A specialized Result type for plissken operations.
 pub type Result<T> = std::result::Result<T, PlisskenError>;
 

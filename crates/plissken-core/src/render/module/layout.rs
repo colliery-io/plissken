@@ -243,10 +243,7 @@ mod tests {
             layout.python_module_dir("mypackage.submodule"),
             "python/mypackage/submodule"
         );
-        assert_eq!(
-            layout.python_module_dir("a.b.c.d"),
-            "python/a/b/c/d"
-        );
+        assert_eq!(layout.python_module_dir("a.b.c.d"), "python/a/b/c/d");
     }
 
     #[test]
@@ -295,10 +292,7 @@ mod tests {
             layout.rust_module_dir("mycrate::submod"),
             "rust/mycrate/submod"
         );
-        assert_eq!(
-            layout.rust_module_dir("a::b::c::d"),
-            "rust/a/b/c/d"
-        );
+        assert_eq!(layout.rust_module_dir("a::b::c::d"), "rust/a/b/c/d");
     }
 
     #[test]

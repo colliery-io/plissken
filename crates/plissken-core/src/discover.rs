@@ -66,10 +66,10 @@ pub fn discover_python_modules(
         let path = entry.path();
 
         // Only process .py files
-        if path.extension().map(|e| e == "py").unwrap_or(false) {
-            if let Some(module) = path_to_module(path, source_dir, package_name) {
-                modules.push(module);
-            }
+        if path.extension().map(|e| e == "py").unwrap_or(false)
+            && let Some(module) = path_to_module(path, source_dir, package_name)
+        {
+            modules.push(module);
         }
     }
 
@@ -193,7 +193,8 @@ fn detect_module_type(file_path: &Path) -> ModuleSourceType {
         // Check for PyO3 markers
         if preview.contains("# pyo3")
             || preview.contains("#pyo3")
-            || preview.contains("# type: ignore[import]")  // Common in PyO3 stubs
+            || preview.contains("# type: ignore[import]")
+        // Common in PyO3 stubs
         {
             return ModuleSourceType::Pyo3;
         }
@@ -322,7 +323,10 @@ mod tests {
         let file = temp_dir.path().join("module.py");
         std::fs::write(&file, "def foo(): pass\n").unwrap();
 
-        assert!(matches!(detect_module_type(&file), ModuleSourceType::Python));
+        assert!(matches!(
+            detect_module_type(&file),
+            ModuleSourceType::Python
+        ));
     }
 
     #[test]
@@ -365,8 +369,14 @@ mod tests {
         let merged = merge_modules(discovered, &explicit);
 
         assert_eq!(merged.len(), 3);
-        assert!(matches!(merged.get("pkg.a"), Some(ModuleSourceType::Python)));
+        assert!(matches!(
+            merged.get("pkg.a"),
+            Some(ModuleSourceType::Python)
+        ));
         assert!(matches!(merged.get("pkg.b"), Some(ModuleSourceType::Pyo3))); // Overridden
-        assert!(matches!(merged.get("pkg.c"), Some(ModuleSourceType::Python))); // Added
+        assert!(matches!(
+            merged.get("pkg.c"),
+            Some(ModuleSourceType::Python)
+        )); // Added
     }
 }

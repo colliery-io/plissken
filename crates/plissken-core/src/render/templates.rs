@@ -52,14 +52,14 @@ impl TemplateLoader {
     /// * `project_root` - Optional path to project root. If provided, user
     ///   templates will be loaded from `{project_root}/.plissken/templates/`.
     pub fn new(project_root: Option<&Path>) -> Self {
-        let user_dir = project_root.map(|root| {
+        let user_dir = project_root.and_then(|root| {
             let dir = root.join(".plissken").join("templates");
             if dir.exists() && dir.is_dir() {
                 Some(dir)
             } else {
                 None
             }
-        }).flatten();
+        });
 
         Self {
             bundled: Self::load_bundled(),
@@ -94,7 +94,10 @@ impl TemplateLoader {
             .map(|s| s.to_string())
             .ok_or_else(|| crate::error::PlisskenError::Template {
                 message: format!("template not found: {}", name),
-                source: tera::Error::msg(format!("template '{}' not found in bundled templates", name)),
+                source: tera::Error::msg(format!(
+                    "template '{}' not found in bundled templates",
+                    name
+                )),
             })
     }
 
@@ -177,7 +180,10 @@ mod tests {
         let project_root = temp_dir.path();
 
         // Create user override directory
-        let templates_dir = project_root.join(".plissken").join("templates").join("partials");
+        let templates_dir = project_root
+            .join(".plissken")
+            .join("templates")
+            .join("partials");
         fs::create_dir_all(&templates_dir).unwrap();
 
         // Create custom badge template

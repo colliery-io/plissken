@@ -155,7 +155,9 @@ pub trait Parser: Send {
 
     /// Check if this parser can handle the given file extension.
     fn can_parse_extension(&self, ext: &str) -> bool {
-        self.extensions().iter().any(|e| e.eq_ignore_ascii_case(ext))
+        self.extensions()
+            .iter()
+            .any(|e| e.eq_ignore_ascii_case(ext))
     }
 }
 

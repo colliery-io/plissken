@@ -412,9 +412,16 @@ mod tests {
         let adapter = Minimal;
 
         // Badge colors should return valid hex or CSS variable
-        assert!(adapter.badge_async().starts_with("#") || adapter.badge_async().starts_with("var("));
-        assert!(adapter.badge_unsafe().starts_with("#") || adapter.badge_unsafe().starts_with("var("));
-        assert!(adapter.badge_deprecated().starts_with("#") || adapter.badge_deprecated().starts_with("var("));
+        assert!(
+            adapter.badge_async().starts_with("#") || adapter.badge_async().starts_with("var(")
+        );
+        assert!(
+            adapter.badge_unsafe().starts_with("#") || adapter.badge_unsafe().starts_with("var(")
+        );
+        assert!(
+            adapter.badge_deprecated().starts_with("#")
+                || adapter.badge_deprecated().starts_with("var(")
+        );
         assert!(adapter.badge_binding().starts_with("#"));
         assert!(adapter.badge_pub().starts_with("#") || adapter.badge_pub().starts_with("var("));
         assert!(adapter.badge_pub_crate().starts_with("#"));
@@ -431,7 +438,9 @@ mod tests {
         assert_eq!(adapter.badge_binding(), "var(--md-accent-fg-color)");
 
         // Other badges use defaults (hardcoded colors that still work in dark mode)
-        assert!(adapter.badge_unsafe().starts_with("#") || adapter.badge_unsafe().starts_with("var("));
+        assert!(
+            adapter.badge_unsafe().starts_with("#") || adapter.badge_unsafe().starts_with("var(")
+        );
     }
 
     #[test]

@@ -5,9 +5,9 @@
 
 use crate::docstring::{parse_docstring, parse_rust_doc};
 use crate::model::{
-    CrossRef, ParamDoc, PythonClass, PythonFunction, PythonItem, PythonModule,
-    PythonParam, PythonVariable, RustEnum, RustFunction, RustImpl, RustItem, RustModule,
-    RustStruct, SourceType, Visibility,
+    CrossRef, ParamDoc, PythonClass, PythonFunction, PythonItem, PythonModule, PythonParam,
+    PythonVariable, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustStruct, SourceType,
+    Visibility,
 };
 use crate::render::docstring_renderer::render_docstring;
 use crate::render::module::{CrossRefLinker, PageLayout};
@@ -45,7 +45,8 @@ impl ModulePageBuilder {
 
     /// Add the module header with a badge
     fn add_header(&mut self, module_name: &str, badge: &str) {
-        self.content.push_str(&format!("# {} {}\n\n", module_name, badge));
+        self.content
+            .push_str(&format!("# {} {}\n\n", module_name, badge));
     }
 
     /// Add a parsed docstring section
@@ -78,7 +79,8 @@ impl ModulePageBuilder {
         self.content.push_str("|------|------|-------------|\n");
         for item in items {
             let (name, ty, desc) = row_renderer(item);
-            self.content.push_str(&format!("| `{}` | `{}` | {} |\n", name, ty, desc));
+            self.content
+                .push_str(&format!("| `{}` | `{}` | {} |\n", name, ty, desc));
         }
         self.content.push('\n');
     }
@@ -95,6 +97,8 @@ pub struct ModuleRenderer<'a> {
     linker: CrossRefLinker,
 }
 
+// Allow dead code for page-per-item rendering methods (reserved for future use)
+#[allow(dead_code)]
 impl<'a> ModuleRenderer<'a> {
     /// Create a new module renderer
     pub fn new(renderer: &'a Renderer) -> Self {
@@ -120,7 +124,10 @@ impl<'a> ModuleRenderer<'a> {
     ///
     /// This creates one file per module with classes, methods, and functions
     /// all rendered inline rather than as separate pages.
-    pub fn render_python_module(&self, module: &PythonModule) -> Result<Vec<RenderedPage>, tera::Error> {
+    pub fn render_python_module(
+        &self,
+        module: &PythonModule,
+    ) -> Result<Vec<RenderedPage>, tera::Error> {
         // Separate classes and functions
         let mut classes = Vec::new();
         let mut functions = Vec::new();
@@ -153,7 +160,7 @@ impl<'a> ModuleRenderer<'a> {
 
         // Module header with source badge
         let source_badge = self.source_badge(&module.source_type)?;
-        let module_name = module.path.split('.').last().unwrap_or(&module.path);
+        let module_name = module.path.split('.').next_back().unwrap_or(&module.path);
         builder.add_header(module_name, &source_badge);
 
         // Module docstring
@@ -187,7 +194,10 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         let path = layout.python_module_page(&module.path);
-        Ok(RenderedPage { path, content: builder.build() })
+        Ok(RenderedPage {
+            path,
+            content: builder.build(),
+        })
     }
 
     /// Render a Python class inline (for single-page module format).
@@ -211,10 +221,12 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // For bindings, add link to Rust implementation
-        if is_binding {
-            if let Some(link) = self.linker.rust_link_for_python_class(module_path, &class.name) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) = self
+                .linker
+                .rust_link_for_python_class(module_path, &class.name)
+        {
+            content.push_str(&link);
         }
 
         // Docstring - parse and render properly
@@ -225,7 +237,9 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Check if this is an Enum class
-        let is_enum = class.bases.iter().any(|b| b == "Enum" || b.ends_with(".Enum") || b == "IntEnum" || b.ends_with(".IntEnum"));
+        let is_enum = class.bases.iter().any(|b| {
+            b == "Enum" || b.ends_with(".Enum") || b == "IntEnum" || b.ends_with(".IntEnum")
+        });
 
         // For enum classes, render variants as a list (unified format with Rust)
         if is_enum && !class.attributes.is_empty() {
@@ -260,8 +274,17 @@ impl<'a> ModuleRenderer<'a> {
         if !class.methods.is_empty() {
             content.push_str("#### Methods\n\n");
             for method in &class.methods {
-                let parent_class = if is_binding { Some(class.name.as_str()) } else { None };
-                content.push_str(&self.render_python_function_with_context(method, 5, module_path, parent_class)?);
+                let parent_class = if is_binding {
+                    Some(class.name.as_str())
+                } else {
+                    None
+                };
+                content.push_str(&self.render_python_function_with_context(
+                    method,
+                    5,
+                    module_path,
+                    parent_class,
+                )?);
                 content.push_str("\n\n");
             }
         }
@@ -298,10 +321,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str("\n\n");
 
         // For bindings, add link to Rust implementation
-        if is_binding {
-            if let Some(link) = self.linker.rust_link_for_python_function(module_path, &func.name) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) = self
+                .linker
+                .rust_link_for_python_function(module_path, &func.name)
+        {
+            content.push_str(&link);
         }
 
         // Docstring - parse and render with merged signature params for types
@@ -372,7 +397,8 @@ impl<'a> ModuleRenderer<'a> {
                 };
 
                 // Get first line of docstring as summary
-                let summary = class.docstring
+                let summary = class
+                    .docstring
                     .as_ref()
                     .map(|d| d.lines().next().unwrap_or("").to_string())
                     .unwrap_or_default();
@@ -397,15 +423,13 @@ impl<'a> ModuleRenderer<'a> {
                     String::new()
                 };
 
-                let summary = func.docstring
+                let summary = func
+                    .docstring
                     .as_ref()
                     .map(|d| d.lines().next().unwrap_or("").to_string())
                     .unwrap_or_default();
 
-                content.push_str(&format!(
-                    "- {}[`{}`]({}.md)",
-                    badge, func.name, func.name
-                ));
+                content.push_str(&format!("- {}[`{}`]({}.md)", badge, func.name, func.name));
                 if !summary.is_empty() {
                     content.push_str(&format!(" - {}", summary));
                 }
@@ -448,10 +472,12 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // For bindings, add link to Rust implementation
-        if is_binding {
-            if let Some(link) = self.linker.rust_link_for_python_class(module_path, &class.name) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) = self
+                .linker
+                .rust_link_for_python_class(module_path, &class.name)
+        {
+            content.push_str(&link);
         }
 
         // Docstring - parse and render properly
@@ -462,7 +488,9 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Check if this is an Enum class
-        let is_enum = class.bases.iter().any(|b| b == "Enum" || b.ends_with(".Enum") || b == "IntEnum" || b.ends_with(".IntEnum"));
+        let is_enum = class.bases.iter().any(|b| {
+            b == "Enum" || b.ends_with(".Enum") || b == "IntEnum" || b.ends_with(".IntEnum")
+        });
 
         // For enum classes, render members as a table
         if is_enum && !class.attributes.is_empty() {
@@ -492,8 +520,17 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str("### Methods\n\n");
             for method in &class.methods {
                 // Pass parent class name for method-level cross-links
-                let parent_class = if is_binding { Some(class.name.as_str()) } else { None };
-                content.push_str(&self.render_python_function_for_class_page(method, module_path, &class.name, parent_class)?);
+                let parent_class = if is_binding {
+                    Some(class.name.as_str())
+                } else {
+                    None
+                };
+                content.push_str(&self.render_python_function_for_class_page(
+                    method,
+                    module_path,
+                    &class.name,
+                    parent_class,
+                )?);
                 content.push_str("\n\n");
             }
         }
@@ -532,10 +569,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str(&format!("*Module: [{}](index.md)*\n\n", module_path));
 
         // For bindings, add link to Rust implementation
-        if is_binding {
-            if let Some(link) = self.linker.rust_link_for_python_function(module_path, &func.name) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) = self
+                .linker
+                .rust_link_for_python_function(module_path, &func.name)
+        {
+            content.push_str(&link);
         }
 
         // Signature
@@ -637,10 +676,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str("\n\n");
 
         // For bindings, add link to Rust implementation (method-level if parent_class is set)
-        if is_binding {
-            if let Some(link) = self.linker.rust_link_for_python_method(module_path, &func.name, parent_class) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) =
+                self.linker
+                    .rust_link_for_python_method(module_path, &func.name, parent_class)
+        {
+            content.push_str(&link);
         }
 
         // Docstring - parse and render with merged signature params for types
@@ -696,16 +737,15 @@ impl<'a> ModuleRenderer<'a> {
             .iter()
             .map(|sig_param| {
                 // Find matching docstring param by name
-                let doc_param = docstring_params
-                    .iter()
-                    .find(|dp| dp.name == sig_param.name);
+                let doc_param = docstring_params.iter().find(|dp| dp.name == sig_param.name);
 
                 ParamDoc {
                     name: sig_param.name.clone(),
                     // Prefer signature type, fall back to docstring type
-                    ty: sig_param.ty.clone().or_else(|| {
-                        doc_param.and_then(|dp| dp.ty.clone())
-                    }),
+                    ty: sig_param
+                        .ty
+                        .clone()
+                        .or_else(|| doc_param.and_then(|dp| dp.ty.clone())),
                     // Use docstring description if available
                     description: doc_param
                         .map(|dp| dp.description.clone())
@@ -767,7 +807,10 @@ impl<'a> ModuleRenderer<'a> {
     ///
     /// This creates one file per module with structs, enums, and functions
     /// all rendered inline rather than as separate pages.
-    pub fn render_rust_module(&self, module: &RustModule) -> Result<Vec<RenderedPage>, tera::Error> {
+    pub fn render_rust_module(
+        &self,
+        module: &RustModule,
+    ) -> Result<Vec<RenderedPage>, tera::Error> {
         // Categorize items
         let mut structs = Vec::new();
         let mut enums = Vec::new();
@@ -840,7 +883,10 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         let path = layout.rust_module_page(&module.path);
-        Ok(RenderedPage { path, content: builder.build() })
+        Ok(RenderedPage {
+            path,
+            content: builder.build(),
+        })
     }
 
     /// Render a Rust struct inline (for single-page module format).
@@ -866,10 +912,8 @@ impl<'a> ModuleRenderer<'a> {
         // Struct/class header (h3 since Structs is h2)
         // Badge on new line after heading to not affect anchor generation
         content.push_str(&format!("### `{} {}`", type_name, display_name));
-        if !is_pyclass {
-            if let Some(ref generics) = s.generics {
-                content.push_str(generics);
-            }
+        if !is_pyclass && let Some(ref generics) = s.generics {
+            content.push_str(generics);
         }
         content.push_str("\n\n");
 
@@ -883,10 +927,12 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // For pyclass, add link to Python API
-        if is_pyclass {
-            if let Some(link) = self.linker.python_link_for_rust_struct(module_path, &s.name) {
-                content.push_str(&link);
-            }
+        if is_pyclass
+            && let Some(link) = self
+                .linker
+                .python_link_for_rust_struct(module_path, &s.name)
+        {
+            content.push_str(&link);
         }
 
         // Derives - only show for pure Rust
@@ -908,7 +954,10 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str("|------|------|-------------|\n");
             for field in &s.fields {
                 let doc = field.doc_comment.as_deref().unwrap_or("");
-                content.push_str(&format!("| `{}` | `{}` | {} |\n", field.name, field.ty, doc));
+                content.push_str(&format!(
+                    "| `{}` | `{}` | {} |\n",
+                    field.name, field.ty, doc
+                ));
             }
             content.push('\n');
         }
@@ -930,8 +979,18 @@ impl<'a> ModuleRenderer<'a> {
 
             for (method, is_pymethod) in methods {
                 // Pass parent struct name for method-level cross-links (use h5 for methods)
-                let parent_struct = if is_pymethod { Some(s.name.as_str()) } else { None };
-                content.push_str(&self.render_rust_function_with_context(method, 5, is_pymethod, module_path, parent_struct)?);
+                let parent_struct = if is_pymethod {
+                    Some(s.name.as_str())
+                } else {
+                    None
+                };
+                content.push_str(&self.render_rust_function_with_context(
+                    method,
+                    5,
+                    is_pymethod,
+                    module_path,
+                    parent_struct,
+                )?);
                 content.push_str("\n\n");
             }
         }
@@ -998,10 +1057,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str("\n\n");
 
         // For bindings, add link to Python API
-        if is_binding {
-            if let Some(link) = self.linker.python_link_for_rust_function(module_path, &func.name) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) = self
+                .linker
+                .python_link_for_rust_function(module_path, &func.name)
+        {
+            content.push_str(&link);
         }
 
         // Signature
@@ -1068,7 +1129,8 @@ impl<'a> ModuleRenderer<'a> {
                 };
 
                 // Get first line of doc as summary
-                let summary = s.doc_comment
+                let summary = s
+                    .doc_comment
                     .as_ref()
                     .map(|d| d.lines().next().unwrap_or("").to_string())
                     .unwrap_or_default();
@@ -1085,7 +1147,8 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str("## Enums\n\n");
             for e in enums {
                 let badge = self.visibility_badge(&e.visibility)?;
-                let summary = e.doc_comment
+                let summary = e
+                    .doc_comment
                     .as_ref()
                     .map(|d| d.lines().next().unwrap_or("").to_string())
                     .unwrap_or_default();
@@ -1110,15 +1173,13 @@ impl<'a> ModuleRenderer<'a> {
                     format!("{} ", self.visibility_badge(&func.visibility)?)
                 };
 
-                let summary = func.doc_comment
+                let summary = func
+                    .doc_comment
                     .as_ref()
                     .map(|d| d.lines().next().unwrap_or("").to_string())
                     .unwrap_or_default();
 
-                content.push_str(&format!(
-                    "- {}[`{}`]({}.md)",
-                    badge, func.name, func.name
-                ));
+                content.push_str(&format!("- {}[`{}`]({}.md)", badge, func.name, func.name));
                 if !summary.is_empty() {
                     content.push_str(&format!(" - {}", summary));
                 }
@@ -1159,10 +1220,8 @@ impl<'a> ModuleRenderer<'a> {
             format!("{} ", self.visibility_badge(&s.visibility)?)
         };
         content.push_str(&format!("# {}`{} {}`", badge, type_name, display_name));
-        if !is_pyclass {
-            if let Some(ref generics) = s.generics {
-                content.push_str(generics);
-            }
+        if !is_pyclass && let Some(ref generics) = s.generics {
+            content.push_str(generics);
         }
         content.push_str("\n\n");
 
@@ -1170,10 +1229,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str(&format!("*Module: [{}](index.md)*\n\n", module_path));
 
         // For pyclass, add link to Python API
-        if is_pyclass {
-            if let Some(link) = self.linker.python_link_for_rust_struct(module_path, &s.name) {
-                content.push_str(&link);
-            }
+        if is_pyclass
+            && let Some(link) = self
+                .linker
+                .python_link_for_rust_struct(module_path, &s.name)
+        {
+            content.push_str(&link);
         }
 
         // Derives - only show for pure Rust
@@ -1195,7 +1256,10 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str("|------|------|-------------|\n");
             for field in &s.fields {
                 let doc = field.doc_comment.as_deref().unwrap_or("");
-                content.push_str(&format!("| `{}` | `{}` | {} |\n", field.name, field.ty, doc));
+                content.push_str(&format!(
+                    "| `{}` | `{}` | {} |\n",
+                    field.name, field.ty, doc
+                ));
             }
             content.push('\n');
         }
@@ -1217,8 +1281,18 @@ impl<'a> ModuleRenderer<'a> {
 
             for (method, is_pymethod) in methods {
                 // Pass parent struct name for method-level cross-links (use h4 for methods on struct page)
-                let parent_struct = if is_pymethod { Some(s.name.as_str()) } else { None };
-                content.push_str(&self.render_rust_function_with_context(method, 4, is_pymethod, module_path, parent_struct)?);
+                let parent_struct = if is_pymethod {
+                    Some(s.name.as_str())
+                } else {
+                    None
+                };
+                content.push_str(&self.render_rust_function_with_context(
+                    method,
+                    4,
+                    is_pymethod,
+                    module_path,
+                    parent_struct,
+                )?);
                 content.push_str("\n\n");
             }
         }
@@ -1294,10 +1368,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str(&format!("*Module: [{}](index.md)*\n\n", module_path));
 
         // For bindings, add link to Python API
-        if is_binding {
-            if let Some(link) = self.linker.python_link_for_rust_function(module_path, &func.name) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) = self
+                .linker
+                .python_link_for_rust_function(module_path, &func.name)
+        {
+            content.push_str(&link);
         }
 
         // Signature
@@ -1370,10 +1446,12 @@ impl<'a> ModuleRenderer<'a> {
         content.push_str("\n```\n\n");
 
         // For bindings, add link to Python API (method-level if parent_struct is set)
-        if is_binding {
-            if let Some(link) = self.linker.python_link_for_rust_method(module_path, &f.name, parent_struct) {
-                content.push_str(&link);
-            }
+        if is_binding
+            && let Some(link) =
+                self.linker
+                    .python_link_for_rust_method(module_path, &f.name, parent_struct)
+        {
+            content.push_str(&link);
         }
 
         // Doc comment - parse and render with proper tables
@@ -1510,7 +1588,7 @@ impl<'a> ModuleRenderer<'a> {
         yaml.push_str("# markdown_extensions:\n");
         yaml.push_str("#   - toc:\n");
         yaml.push_str("#       toc_depth: 2\n");
-        yaml.push_str("\n");
+        yaml.push('\n');
 
         yaml.push_str("nav:\n");
 
@@ -1668,7 +1746,9 @@ mod tests {
 
     /// Helper to find a page by path suffix
     fn find_page<'a>(pages: &'a [RenderedPage], suffix: &str) -> Option<&'a RenderedPage> {
-        pages.iter().find(|p| p.path.to_string_lossy().ends_with(suffix))
+        pages
+            .iter()
+            .find(|p| p.path.to_string_lossy().ends_with(suffix))
     }
 
     #[test]
@@ -1843,7 +1923,10 @@ mod tests {
         assert!(page.content.contains("<T>")); // generics
         assert!(page.content.contains("**Derives:** `Debug`, `Clone`"));
         assert!(page.content.contains("#### Fields"));
-        assert!(page.content.contains("| `value` | `T` | The stored value |"));
+        assert!(
+            page.content
+                .contains("| `value` | `T` | The stored value |")
+        );
         assert!(page.content.contains("#### Methods"));
         assert!(page.content.contains("`new`"));
     }
@@ -1946,7 +2029,8 @@ mod tests {
         assert!(page.content.contains("#### Variants"));
         assert!(page.content.contains("**`Pending`** - Waiting to start"));
         assert!(
-            page.content.contains("**`Complete`** - Finished successfully")
+            page.content
+                .contains("**`Complete`** - Finished successfully")
         );
     }
 
@@ -2079,34 +2163,41 @@ mod snapshot_tests {
         let renderer = test_renderer();
         let module_renderer = ModuleRenderer::new(&renderer);
 
-        let module = PythonModule::test("models")
-            .with_item(PythonItem::Class(
-                PythonClass::test("User")
-                    .with_docstring("A user model.\n\nRepresents a system user with authentication.")
-                    .with_base("BaseModel")
-                    .with_attribute(PythonVariable::test("id").with_type("int").with_docstring("User ID"))
-                    .with_attribute(PythonVariable::test("name").with_type("str").with_docstring("User name"))
-                    .with_method(
-                        PythonFunction::test("__init__")
-                            .with_param(PythonParam::test("self"))
-                            .with_param(PythonParam::test("name").with_type("str"))
-                            .with_param(PythonParam::test("id").with_type("int").with_default("0")),
-                    )
-                    .with_method(
-                        PythonFunction::test("get_display_name")
-                            .with_docstring("Get formatted display name")
-                            .with_param(PythonParam::test("self"))
-                            .with_return_type("str"),
-                    )
-                    .with_method(
-                        PythonFunction::test("from_dict")
-                            .classmethod()
-                            .with_docstring("Create user from dictionary")
-                            .with_param(PythonParam::test("cls"))
-                            .with_param(PythonParam::test("data").with_type("dict"))
-                            .with_return_type("User"),
-                    ),
-            ));
+        let module = PythonModule::test("models").with_item(PythonItem::Class(
+            PythonClass::test("User")
+                .with_docstring("A user model.\n\nRepresents a system user with authentication.")
+                .with_base("BaseModel")
+                .with_attribute(
+                    PythonVariable::test("id")
+                        .with_type("int")
+                        .with_docstring("User ID"),
+                )
+                .with_attribute(
+                    PythonVariable::test("name")
+                        .with_type("str")
+                        .with_docstring("User name"),
+                )
+                .with_method(
+                    PythonFunction::test("__init__")
+                        .with_param(PythonParam::test("self"))
+                        .with_param(PythonParam::test("name").with_type("str"))
+                        .with_param(PythonParam::test("id").with_type("int").with_default("0")),
+                )
+                .with_method(
+                    PythonFunction::test("get_display_name")
+                        .with_docstring("Get formatted display name")
+                        .with_param(PythonParam::test("self"))
+                        .with_return_type("str"),
+                )
+                .with_method(
+                    PythonFunction::test("from_dict")
+                        .classmethod()
+                        .with_docstring("Create user from dictionary")
+                        .with_param(PythonParam::test("cls"))
+                        .with_param(PythonParam::test("data").with_type("dict"))
+                        .with_return_type("User"),
+                ),
+        ));
 
         let pages = module_renderer.render_python_module(&module).unwrap();
         assert_snapshot!("python_class_with_methods", &pages[0].content);
@@ -2148,7 +2239,9 @@ mod snapshot_tests {
             .with_docstring("Native bindings for data processing")
             .with_item(PythonItem::Class(
                 PythonClass::test("DataProcessor")
-                    .with_docstring("High-performance data processor.\n\nWraps native Rust implementation.")
+                    .with_docstring(
+                        "High-performance data processor.\n\nWraps native Rust implementation.",
+                    )
                     .with_rust_impl(RustItemRef::new("crate::data", "DataProcessor"))
                     .with_method(
                         PythonFunction::test("process")
@@ -2156,7 +2249,10 @@ mod snapshot_tests {
                             .with_param(PythonParam::test("self"))
                             .with_param(PythonParam::test("data").with_type("bytes"))
                             .with_return_type("bytes")
-                            .with_rust_impl(RustItemRef::new("crate::data::DataProcessor", "process")),
+                            .with_rust_impl(RustItemRef::new(
+                                "crate::data::DataProcessor",
+                                "process",
+                            )),
                     ),
             ));
 
@@ -2169,16 +2265,15 @@ mod snapshot_tests {
         let renderer = test_renderer();
         let module_renderer = ModuleRenderer::new(&renderer);
 
-        let module = PythonModule::test("enums")
-            .with_item(PythonItem::Class(
-                PythonClass::test("Status")
-                    .with_docstring("Request status enumeration")
-                    .with_base("Enum")
-                    .with_attribute(PythonVariable::test("PENDING").with_value("\"pending\""))
-                    .with_attribute(PythonVariable::test("RUNNING").with_value("\"running\""))
-                    .with_attribute(PythonVariable::test("COMPLETED").with_value("\"completed\""))
-                    .with_attribute(PythonVariable::test("FAILED").with_value("\"failed\"")),
-            ));
+        let module = PythonModule::test("enums").with_item(PythonItem::Class(
+            PythonClass::test("Status")
+                .with_docstring("Request status enumeration")
+                .with_base("Enum")
+                .with_attribute(PythonVariable::test("PENDING").with_value("\"pending\""))
+                .with_attribute(PythonVariable::test("RUNNING").with_value("\"running\""))
+                .with_attribute(PythonVariable::test("COMPLETED").with_value("\"completed\""))
+                .with_attribute(PythonVariable::test("FAILED").with_value("\"failed\"")),
+        ));
 
         let pages = module_renderer.render_python_module(&module).unwrap();
         assert_snapshot!("python_enum_class", &pages[0].content);
@@ -2192,10 +2287,16 @@ mod snapshot_tests {
         let module = PythonModule::test("constants")
             .with_docstring("Module-level constants")
             .with_item(PythonItem::Variable(
-                PythonVariable::test("VERSION").with_type("str").with_value("\"1.0.0\"").with_docstring("Package version"),
+                PythonVariable::test("VERSION")
+                    .with_type("str")
+                    .with_value("\"1.0.0\"")
+                    .with_docstring("Package version"),
             ))
             .with_item(PythonItem::Variable(
-                PythonVariable::test("MAX_RETRIES").with_type("int").with_value("3").with_docstring("Maximum retry attempts"),
+                PythonVariable::test("MAX_RETRIES")
+                    .with_type("int")
+                    .with_value("3")
+                    .with_docstring("Maximum retry attempts"),
             ));
 
         let pages = module_renderer.render_python_module(&module).unwrap();
@@ -2230,7 +2331,9 @@ mod snapshot_tests {
                     .with_generics("<T: Default>")
                     .with_field(RustField::test("name", "String").with_doc("Configuration name"))
                     .with_field(RustField::test("value", "T").with_doc("Configuration value"))
-                    .with_field(RustField::test("enabled", "bool").with_doc("Whether config is active"))
+                    .with_field(
+                        RustField::test("enabled", "bool").with_doc("Whether config is active"),
+                    )
                     .with_derive("Debug")
                     .with_derive("Clone")
                     .with_derive("Serialize"),
@@ -2261,27 +2364,29 @@ mod snapshot_tests {
         let renderer = test_renderer();
         let module_renderer = ModuleRenderer::new(&renderer);
 
-        let module = RustModule::test("crate::types")
-            .with_item(RustItem::Enum(RustEnum {
-                name: "Result".to_string(),
-                visibility: Visibility::Public,
-                doc_comment: Some("Operation result type.\n\nRepresents success or failure of an operation.".to_string()),
-                parsed_doc: None,
-                generics: Some("<T, E>".to_string()),
-                variants: vec![
-                    RustVariant {
-                        name: "Ok".to_string(),
-                        doc_comment: Some("Operation succeeded with value".to_string()),
-                        fields: vec![RustField::test("0", "T")],
-                    },
-                    RustVariant {
-                        name: "Err".to_string(),
-                        doc_comment: Some("Operation failed with error".to_string()),
-                        fields: vec![RustField::test("0", "E")],
-                    },
-                ],
-                source: SourceSpan::test("test.rs", 1, 15),
-            }));
+        let module = RustModule::test("crate::types").with_item(RustItem::Enum(RustEnum {
+            name: "Result".to_string(),
+            visibility: Visibility::Public,
+            doc_comment: Some(
+                "Operation result type.\n\nRepresents success or failure of an operation."
+                    .to_string(),
+            ),
+            parsed_doc: None,
+            generics: Some("<T, E>".to_string()),
+            variants: vec![
+                RustVariant {
+                    name: "Ok".to_string(),
+                    doc_comment: Some("Operation succeeded with value".to_string()),
+                    fields: vec![RustField::test("0", "T")],
+                },
+                RustVariant {
+                    name: "Err".to_string(),
+                    doc_comment: Some("Operation failed with error".to_string()),
+                    fields: vec![RustField::test("0", "E")],
+                },
+            ],
+            source: SourceSpan::test("test.rs", 1, 15),
+        }));
 
         let pages = module_renderer.render_rust_module(&module).unwrap();
         assert_snapshot!("rust_enum_with_variants", &pages[0].content);
@@ -2337,9 +2442,13 @@ mod snapshot_tests {
         let module = RustModule::test("crate::buffer")
             .with_item(RustItem::Struct(
                 RustStruct::test("RustBuffer")
-                    .with_doc("High-performance buffer for Python.\n\nExposed to Python as `Buffer`.")
+                    .with_doc(
+                        "High-performance buffer for Python.\n\nExposed to Python as `Buffer`.",
+                    )
                     .with_pyclass(PyClassMeta::new().with_name("Buffer").with_module("native"))
-                    .with_field(RustField::test("data", "Vec<u8>").with_doc("Internal data storage")),
+                    .with_field(
+                        RustField::test("data", "Vec<u8>").with_doc("Internal data storage"),
+                    ),
             ))
             .with_item(RustItem::Impl(RustImpl {
                 generics: None,
@@ -2374,13 +2483,12 @@ mod snapshot_tests {
 
         let module_renderer = ModuleRenderer::with_cross_refs(&renderer, cross_refs);
 
-        let module = RustModule::test("crate::compute")
-            .with_item(RustItem::Function(
-                RustFunction::test("compute")
-                    .with_doc("Compute result from input.\n\nExposed to Python as `compute()`.")
-                    .with_pyfunction(PyFunctionMeta::new().with_name("compute"))
-                    .with_signature("#[pyfunction]\npub fn compute(value: i64) -> i64"),
-            ));
+        let module = RustModule::test("crate::compute").with_item(RustItem::Function(
+            RustFunction::test("compute")
+                .with_doc("Compute result from input.\n\nExposed to Python as `compute()`.")
+                .with_pyfunction(PyFunctionMeta::new().with_name("compute"))
+                .with_signature("#[pyfunction]\npub fn compute(value: i64) -> i64"),
+        ));
 
         let pages = module_renderer.render_rust_module(&module).unwrap();
         assert_snapshot!("rust_pyfunction", &pages[0].content);

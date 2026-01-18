@@ -441,18 +441,18 @@ pub fn synthesize_python_modules_from_rust(
         // Collect methods from pymethods impl blocks
         let mut pyclass_methods: HashMap<String, Vec<PythonFunction>> = HashMap::new();
         for item in &module.items {
-            if let RustItem::Impl(impl_block) = item {
-                if impl_block.pymethods {
-                    let methods: Vec<_> = impl_block
-                        .methods
-                        .iter()
-                        .map(|m| synthesize_python_method(m, &impl_block.target, &module.path))
-                        .collect();
-                    pyclass_methods
-                        .entry(impl_block.target.clone())
-                        .or_default()
-                        .extend(methods);
-                }
+            if let RustItem::Impl(impl_block) = item
+                && impl_block.pymethods
+            {
+                let methods: Vec<_> = impl_block
+                    .methods
+                    .iter()
+                    .map(|m| synthesize_python_method(m, &impl_block.target, &module.path))
+                    .collect();
+                pyclass_methods
+                    .entry(impl_block.target.clone())
+                    .or_default()
+                    .extend(methods);
             }
         }
 

@@ -106,11 +106,7 @@ pub trait SSGAdapter: Send + Sync {
     /// Returns the navigation content in the SSG's expected format:
     /// - MkDocs: YAML format for the `nav:` section
     /// - mdBook: Markdown format for SUMMARY.md
-    fn generate_nav(
-        &self,
-        python_modules: &[PythonModule],
-        rust_modules: &[RustModule],
-    ) -> String;
+    fn generate_nav(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String;
 
     /// Generate SSG config file content.
     ///

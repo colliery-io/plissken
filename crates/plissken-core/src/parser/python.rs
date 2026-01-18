@@ -27,8 +27,8 @@ impl PythonParser {
     pub fn parse_file(&mut self, path: &Path) -> crate::error::Result<PythonModule> {
         use crate::error::PlisskenError;
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| PlisskenError::file_read(path, e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| PlisskenError::file_read(path, e))?;
         self.parse_str(&content, path)
     }
 
@@ -158,13 +158,11 @@ fn extract_module_items(root: &Node, content: &str, path: &Path) -> Vec<PythonIt
                         // A string literal immediately following a variable is its docstring
                         if i + 1 < children.len() {
                             let next = &children[i + 1];
-                            if next.kind() == "expression_statement" {
-                                if let Some(docstring) =
-                                    extract_expression_string(next, content)
-                                {
-                                    var.docstring = Some(docstring);
-                                    i += 1; // Skip the docstring node
-                                }
+                            if next.kind() == "expression_statement"
+                                && let Some(docstring) = extract_expression_string(next, content)
+                            {
+                                var.docstring = Some(docstring);
+                                i += 1; // Skip the docstring node
                             }
                         }
                         items.push(PythonItem::Variable(var));

@@ -14,7 +14,11 @@ tests/functional/mdbook/src/theme/
 
 # Local tooling
 .claude/
-.flox/
+
+# Flox - track manifest, ignore runtime
+.flox/cache/
+.flox/run/
+.flox/log/
 
 # Metis database (but track .metis/ folder)
 .metis/metis.db

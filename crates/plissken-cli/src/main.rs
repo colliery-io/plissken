@@ -3,11 +3,11 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use plissken_core::{
-    Config, CrossRef, DocModel, ModuleRenderer, ProjectMetadata, PythonModule, Renderer, RustModule,
-    build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust,
-    CARGO_MANIFEST, PYPROJECT_MANIFEST, PLISSKEN_CONFIG, TEMPLATE_MDBOOK, TEMPLATE_MKDOCS_MATERIAL,
-    VERSION_SOURCE_CARGO, VERSION_SOURCE_PYPROJECT, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_PATH,
-    DEFAULT_CRATES,
+    CARGO_MANIFEST, Config, CrossRef, DEFAULT_CRATES, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_PATH,
+    DocModel, ModuleRenderer, PLISSKEN_CONFIG, PYPROJECT_MANIFEST, ProjectMetadata, PythonModule,
+    Renderer, RustModule, TEMPLATE_MDBOOK, TEMPLATE_MKDOCS_MATERIAL, VERSION_SOURCE_CARGO,
+    VERSION_SOURCE_PYPROJECT, build_cross_refs, synthesize_python_from_rust,
+    synthesize_python_modules_from_rust,
 };
 use std::path::{Path, PathBuf};
 
@@ -191,7 +191,12 @@ fn generate(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) ->
         .parent()
         .ok_or_else(|| CliError::new("Config path has no parent directory"))?;
 
-    verbose!(1, verbosity, "Loading config from: {}", config_path.display());
+    verbose!(
+        1,
+        verbosity,
+        "Loading config from: {}",
+        config_path.display()
+    );
     let config = load_config(&config_path)?;
 
     // Parse Rust sources
@@ -200,12 +205,23 @@ fn generate(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) ->
 
     // Parse Python sources
     let python_modules = parse_python_sources(&config, project_root, verbosity)?;
-    verbose!(1, verbosity, "Parsed {} Python module(s)", python_modules.len());
+    verbose!(
+        1,
+        verbosity,
+        "Parsed {} Python module(s)",
+        python_modules.len()
+    );
 
     // Build cross-references (synthesizing Python bindings if needed)
-    let (python_modules, cross_refs) = synthesize_python_if_needed(&config, python_modules, &rust_modules);
+    let (python_modules, cross_refs) =
+        synthesize_python_if_needed(&config, python_modules, &rust_modules);
 
-    verbose!(1, verbosity, "Built {} cross-reference(s)", cross_refs.len());
+    verbose!(
+        1,
+        verbosity,
+        "Built {} cross-reference(s)",
+        cross_refs.len()
+    );
 
     // Build the doc model
     let model = DocModel {
@@ -256,11 +272,8 @@ fn render(
     log_output_settings(&output_dir, template.as_deref(), verbosity);
 
     // Parse and merge modules
-    let (python_modules, rust_modules, cross_refs) = parse_and_merge_modules(
-        &config,
-        &project_root,
-        verbosity,
-    )?;
+    let (python_modules, rust_modules, cross_refs) =
+        parse_and_merge_modules(&config, &project_root, verbosity)?;
 
     // Create renderer with theme and cross-references
     let renderer = create_renderer(template.as_deref(), &project_root)?;
@@ -289,7 +302,13 @@ fn render(
         verbosity,
     )?;
 
-    verbose!(1, verbosity, "\nRendered {} file(s) to {}", files_written + ssg_files, output_dir.display());
+    verbose!(
+        1,
+        verbosity,
+        "\nRendered {} file(s) to {}",
+        files_written + ssg_files,
+        output_dir.display()
+    );
     Ok(())
 }
 
@@ -302,7 +321,12 @@ fn load_project_config(path: &str, verbosity: u8) -> Result<(Config, PathBuf)> {
         .ok_or_else(|| CliError::new("Config path has no parent directory"))?
         .to_path_buf();
 
-    verbose!(1, verbosity, "Loading config from: {}", config_path.display());
+    verbose!(
+        1,
+        verbosity,
+        "Loading config from: {}",
+        config_path.display()
+    );
     let config = load_config(&config_path)?;
 
     Ok((config, project_root))
@@ -344,7 +368,12 @@ fn parse_and_merge_modules(
     verbose!(1, verbosity, "Parsed {} Rust module(s)", rust_modules.len());
 
     let mut python_modules = parse_python_sources(config, project_root, verbosity)?;
-    verbose!(1, verbosity, "Parsed {} Python module(s)", python_modules.len());
+    verbose!(
+        1,
+        verbosity,
+        "Parsed {} Python module(s)",
+        python_modules.len()
+    );
 
     // Normalize Python module paths
     for module in &mut python_modules {
@@ -352,21 +381,18 @@ fn parse_and_merge_modules(
     }
 
     // Merge synthesized Python modules
-    let (python_modules, initial_cross_refs) = merge_synthesized_python_modules(
-        config,
-        python_modules,
-        &rust_modules,
-        verbosity,
-    );
+    let (python_modules, initial_cross_refs) =
+        merge_synthesized_python_modules(config, python_modules, &rust_modules, verbosity);
 
     // Build cross-references
-    let (python_modules, cross_refs) = build_cross_references(
-        config,
-        python_modules,
-        &rust_modules,
-        initial_cross_refs,
+    let (python_modules, cross_refs) =
+        build_cross_references(config, python_modules, &rust_modules, initial_cross_refs);
+    verbose!(
+        1,
+        verbosity,
+        "Built {} cross-reference(s)",
+        cross_refs.len()
     );
-    verbose!(1, verbosity, "Built {} cross-reference(s)", cross_refs.len());
 
     Ok((python_modules, rust_modules, cross_refs))
 }
@@ -424,13 +450,16 @@ fn merge_synthesized_python_modules(
         .as_ref()
         .and_then(|r| r.entry_point.clone())
         .unwrap_or_else(|| config.project.name.clone());
-    let synth_results = synthesize_python_modules_from_rust(rust_modules, &python_package, &rust_entry_point);
+    let synth_results =
+        synthesize_python_modules_from_rust(rust_modules, &python_package, &rust_entry_point);
     let mut all_cross_refs: Vec<CrossRef> = Vec::new();
 
     // Add synthesized Python modules (merging with existing ones)
     for (synth_module, synth_refs) in synth_results {
         // Check if we already have a Python module with this path
-        let existing = python_modules.iter_mut().find(|m| m.path == synth_module.path);
+        let existing = python_modules
+            .iter_mut()
+            .find(|m| m.path == synth_module.path);
         if let Some(existing_module) = existing {
             // Merge: add synthesized items to existing module
             for synth_item in synth_module.items {
@@ -441,23 +470,44 @@ fn merge_synthesized_python_modules(
                 };
 
                 // Check if item already exists
-                let exists = existing_module.items.iter().any(|item| {
-                    match (item, &synth_item) {
-                        (plissken_core::PythonItem::Class(a), plissken_core::PythonItem::Class(b)) => a.name == b.name,
-                        (plissken_core::PythonItem::Function(a), plissken_core::PythonItem::Function(b)) => a.name == b.name,
-                        (plissken_core::PythonItem::Variable(a), plissken_core::PythonItem::Variable(b)) => a.name == b.name,
+                let exists = existing_module
+                    .items
+                    .iter()
+                    .any(|item| match (item, &synth_item) {
+                        (
+                            plissken_core::PythonItem::Class(a),
+                            plissken_core::PythonItem::Class(b),
+                        ) => a.name == b.name,
+                        (
+                            plissken_core::PythonItem::Function(a),
+                            plissken_core::PythonItem::Function(b),
+                        ) => a.name == b.name,
+                        (
+                            plissken_core::PythonItem::Variable(a),
+                            plissken_core::PythonItem::Variable(b),
+                        ) => a.name == b.name,
                         _ => false,
-                    }
-                });
+                    });
 
                 if !exists {
-                    verbose!(2, verbosity, "  Merging synthesized {} into {}", item_name, existing_module.path);
+                    verbose!(
+                        2,
+                        verbosity,
+                        "  Merging synthesized {} into {}",
+                        item_name,
+                        existing_module.path
+                    );
                     existing_module.items.push(synth_item);
                 }
             }
         } else {
             // No existing module - add the synthesized one
-            verbose!(2, verbosity, "  Synthesized Python module: {} (from Rust bindings)", synth_module.path);
+            verbose!(
+                2,
+                verbosity,
+                "  Synthesized Python module: {} (from Rust bindings)",
+                synth_module.path
+            );
             python_modules.push(synth_module);
         }
         all_cross_refs.extend(synth_refs);
@@ -498,7 +548,8 @@ fn build_cross_references(
     rust_modules: &[RustModule],
     initial_cross_refs: Vec<CrossRef>,
 ) -> (Vec<PythonModule>, Vec<CrossRef>) {
-    let (python_modules, mut cross_refs) = synthesize_python_if_needed(config, python_modules, rust_modules);
+    let (python_modules, mut cross_refs) =
+        synthesize_python_if_needed(config, python_modules, rust_modules);
     cross_refs.extend(initial_cross_refs);
     (python_modules, cross_refs)
 }
@@ -714,7 +765,9 @@ fn check(path: &str, format: &str, verbosity: u8) -> Result<()> {
                     issues: vec![ValidationIssue {
                         severity: "error".to_string(),
                         message: "configuration file not found".to_string(),
-                        hint: Some("run 'plissken init' to create a configuration file".to_string()),
+                        hint: Some(
+                            "run 'plissken init' to create a configuration file".to_string(),
+                        ),
                     }],
                 };
                 println!("{}", serde_json::to_string_pretty(&result)?);
@@ -943,11 +996,12 @@ fn extract_cargo_name(content: &str) -> Option<String> {
             in_package = false;
             continue;
         }
-        if in_package && line.starts_with("name") {
-            if let Some(val) = line.split('=').nth(1) {
-                let name = val.trim().trim_matches('"').trim_matches('\'');
-                return Some(name.to_string());
-            }
+        if in_package
+            && line.starts_with("name")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            let name = val.trim().trim_matches('"').trim_matches('\'');
+            return Some(name.to_string());
         }
     }
     None
@@ -975,11 +1029,12 @@ fn extract_pyproject_name(content: &str) -> Option<String> {
             in_poetry = false;
             continue;
         }
-        if (in_project || in_poetry) && line.starts_with("name") {
-            if let Some(val) = line.split('=').nth(1) {
-                let name = val.trim().trim_matches('"').trim_matches('\'');
-                return Some(name.to_string());
-            }
+        if (in_project || in_poetry)
+            && line.starts_with("name")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            let name = val.trim().trim_matches('"').trim_matches('\'');
+            return Some(name.to_string());
         }
     }
     None
@@ -999,11 +1054,12 @@ fn extract_python_source(content: &str) -> Option<PathBuf> {
             in_maturin = false;
             continue;
         }
-        if in_maturin && line.starts_with("python-source") {
-            if let Some(val) = line.split('=').nth(1) {
-                let source = val.trim().trim_matches('"').trim_matches('\'');
-                return Some(PathBuf::from(source));
-            }
+        if in_maturin
+            && line.starts_with("python-source")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            let source = val.trim().trim_matches('"').trim_matches('\'');
+            return Some(PathBuf::from(source));
         }
     }
 
@@ -1019,18 +1075,19 @@ fn extract_python_source(content: &str) -> Option<PathBuf> {
             in_find = false;
             continue;
         }
-        if in_find && line.starts_with("where") {
-            if let Some(val) = line.split('=').nth(1) {
-                // where = ["src"] format
-                let val = val.trim();
-                if val.starts_with('[') {
-                    // Parse array - take first element
-                    let inner = val.trim_start_matches('[').trim_end_matches(']');
-                    if let Some(first) = inner.split(',').next() {
-                        let source = first.trim().trim_matches('"').trim_matches('\'');
-                        if !source.is_empty() && source != "." {
-                            return Some(PathBuf::from(source));
-                        }
+        if in_find
+            && line.starts_with("where")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            // where = ["src"] format
+            let val = val.trim();
+            if val.starts_with('[') {
+                // Parse array - take first element
+                let inner = val.trim_start_matches('[').trim_end_matches(']');
+                if let Some(first) = inner.split(',').next() {
+                    let source = first.trim().trim_matches('"').trim_matches('\'');
+                    if !source.is_empty() && source != "." {
+                        return Some(PathBuf::from(source));
                     }
                 }
             }
@@ -1053,7 +1110,10 @@ fn generate_config(project: &DetectedProject) -> Result<String> {
     if project.has_rust {
         config.push_str(&format!("version_from = \"{}\"\n", VERSION_SOURCE_CARGO));
     } else {
-        config.push_str(&format!("version_from = \"{}\"\n", VERSION_SOURCE_PYPROJECT));
+        config.push_str(&format!(
+            "version_from = \"{}\"\n",
+            VERSION_SOURCE_PYPROJECT
+        ));
     }
     config.push('\n');
 
@@ -1152,9 +1212,12 @@ fn load_config(path: &Path) -> Result<Config> {
         }
 
         // Add the actual error message and hint
-        err = CliError::new(format!("invalid configuration: {}", summarize_toml_error(&err_str)))
-            .with_context(err.context.unwrap_or_default())
-            .with_hint(suggest_config_fix(&err_str));
+        err = CliError::new(format!(
+            "invalid configuration: {}",
+            summarize_toml_error(&err_str)
+        ))
+        .with_context(err.context.unwrap_or_default())
+        .with_hint(suggest_config_fix(&err_str));
 
         err.into()
     })
@@ -1165,7 +1228,7 @@ fn extract_toml_location(err: &str) -> Option<String> {
     // toml errors often contain "at line X column Y"
     if let Some(idx) = err.find("at line") {
         let rest = &err[idx..];
-        if let Some(end) = rest.find(|c: char| c == '\n' || c == ',') {
+        if let Some(end) = rest.find(['\n', ',']) {
             return Some(rest[..end].to_string());
         }
         return Some(rest.to_string());
@@ -1176,21 +1239,19 @@ fn extract_toml_location(err: &str) -> Option<String> {
 /// Summarize a toml error message for users
 fn summarize_toml_error(err: &str) -> String {
     // Extract the most useful part of the error
-    if err.contains("missing field") {
-        if let Some(start) = err.find('`') {
-            if let Some(end) = err[start + 1..].find('`') {
-                let field = &err[start + 1..start + 1 + end];
-                return format!("missing required field '{}'", field);
-            }
-        }
+    if err.contains("missing field")
+        && let Some(start) = err.find('`')
+        && let Some(end) = err[start + 1..].find('`')
+    {
+        let field = &err[start + 1..start + 1 + end];
+        return format!("missing required field '{}'", field);
     }
-    if err.contains("unknown field") {
-        if let Some(start) = err.find('`') {
-            if let Some(end) = err[start + 1..].find('`') {
-                let field = &err[start + 1..start + 1 + end];
-                return format!("unknown field '{}'", field);
-            }
-        }
+    if err.contains("unknown field")
+        && let Some(start) = err.find('`')
+        && let Some(end) = err[start + 1..].find('`')
+    {
+        let field = &err[start + 1..start + 1 + end];
+        return format!("unknown field '{}'", field);
     }
     if err.contains("invalid type") {
         return "invalid value type".to_string();
@@ -1220,7 +1281,11 @@ fn suggest_config_fix(err: &str) -> String {
 }
 
 /// Parse Rust source files based on config
-fn parse_rust_sources(config: &Config, project_root: &Path, verbosity: u8) -> Result<Vec<RustModule>> {
+fn parse_rust_sources(
+    config: &Config,
+    project_root: &Path,
+    verbosity: u8,
+) -> Result<Vec<RustModule>> {
     let Some(ref rust_config) = config.rust else {
         return Ok(Vec::new());
     };
@@ -1233,12 +1298,19 @@ fn parse_rust_sources(config: &Config, project_root: &Path, verbosity: u8) -> Re
 
         // Read crate name from Cargo.toml
         let crate_name = read_crate_name(&crate_dir)?;
-        verbose!(2, verbosity, "  Crate: {} ({})", crate_name, crate_dir.display());
+        verbose!(
+            2,
+            verbosity,
+            "  Crate: {} ({})",
+            crate_name,
+            crate_dir.display()
+        );
 
         // Determine src directory (check common source directory names)
         let src_dir = if crate_dir.join("src").exists() {
             crate_dir.join("src")
-        } else if crate_dir.join("rust").exists() && crate_dir.join("rust").join("lib.rs").exists() {
+        } else if crate_dir.join("rust").exists() && crate_dir.join("rust").join("lib.rs").exists()
+        {
             crate_dir.join("rust")
         } else {
             crate_dir.clone()
@@ -1300,10 +1372,7 @@ fn read_crate_name(crate_dir: &Path) -> Result<String> {
         .and_then(|p| p.get("name"))
         .and_then(|n| n.as_str())
         .ok_or_else(|| {
-            CliError::new(format!(
-                "missing package.name in {}",
-                cargo_toml.display()
-            ))
+            CliError::new(format!("missing package.name in {}", cargo_toml.display()))
         })?;
 
     Ok(name.to_string())
@@ -1324,10 +1393,7 @@ fn file_to_module_path(file_path: &Path, crate_name: &str, src_dir: &Path) -> St
         Err(_) => return crate_name.to_string(),
     };
 
-    let file_name = relative
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("");
+    let file_name = relative.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     // Handle crate root files
     if file_name == "lib.rs" || file_name == "main.rs" {
@@ -1338,10 +1404,10 @@ fn file_to_module_path(file_path: &Path, crate_name: &str, src_dir: &Path) -> St
     let mut parts: Vec<&str> = Vec::new();
 
     for component in relative.parent().unwrap_or(Path::new("")).components() {
-        if let std::path::Component::Normal(name) = component {
-            if let Some(name_str) = name.to_str() {
-                parts.push(name_str);
-            }
+        if let std::path::Component::Normal(name) = component
+            && let Some(name_str) = name.to_str()
+        {
+            parts.push(name_str);
         }
     }
 
@@ -1406,7 +1472,11 @@ fn find_rust_files(dir: &Path) -> Result<Vec<PathBuf>> {
 }
 
 /// Parse Python source files based on config
-fn parse_python_sources(config: &Config, project_root: &Path, verbosity: u8) -> Result<Vec<PythonModule>> {
+fn parse_python_sources(
+    config: &Config,
+    project_root: &Path,
+    verbosity: u8,
+) -> Result<Vec<PythonModule>> {
     let Some(ref python_config) = config.python else {
         return Ok(Vec::new());
     };
@@ -1427,10 +1497,21 @@ fn parse_python_sources(config: &Config, project_root: &Path, verbosity: u8) -> 
 
     // Use auto-discovery or explicit file finding
     let py_files: Vec<PathBuf> = if python_config.auto_discover {
-        verbose!(1, verbosity, "Auto-discovering Python modules in {}...", python_dir.display());
-        let discovered = plissken_core::discover_python_modules(&python_dir, &python_config.package)
-            .map_err(|e| CliError::new(format!("failed to discover Python modules: {}", e)))?;
-        verbose!(2, verbosity, "  Discovered {} Python modules", discovered.len());
+        verbose!(
+            1,
+            verbosity,
+            "Auto-discovering Python modules in {}...",
+            python_dir.display()
+        );
+        let discovered =
+            plissken_core::discover_python_modules(&python_dir, &python_config.package)
+                .map_err(|e| CliError::new(format!("failed to discover Python modules: {}", e)))?;
+        verbose!(
+            2,
+            verbosity,
+            "  Discovered {} Python modules",
+            discovered.len()
+        );
         discovered.into_iter().map(|m| m.path).collect()
     } else {
         find_python_files(&python_dir)?

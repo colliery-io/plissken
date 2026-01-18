@@ -20,13 +20,13 @@
 //! assert_eq!(adapter.nav_filename(), "_nav.yml");
 //! ```
 
-mod traits;
-mod mkdocs;
 mod mdbook;
+mod mkdocs;
+mod traits;
 
-pub use traits::{python_nav_entries, rust_nav_entries, NavEntry, SSGAdapter};
-pub use mkdocs::MkDocsAdapter;
 pub use mdbook::MdBookAdapter;
+pub use mkdocs::MkDocsAdapter;
+pub use traits::{NavEntry, SSGAdapter, python_nav_entries, rust_nav_entries};
 
 /// Get an SSG adapter for the given template name.
 ///

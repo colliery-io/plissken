@@ -35,8 +35,6 @@
 pub mod config;
 
 // Test utilities - only compiled for tests
-#[cfg(test)]
-pub mod test_fixtures;
 pub mod crossref;
 pub mod discover;
 pub mod docstring;
@@ -45,6 +43,8 @@ pub mod manifest;
 pub mod model;
 pub mod parser;
 pub mod render;
+#[cfg(test)]
+pub mod test_fixtures;
 
 // =============================================================================
 // Core API - Essential types for typical usage (~20 types)
@@ -54,24 +54,25 @@ pub mod render;
 pub use config::{Config, ConfigError, ConfigWarning, ValidationResult};
 // Configuration constants
 pub use config::{
-    DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_PATH, DEFAULT_DOCS_RS_URL, DEFAULT_TEMPLATE,
-    VERSION_SOURCE_CARGO, VERSION_SOURCE_PYPROJECT,
-    CARGO_MANIFEST, PYPROJECT_MANIFEST, PLISSKEN_CONFIG,
-    TEMPLATE_MKDOCS_MATERIAL, TEMPLATE_MDBOOK, DEFAULT_CRATES,
+    CARGO_MANIFEST, DEFAULT_CRATES, DEFAULT_DOCS_RS_URL, DEFAULT_OUTPUT_FORMAT,
+    DEFAULT_OUTPUT_PATH, DEFAULT_TEMPLATE, PLISSKEN_CONFIG, PYPROJECT_MANIFEST, TEMPLATE_MDBOOK,
+    TEMPLATE_MKDOCS_MATERIAL, VERSION_SOURCE_CARGO, VERSION_SOURCE_PYPROJECT,
 };
 
 // Errors
 pub use error::{PlisskenError, Result};
 
 // Documentation model - top level
-pub use model::{DocModel, ProjectMetadata, CrossRef, CrossRefKind, SourceType};
+pub use model::{CrossRef, CrossRefKind, DocModel, ProjectMetadata, SourceType};
 
 // Module containers
-pub use model::{RustModule, PythonModule};
+pub use model::{PythonModule, RustModule};
 
 // Parsers
-pub use parser::{RustParser, PythonParser};
-pub use parser::{Parser, ParserLanguage, Module as ParsedModule, create_parser, parser_for_extension};
+pub use parser::{
+    Module as ParsedModule, Parser, ParserLanguage, create_parser, parser_for_extension,
+};
+pub use parser::{PythonParser, RustParser};
 
 // Rendering
 pub use render::{ModuleRenderer, RenderedPage, Renderer};
@@ -101,34 +102,28 @@ pub use render::{ThemeAdapter, get_theme_adapter};
 pub mod detail {
     // Rust item types
     pub use crate::model::{
-        RustItem, RustStruct, RustEnum, RustFunction, RustTrait,
-        RustImpl, RustConst, RustTypeAlias,
+        RustConst, RustEnum, RustFunction, RustImpl, RustItem, RustStruct, RustTrait, RustTypeAlias,
     };
 
     // Rust sub-types
     pub use crate::model::{
-        RustField, RustFunctionSig, RustParam, RustVariant, RustAssociatedType,
-        Visibility,
+        RustAssociatedType, RustField, RustFunctionSig, RustParam, RustVariant, Visibility,
     };
 
     // Python item types
-    pub use crate::model::{
-        PythonItem, PythonClass, PythonFunction, PythonVariable,
-    };
+    pub use crate::model::{PythonClass, PythonFunction, PythonItem, PythonVariable};
 
     // Python sub-types
-    pub use crate::model::{
-        PythonFunctionSig, PythonParam,
-    };
+    pub use crate::model::{PythonFunctionSig, PythonParam};
 
     // Source location types
-    pub use crate::model::{SourceSpan, SourceLocation};
+    pub use crate::model::{SourceLocation, SourceSpan};
 
     // Cross-reference types
     pub use crate::model::RustItemRef;
 
     // Docstring types
-    pub use crate::model::{ParsedDocstring, ParamDoc, ReturnDoc, RaisesDoc};
+    pub use crate::model::{ParamDoc, ParsedDocstring, RaisesDoc, ReturnDoc};
 
     // PyO3 metadata (useful for cross-reference inspection)
     pub use crate::model::{PyClassMeta, PyFunctionMeta};
@@ -149,10 +144,9 @@ pub mod detail {
 
     // Render utilities
     pub use crate::render::{
-        CrossRefLink, Language, crossref_link, link_to_python, link_to_rust,
-        render_docstring, render_examples, render_params_table,
-        render_raises_table, render_returns,
-        render_python_exposure_details, render_rust_impl_details,
+        CrossRefLink, Language, crossref_link, link_to_python, link_to_rust, render_docstring,
+        render_examples, render_params_table, render_python_exposure_details, render_raises_table,
+        render_returns, render_rust_impl_details,
     };
 }
 
@@ -165,11 +159,9 @@ pub mod detail {
 
 // Commonly used detail types that were previously in root
 pub use model::{
-    RustItem, RustStruct, RustEnum, RustFunction, RustTrait, RustImpl,
-    PythonItem, PythonClass, PythonFunction, PythonVariable,
-    RustField, RustParam, PythonParam, Visibility,
-    SourceSpan, SourceLocation, RustItemRef,
-    ParsedDocstring,
+    ParsedDocstring, PythonClass, PythonFunction, PythonItem, PythonParam, PythonVariable,
+    RustEnum, RustField, RustFunction, RustImpl, RustItem, RustItemRef, RustParam, RustStruct,
+    RustTrait, SourceLocation, SourceSpan, Visibility,
 };
 
 // Discovery and manifest (commonly used)
@@ -177,7 +169,9 @@ pub use discover::{DiscoveredModule, discover_python_modules, merge_modules};
 pub use manifest::{CargoManifest, InferredConfig, PyProjectManifest};
 
 // Cross-reference utilities
-pub use crossref::{build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust};
+pub use crossref::{
+    build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust,
+};
 
 // Docstring utilities
 pub use docstring::{parse_docstring, parse_rust_doc};
@@ -185,6 +179,6 @@ pub use docstring::{parse_docstring, parse_rust_doc};
 // Render utilities
 pub use render::{CrossRefLink, Language, crossref_link, link_to_python, link_to_rust};
 pub use render::{
-    render_docstring, render_examples, render_params_table, render_raises_table, render_returns,
-    render_python_exposure_details, render_rust_impl_details,
+    render_docstring, render_examples, render_params_table, render_python_exposure_details,
+    render_raises_table, render_returns, render_rust_impl_details,
 };

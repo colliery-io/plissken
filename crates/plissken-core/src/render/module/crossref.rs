@@ -47,11 +47,7 @@ fn compute_rust_relative_prefix(rust_path: &str) -> String {
 /// Nested modules need to go up for each parent directory.
 fn compute_python_relative_prefix(python_path: &str) -> String {
     let parts: Vec<&str> = python_path.split('.').collect();
-    let depth = if parts.len() == 1 {
-        0
-    } else {
-        parts.len() - 1
-    };
+    let depth = if parts.len() == 1 { 0 } else { parts.len() - 1 };
     "../".repeat(depth)
 }
 
@@ -206,12 +202,11 @@ impl CrossRefLinker {
                 || xref.rust_path.ends_with(&format!("::{}", struct_name))
             {
                 // Get Python module and class name
-                let (python_module, python_class) =
-                    if let Some(pos) = xref.python_path.rfind('.') {
-                        (&xref.python_path[..pos], &xref.python_path[pos + 1..])
-                    } else {
-                        (xref.python_path.as_str(), xref.python_path.as_str())
-                    };
+                let (python_module, python_class) = if let Some(pos) = xref.python_path.rfind('.') {
+                    (&xref.python_path[..pos], &xref.python_path[pos + 1..])
+                } else {
+                    (xref.python_path.as_str(), xref.python_path.as_str())
+                };
 
                 // Compute path to Python module page
                 let prefix = compute_rust_relative_prefix(rust_path);
@@ -457,9 +452,11 @@ mod tests {
     fn test_empty_linker() {
         let linker = CrossRefLinker::empty();
         assert!(!linker.has_refs());
-        assert!(linker
-            .python_link_for_rust_struct("mycrate", "MyStruct")
-            .is_none());
+        assert!(
+            linker
+                .python_link_for_rust_struct("mycrate", "MyStruct")
+                .is_none()
+        );
     }
 
     #[test]
@@ -583,11 +580,15 @@ mod tests {
     fn test_no_match_returns_none() {
         let linker = CrossRefLinker::new(test_cross_refs());
 
-        assert!(linker
-            .python_link_for_rust_struct("mycrate", "Unknown")
-            .is_none());
-        assert!(linker
-            .rust_link_for_python_class("mypackage", "Unknown")
-            .is_none());
+        assert!(
+            linker
+                .python_link_for_rust_struct("mycrate", "Unknown")
+                .is_none()
+        );
+        assert!(
+            linker
+                .rust_link_for_python_class("mypackage", "Unknown")
+                .is_none()
+        );
     }
 }

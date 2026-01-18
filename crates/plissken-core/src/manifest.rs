@@ -85,6 +85,7 @@ struct SetuptoolsConfig {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)] // Fields used for deserialization, may be used in future
 struct MaturinConfig {
     #[serde(rename = "python-source")]
     python_source: Option<String>,
@@ -145,11 +146,7 @@ impl PyProjectManifest {
         let package_dir = if let Some(tool) = toml.tool {
             // First check maturin python-source
             if let Some(maturin) = tool.maturin {
-                if let Some(src) = maturin.python_source {
-                    Some(PathBuf::from(src))
-                } else {
-                    None
-                }
+                maturin.python_source.map(PathBuf::from)
             // Then check setuptools package-dir
             } else if let Some(setuptools) = tool.setuptools {
                 if let Some(pkg_dir) = setuptools.package_dir {
@@ -195,40 +192,40 @@ impl InferredConfig {
 
         // Try to parse Cargo.toml
         let cargo_path = project_root.join("Cargo.toml");
-        if cargo_path.exists() {
-            if let Ok(cargo) = CargoManifest::parse(&cargo_path) {
-                // Project name from package name
-                if let Some(name) = &cargo.name {
-                    inferred.project_name = Some(name.clone());
-                    inferred.rust_entry_point = Some(name.clone());
-                }
+        if cargo_path.exists()
+            && let Ok(cargo) = CargoManifest::parse(&cargo_path)
+        {
+            // Project name from package name
+            if let Some(name) = &cargo.name {
+                inferred.project_name = Some(name.clone());
+                inferred.rust_entry_point = Some(name.clone());
+            }
 
-                // Rust crates from workspace members or current directory
-                if cargo.is_workspace && !cargo.workspace_members.is_empty() {
-                    inferred.rust_crates =
-                        Some(cargo.workspace_members.iter().map(PathBuf::from).collect());
-                } else if cargo.name.is_some() {
-                    // Single crate project
-                    inferred.rust_crates = Some(vec![PathBuf::from(".")]);
-                }
+            // Rust crates from workspace members or current directory
+            if cargo.is_workspace && !cargo.workspace_members.is_empty() {
+                inferred.rust_crates =
+                    Some(cargo.workspace_members.iter().map(PathBuf::from).collect());
+            } else if cargo.name.is_some() {
+                // Single crate project
+                inferred.rust_crates = Some(vec![PathBuf::from(".")]);
             }
         }
 
         // Try to parse pyproject.toml
         let pyproject_path = project_root.join("pyproject.toml");
-        if pyproject_path.exists() {
-            if let Ok(pyproject) = PyProjectManifest::parse(&pyproject_path) {
-                // Project name from pyproject takes precedence
-                if let Some(name) = &pyproject.name {
-                    inferred.project_name = Some(name.clone());
-                    // Python package name (convert dashes to underscores)
-                    inferred.python_package = Some(name.replace('-', "_"));
-                }
+        if pyproject_path.exists()
+            && let Ok(pyproject) = PyProjectManifest::parse(&pyproject_path)
+        {
+            // Project name from pyproject takes precedence
+            if let Some(name) = &pyproject.name {
+                inferred.project_name = Some(name.clone());
+                // Python package name (convert dashes to underscores)
+                inferred.python_package = Some(name.replace('-', "_"));
+            }
 
-                // Python source directory
-                if let Some(pkg_dir) = pyproject.package_dir {
-                    inferred.python_source = Some(pkg_dir);
-                }
+            // Python source directory
+            if let Some(pkg_dir) = pyproject.package_dir {
+                inferred.python_source = Some(pkg_dir);
             }
         }
 

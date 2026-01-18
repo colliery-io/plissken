@@ -26,8 +26,8 @@ impl RustParser {
     pub fn parse_file(&self, path: &Path) -> crate::error::Result<RustModule> {
         use crate::error::PlisskenError;
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| PlisskenError::file_read(path, e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| PlisskenError::file_read(path, e))?;
         self.parse_str(&content, path)
     }
 

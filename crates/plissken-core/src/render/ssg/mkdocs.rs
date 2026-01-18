@@ -1,6 +1,6 @@
 //! MkDocs adapter implementation
 
-use super::traits::{python_nav_entries, rust_nav_entries, SSGAdapter};
+use super::traits::{SSGAdapter, python_nav_entries, rust_nav_entries};
 use crate::model::{PythonModule, RustModule};
 
 /// MkDocs adapter for Material theme.
@@ -33,11 +33,7 @@ impl SSGAdapter for MkDocsAdapter {
         "_nav.yml"
     }
 
-    fn generate_nav(
-        &self,
-        python_modules: &[PythonModule],
-        rust_modules: &[RustModule],
-    ) -> String {
+    fn generate_nav(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String {
         let mut yaml = String::new();
 
         // Add recommended toc setting
@@ -47,7 +43,7 @@ impl SSGAdapter for MkDocsAdapter {
         yaml.push_str("# markdown_extensions:\n");
         yaml.push_str("#   - toc:\n");
         yaml.push_str("#       toc_depth: 2\n");
-        yaml.push_str("\n");
+        yaml.push('\n');
 
         yaml.push_str("nav:\n");
 

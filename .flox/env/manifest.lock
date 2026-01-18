@@ -1,0 +1,255 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "version": 1,
+    "install": {
+      "mdbook": {
+        "pkg-path": "mdbook"
+      },
+      "mkdocs-material": {
+        "pkg-path": "python312Packages.mkdocs-material"
+      }
+    },
+    "hook": {},
+    "profile": {},
+    "options": {}
+  },
+  "packages": [
+    {
+      "attr_path": "mdbook",
+      "broken": false,
+      "derivation": "/nix/store/4wrdbxjib4ac47x3dixf8vy372yklffw-mdbook-0.4.52.drv",
+      "description": "Create books from MarkDown",
+      "install_id": "mdbook",
+      "license": "[ MPL-2.0 ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "mdbook-0.4.52",
+      "pname": "mdbook",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:02:57.939818Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.4.52",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/lvnw69fglr426qn9yng5ifziy0xis5j5-mdbook-0.4.52"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "mdbook",
+      "broken": false,
+      "derivation": "/nix/store/3kwwdc97lvcy1lman746s27av20y70af-mdbook-0.4.52.drv",
+      "description": "Create books from MarkDown",
+      "install_id": "mdbook",
+      "license": "[ MPL-2.0 ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "mdbook-0.4.52",
+      "pname": "mdbook",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:18:34.074485Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.4.52",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/la7vybhi1qfn4k9fanr04v9kxr5c597v-mdbook-0.4.52"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "mdbook",
+      "broken": false,
+      "derivation": "/nix/store/00j1fykf1p6lv3s128sq2qnv5saw4jd9-mdbook-0.4.52.drv",
+      "description": "Create books from MarkDown",
+      "install_id": "mdbook",
+      "license": "[ MPL-2.0 ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "mdbook-0.4.52",
+      "pname": "mdbook",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:35:15.391775Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.4.52",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/lpcx1gpcha7cy10kh60anb14sd77bf5p-mdbook-0.4.52"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "mdbook",
+      "broken": false,
+      "derivation": "/nix/store/58njfb4di3pacab0bsdpark94j6qrya7-mdbook-0.4.52.drv",
+      "description": "Create books from MarkDown",
+      "install_id": "mdbook",
+      "license": "[ MPL-2.0 ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "mdbook-0.4.52",
+      "pname": "mdbook",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:50:53.751875Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.4.52",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/dbkrksn43kn9bjmmw6nv8bakn2876gi5-mdbook-0.4.52"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312Packages.mkdocs-material",
+      "broken": false,
+      "derivation": "/nix/store/z49n25gcm9dih4v4bz8799ad2gaq87fi-python3.12-mkdocs-material-9.7.0.drv",
+      "description": "Material for mkdocs",
+      "install_id": "mkdocs-material",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "python3.12-mkdocs-material-9.7.0",
+      "pname": "mkdocs-material",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:03:23.733913Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "9.7.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/yli4cim7yiq5c615axivwkpyfhi6jfm6-python3.12-mkdocs-material-9.7.0-dist",
+        "out": "/nix/store/s3anfwfis5zkw4a528d7g1j1fww2fas2-python3.12-mkdocs-material-9.7.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312Packages.mkdocs-material",
+      "broken": false,
+      "derivation": "/nix/store/bn3gc7vrvxinf1l3nfaw8cf9fwvd3xxg-python3.12-mkdocs-material-9.7.0.drv",
+      "description": "Material for mkdocs",
+      "install_id": "mkdocs-material",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "python3.12-mkdocs-material-9.7.0",
+      "pname": "mkdocs-material",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:19:13.574369Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "9.7.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/4cndjr4x5nlrl70qxpysb304vwlgg01a-python3.12-mkdocs-material-9.7.0-dist",
+        "out": "/nix/store/yh38hcvclgqfik1f06rbrqsw8x33s5r8-python3.12-mkdocs-material-9.7.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312Packages.mkdocs-material",
+      "broken": false,
+      "derivation": "/nix/store/jnwb7gszsi25c6nykrq1jnqb17pmyjvk-python3.12-mkdocs-material-9.7.0.drv",
+      "description": "Material for mkdocs",
+      "install_id": "mkdocs-material",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "python3.12-mkdocs-material-9.7.0",
+      "pname": "mkdocs-material",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:35:43.182680Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "9.7.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/ak0acnjp9yjhdlp30rxl63lj6z872z2s-python3.12-mkdocs-material-9.7.0-dist",
+        "out": "/nix/store/wpz0gkll7lwdrw4qrwnx004b7lapfmvz-python3.12-mkdocs-material-9.7.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312Packages.mkdocs-material",
+      "broken": false,
+      "derivation": "/nix/store/w7kkbrsxpa7hpvwflir9y1ha920cmnhy-python3.12-mkdocs-material-9.7.0.drv",
+      "description": "Material for mkdocs",
+      "install_id": "mkdocs-material",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "name": "python3.12-mkdocs-material-9.7.0",
+      "pname": "mkdocs-material",
+      "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+      "rev_count": 917670,
+      "rev_date": "2025-12-28T06:08:05Z",
+      "scrape_date": "2025-12-29T03:51:32.336404Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "9.7.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/jr2r46vb9jbrxm9bywkip6135q07mbka-python3.12-mkdocs-material-9.7.0-dist",
+        "out": "/nix/store/bnv54q1r3bvqa488hcy38rs744zhi4qd-python3.12-mkdocs-material-9.7.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}

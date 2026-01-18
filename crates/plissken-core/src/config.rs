@@ -280,19 +280,19 @@ impl Config {
         let inferred = InferredConfig::from_directory(project_root);
 
         // Fill in project name if empty
-        if self.project.name.is_empty() {
-            if let Some(name) = inferred.project_name {
-                self.project.name = name;
-            }
+        if self.project.name.is_empty()
+            && let Some(name) = inferred.project_name
+        {
+            self.project.name = name;
         }
 
         // Fill in Rust config if present but incomplete
         if let Some(ref mut rust) = self.rust {
             // Fill in crates if empty
-            if rust.crates.is_empty() {
-                if let Some(crates) = inferred.rust_crates {
-                    rust.crates = crates;
-                }
+            if rust.crates.is_empty()
+                && let Some(crates) = inferred.rust_crates
+            {
+                rust.crates = crates;
             }
             // Fill in entry_point if not set
             if rust.entry_point.is_none() {
@@ -303,10 +303,10 @@ impl Config {
         // Fill in Python config if present but incomplete
         if let Some(ref mut python) = self.python {
             // Fill in package name if empty
-            if python.package.is_empty() {
-                if let Some(pkg) = inferred.python_package {
-                    python.package = pkg;
-                }
+            if python.package.is_empty()
+                && let Some(pkg) = inferred.python_package
+            {
+                python.package = pkg;
             }
             // Fill in source if not set
             if python.source.is_none() {
@@ -400,8 +400,11 @@ impl Config {
     ) -> Result<(), ConfigError> {
         if rust_config.crates.is_empty() {
             warnings.push(
-                ConfigWarning::new("rust.crates", "no crates configured; no Rust docs will be generated")
-                    .with_hint("add crate paths to the crates array"),
+                ConfigWarning::new(
+                    "rust.crates",
+                    "no crates configured; no Rust docs will be generated",
+                )
+                .with_hint("add crate paths to the crates array"),
             );
             return Ok(());
         }
@@ -574,7 +577,10 @@ mod tests {
         std::fs::create_dir(temp_dir.path().join("src")).unwrap();
 
         let result = config.validate(temp_dir.path());
-        assert!(matches!(result, Err(ConfigError::VersionSourceNotFound(_, _))));
+        assert!(matches!(
+            result,
+            Err(ConfigError::VersionSourceNotFound(_, _))
+        ));
     }
 
     #[test]
@@ -593,7 +599,10 @@ mod tests {
         std::fs::create_dir(temp_dir.path().join("mypackage")).unwrap();
 
         let result = config.validate(temp_dir.path());
-        assert!(matches!(result, Err(ConfigError::VersionSourceNotFound(_, _))));
+        assert!(matches!(
+            result,
+            Err(ConfigError::VersionSourceNotFound(_, _))
+        ));
     }
 
     #[test]
@@ -674,7 +683,12 @@ mod tests {
         assert!(result.is_ok());
         let validation = result.unwrap();
         // Should have warning about missing __init__.py
-        assert!(validation.warnings.iter().any(|w| w.message.contains("__init__.py")));
+        assert!(
+            validation
+                .warnings
+                .iter()
+                .any(|w| w.message.contains("__init__.py"))
+        );
     }
 
     #[test]
@@ -698,7 +712,12 @@ mod tests {
         assert!(result.is_ok());
         let validation = result.unwrap();
         // Should have warning about missing src/
-        assert!(validation.warnings.iter().any(|w| w.message.contains("src/")));
+        assert!(
+            validation
+                .warnings
+                .iter()
+                .any(|w| w.message.contains("src/"))
+        );
     }
 
     #[test]

@@ -1,6 +1,6 @@
 //! mdBook adapter implementation
 
-use super::traits::{python_nav_entries, rust_nav_entries, SSGAdapter};
+use super::traits::{SSGAdapter, python_nav_entries, rust_nav_entries};
 use crate::model::{PythonModule, RustModule};
 
 /// mdBook adapter.
@@ -37,11 +37,7 @@ impl SSGAdapter for MdBookAdapter {
         "SUMMARY.md"
     }
 
-    fn generate_nav(
-        &self,
-        python_modules: &[PythonModule],
-        rust_modules: &[RustModule],
-    ) -> String {
+    fn generate_nav(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String {
         let mut summary = String::new();
 
         summary.push_str("# Summary\n\n");
