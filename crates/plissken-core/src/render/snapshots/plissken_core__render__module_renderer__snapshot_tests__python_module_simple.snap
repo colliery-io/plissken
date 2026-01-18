@@ -1,0 +1,10 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# mymodule <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">Python</span>
+
+
+A simple Python module.
+
+This module provides basic utilities.

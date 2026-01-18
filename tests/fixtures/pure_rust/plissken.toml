@@ -1,0 +1,15 @@
+[project]
+name = "pure_rust"
+version_from = "cargo"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mkdocs-material"
+
+[rust]
+crates = ["."]
+entry_point = "pure_rust"
+
+[quality]
+require_docstrings = true

@@ -1,0 +1,254 @@
+{
+  "metadata": {
+    "name": "hybrid_binary",
+    "version": "0.1.0",
+    "description": "A task runner library with Python bindings",
+    "git_ref": null,
+    "git_commit": null,
+    "generated_at": "2024-01-01T00:00:00Z"
+  },
+  "rust_modules": [
+    {
+      "path": "hybrid_binary",
+      "doc_comment": "A task runner library with Python bindings.\n\nThis module provides task execution and scheduling capabilities\nexposed to Python via PyO3.",
+      "items": [
+        {
+          "kind": "Struct",
+          "name": "PyTask",
+          "visibility": "Public",
+          "doc_comment": "A task that can be executed by the runner.\n\nTasks have a name, optional description, and can be marked\nas async or having dependencies.",
+          "generics": null,
+          "fields": [
+            {
+              "name": "inner",
+              "ty": "internal::Task",
+              "visibility": "Private",
+              "doc_comment": null
+            }
+          ],
+          "derives": ["Clone"],
+          "pyclass": {
+            "name": "Task",
+            "module": null
+          },
+          "source": {
+            "location": {
+              "file": "rust/lib.rs",
+              "line_start": 17,
+              "line_end": 21
+            },
+            "source": "#[pyclass(name = \"Task\")]\n#[derive(Clone)]\npub struct PyTask {\n    inner: internal::Task,\n}"
+          }
+        },
+        {
+          "kind": "Impl",
+          "generics": null,
+          "target": "PyTask",
+          "trait_": null,
+          "where_clause": null,
+          "methods": [
+            {
+              "name": "new",
+              "visibility": "Private",
+              "doc_comment": "Create a new task.\n\nArgs:\n    name: The unique identifier for this task.\n    description: Optional human-readable description.\n\nReturns:\n    A new Task instance.",
+              "generics": null,
+              "signature_str": "fn new(name: &str, description: Option<&str>) -> Self",
+              "signature": {
+                "params": [
+                  { "name": "name", "ty": "&str", "default": null },
+                  { "name": "description", "ty": "Option<&str>", "default": null }
+                ],
+                "return_type": "Self"
+              },
+              "is_async": false,
+              "is_unsafe": false,
+              "is_const": false,
+              "pyfunction": {
+                "name": null,
+                "signature": "(name, description=None)"
+              },
+              "source": {
+                "location": {
+                  "file": "rust/lib.rs",
+                  "line_start": 25,
+                  "line_end": 39
+                },
+                "source": "..."
+              }
+            }
+          ],
+          "pymethods": true,
+          "source": {
+            "location": {
+              "file": "rust/lib.rs",
+              "line_start": 23,
+              "line_end": 65
+            },
+            "source": "..."
+          }
+        },
+        {
+          "kind": "Struct",
+          "name": "PyRunner",
+          "visibility": "Public",
+          "doc_comment": "The main task runner that executes tasks.\n\nHandles dependency resolution, parallel execution, and\nerror reporting.",
+          "generics": null,
+          "fields": [
+            {
+              "name": "executor",
+              "ty": "TaskExecutor",
+              "visibility": "Private",
+              "doc_comment": null
+            }
+          ],
+          "derives": [],
+          "pyclass": {
+            "name": "Runner",
+            "module": null
+          },
+          "source": {
+            "location": {
+              "file": "rust/lib.rs",
+              "line_start": 67,
+              "line_end": 74
+            },
+            "source": "..."
+          }
+        },
+        {
+          "kind": "Struct",
+          "name": "PyRunResult",
+          "visibility": "Public",
+          "doc_comment": "Result of a task run.",
+          "generics": null,
+          "fields": [
+            {
+              "name": "inner",
+              "ty": "internal::RunResult",
+              "visibility": "Private",
+              "doc_comment": null
+            }
+          ],
+          "derives": [],
+          "pyclass": {
+            "name": "RunResult",
+            "module": null
+          },
+          "source": {
+            "location": {
+              "file": "rust/lib.rs",
+              "line_start": 130,
+              "line_end": 134
+            },
+            "source": "..."
+          }
+        }
+      ],
+      "source": {
+        "location": {
+          "file": "rust/lib.rs",
+          "line_start": 1,
+          "line_end": 171
+        },
+        "source": "// Full module source would be here"
+      }
+    }
+  ],
+  "python_modules": [
+    {
+      "path": "hybrid_binary",
+      "docstring": null,
+      "items": [
+        {
+          "kind": "Class",
+          "name": "Task",
+          "docstring": null,
+          "bases": [],
+          "methods": [],
+          "attributes": [],
+          "decorators": [],
+          "rust_impl": {
+            "path": "hybrid_binary::PyTask",
+            "name": "PyTask"
+          },
+          "source": {
+            "location": {
+              "file": "python/__init__.py",
+              "line_start": 1,
+              "line_end": 1
+            },
+            "source": "from .hybrid_binary import Task"
+          }
+        },
+        {
+          "kind": "Class",
+          "name": "Runner",
+          "docstring": null,
+          "bases": [],
+          "methods": [],
+          "attributes": [],
+          "decorators": [],
+          "rust_impl": {
+            "path": "hybrid_binary::PyRunner",
+            "name": "PyRunner"
+          },
+          "source": {
+            "location": {
+              "file": "python/__init__.py",
+              "line_start": 1,
+              "line_end": 1
+            },
+            "source": "from .hybrid_binary import Runner"
+          }
+        },
+        {
+          "kind": "Class",
+          "name": "RunResult",
+          "docstring": null,
+          "bases": [],
+          "methods": [],
+          "attributes": [],
+          "decorators": [],
+          "rust_impl": {
+            "path": "hybrid_binary::PyRunResult",
+            "name": "PyRunResult"
+          },
+          "source": {
+            "location": {
+              "file": "python/__init__.py",
+              "line_start": 1,
+              "line_end": 1
+            },
+            "source": "from .hybrid_binary import RunResult"
+          }
+        }
+      ],
+      "source_type": "PyO3Binding",
+      "source": {
+        "location": {
+          "file": "python/__init__.py",
+          "line_start": 1,
+          "line_end": 1
+        },
+        "source": "from .hybrid_binary import Task, Runner, RunResult"
+      }
+    }
+  ],
+  "cross_refs": [
+    {
+      "python_path": "hybrid_binary.Task",
+      "rust_path": "hybrid_binary::PyTask",
+      "relationship": "Binding"
+    },
+    {
+      "python_path": "hybrid_binary.Runner",
+      "rust_path": "hybrid_binary::PyRunner",
+      "relationship": "Binding"
+    },
+    {
+      "python_path": "hybrid_binary.RunResult",
+      "rust_path": "hybrid_binary::PyRunResult",
+      "relationship": "Binding"
+    }
+  ]
+}

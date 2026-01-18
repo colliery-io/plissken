@@ -1,0 +1,76 @@
+# Recommended: add to markdown_extensions in mkdocs.yml
+# to hide method-level entries from the table of contents:
+#
+# markdown_extensions:
+#   - toc:
+#       toc_depth: 2
+
+nav:
+  - Python:
+    - helpers:
+      - python/helpers/index.md
+      - TaskBuilder: python/helpers/TaskBuilder.md
+      - run_task(): python/helpers/run_task.md
+    - hybrid_binary:
+      - python/hybrid_binary/index.md
+      - RunResult: python/hybrid_binary/RunResult.md
+      - Runner: python/hybrid_binary/Runner.md
+      - Task: python/hybrid_binary/Task.md
+      - get_version(): python/hybrid_binary/get_version.md
+      - list_submodules(): python/hybrid_binary/list_submodules.md
+    - hybrid_binary.cli:
+      - python/hybrid_binary/cli/index.md
+      - ColoredOutput: python/hybrid_binary/cli/ColoredOutput.md
+      - OutputFormat: python/hybrid_binary/cli/OutputFormat.md
+      - ProgressBar: python/hybrid_binary/cli/ProgressBar.md
+      - format_task_list(): python/hybrid_binary/cli/format_task_list.md
+    - hybrid_binary.config:
+      - python/hybrid_binary/config/index.md
+      - RunnerConfig: python/hybrid_binary/config/RunnerConfig.md
+      - TaskConfig: python/hybrid_binary/config/TaskConfig.md
+      - load_config(): python/hybrid_binary/config/load_config.md
+    - hybrid_binary.decorators:
+      - python/hybrid_binary/decorators/index.md
+      - TaskDecorator: python/hybrid_binary/decorators/TaskDecorator.md
+      - task(): python/hybrid_binary/decorators/task.md
+    - hybrid_binary.testing:
+      - python/hybrid_binary/testing/index.md
+      - MockRunResult: python/hybrid_binary/testing/MockRunResult.md
+      - MockRunner: python/hybrid_binary/testing/MockRunner.md
+      - MockTask: python/hybrid_binary/testing/MockTask.md
+      - assert_task_ran(): python/hybrid_binary/testing/assert_task_ran.md
+      - assert_task_registered(): python/hybrid_binary/testing/assert_task_registered.md
+    - hybrid_binary.utils:
+      - python/hybrid_binary/utils/index.md
+      - TaskLogger: python/hybrid_binary/utils/TaskLogger.md
+      - format_duration(): python/hybrid_binary/utils/format_duration.md
+  - Rust:
+    - hybrid_binary:
+      - rust/hybrid_binary/index.md
+      - PyRunResult: rust/hybrid_binary/PyRunResult.md
+      - PyRunner: rust/hybrid_binary/PyRunner.md
+      - PyTask: rust/hybrid_binary/PyTask.md
+      - hybrid_binary(): rust/hybrid_binary/hybrid_binary.md
+    - hybrid_binary::config:
+      - rust/hybrid_binary/config/index.md
+      - PyRunnerConfig: rust/hybrid_binary/config/PyRunnerConfig.md
+      - PyTaskConfig: rust/hybrid_binary/config/PyTaskConfig.md
+      - load_config(): rust/hybrid_binary/config/load_config.md
+      - register(): rust/hybrid_binary/config/register.md
+    - hybrid_binary::decorators:
+      - rust/hybrid_binary/decorators/index.md
+      - TaskDecorator: rust/hybrid_binary/decorators/TaskDecorator.md
+      - register(): rust/hybrid_binary/decorators/register.md
+      - task(): rust/hybrid_binary/decorators/task.md
+    - hybrid_binary::internal:
+      - rust/hybrid_binary/internal/index.md
+      - RunResult: rust/hybrid_binary/internal/RunResult.md
+      - Task: rust/hybrid_binary/internal/Task.md
+      - TaskExecutor: rust/hybrid_binary/internal/TaskExecutor.md
+      - ExecutorError: rust/hybrid_binary/internal/ExecutorError.md
+    - hybrid_binary::utils:
+      - rust/hybrid_binary/utils/index.md
+      - PyTaskLogger: rust/hybrid_binary/utils/PyTaskLogger.md
+      - LogLevel: rust/hybrid_binary/utils/LogLevel.md
+      - format_duration(): rust/hybrid_binary/utils/format_duration.md
+      - register(): rust/hybrid_binary/utils/register.md

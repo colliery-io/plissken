@@ -1,0 +1,32 @@
+[project]
+name = "separate_bindings"
+version_from = "git"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mdbook"
+
+# The pure Rust library
+[rust]
+crates = ["core", "bindings"]
+entry_point = "separate_bindings_core"
+
+# Python package (bindings + helpers)
+[python]
+package = "separate_bindings"
+source = "python"
+
+# Explicit source type mapping
+[python.modules]
+"separate_bindings" = "pyo3"           # Root is PyO3 bindings
+"separate_bindings.helpers" = "python" # Pure Python helpers
+
+[links]
+dependencies = "cargo_lock"
+docs_rs_base = "https://docs.rs"
+
+[quality]
+require_docstrings = true
+min_coverage = 0.85
+fail_on_broken_links = true

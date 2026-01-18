@@ -1,0 +1,16 @@
+[project]
+name = "pure_python"
+version_from = "pyproject"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mkdocs-material"
+
+[python]
+package = "pure_python"
+source = "."
+auto_discover = true
+
+[quality]
+require_docstrings = true

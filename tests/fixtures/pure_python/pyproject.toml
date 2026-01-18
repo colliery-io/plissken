@@ -1,0 +1,7 @@
+[project]
+name = "pure_python"
+version = "1.0.0"
+description = "A task scheduling library"
+
+[tool.setuptools.packages.find]
+where = ["."]

@@ -1,0 +1,12 @@
+[package]
+name = "rustscale"
+version = "0.1.0"
+edition = "2021"
+description = "A minimal Rust crate for testing plissken documentation"
+
+[lib]
+name = "rustscale"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }

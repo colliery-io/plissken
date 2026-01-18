@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Create the release first
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: plissken ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref, '-') }}
+          body: |
+            ## Installation
+
+            ### Quick Install (Linux/macOS)
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/colliery-io/plissken/main/install.sh | bash
+            ```
+
+            ### From crates.io
+            ```bash
+            cargo install plissken
+            ```
+
+            ### Manual Download
+            Download the appropriate binary for your platform below.
+
+  # Build binaries for all platforms
+  build:
+    name: Build ${{ matrix.target }}
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            archive: tar.gz
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
+            cross: true
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            archive: tar.gz
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            archive: tar.gz
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            archive: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux musl)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install cross
+        if: matrix.cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Create archive (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/plissken dist/
+          cd dist
+          tar -czvf ../plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz *
+
+      - name: Create archive (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          mkdir dist
+          cp target/${{ matrix.target }}/release/plissken.exe dist/
+          Compress-Archive -Path dist/* -DestinationPath plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
+
+      - name: Upload Release Asset (tar.gz)
+        if: matrix.archive == 'tar.gz'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
+          asset_name: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Release Asset (zip)
+        if: matrix.archive == 'zip'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
+          asset_name: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
+          asset_content_type: application/zip
+
+  # Publish to crates.io
+  publish:
+    name: Publish to crates.io
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish plissken-core
+        run: cargo publish -p plissken-core --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Wait for crates.io index update
+        run: sleep 30
+
+      - name: Publish plissken
+        run: cargo publish -p plissken --token ${{ secrets.CARGO_REGISTRY_TOKEN }}

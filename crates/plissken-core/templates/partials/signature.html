@@ -1,0 +1,3 @@
+<div style="background: {{ theme.code_bg }}; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid {{ theme.primary }}; margin-bottom: 1em;">
+<code style="color: {{ theme.code_fg }}; font-family: monospace;">{% if is_async %}<span style="color: {{ theme.accent }};">async </span>{% endif %}<span style="color: {{ theme.primary }}; font-weight: 600;">{{ name }}</span>({{ params }}){% if return_type %} -> <span style="color: {{ theme.muted }};">{{ return_type }}</span>{% endif %}</code>
+</div>

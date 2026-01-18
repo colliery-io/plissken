@@ -1,0 +1,106 @@
+site_name: plissken
+site_description: Documentation generator for Rust-Python hybrid projects
+site_url: https://colliery-io.github.io/plissken
+repo_url: https://github.com/colliery-io/plissken
+repo_name: colliery-io/plissken
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/colliery-io/plissken
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - User Guide:
+    - Overview: guide/overview.md
+    - Python Projects: guide/python.md
+    - Rust Projects: guide/rust.md
+    - Hybrid Projects: guide/hybrid.md
+    - Customization: guide/customization.md
+  - API Reference:
+    - Rust:
+      - plissken: api/rust/plissken.md
+      - plissken-core: api/rust/plissken-core.md
+      - plissken-core::config: api/rust/plissken-core/config.md
+      - plissken-core::crossref: api/rust/plissken-core/crossref.md
+      - plissken-core::discover: api/rust/plissken-core/discover.md
+      - plissken-core::docstring: api/rust/plissken-core/docstring.md
+      - plissken-core::error: api/rust/plissken-core/error.md
+      - plissken-core::manifest: api/rust/plissken-core/manifest.md
+      - plissken-core::model: api/rust/plissken-core/model.md
+      - plissken-core::parser: api/rust/plissken-core/parser.md
+      - plissken-core::parser::python: api/rust/plissken-core/parser/python.md
+      - plissken-core::parser::rust: api/rust/plissken-core/parser/rust.md
+      - plissken-core::parser::traits: api/rust/plissken-core/parser/traits.md
+      - plissken-core::render: api/rust/plissken-core/render.md
+      - plissken-core::render::crossref_renderer: api/rust/plissken-core/render/crossref_renderer.md
+      - plissken-core::render::docstring_renderer: api/rust/plissken-core/render/docstring_renderer.md
+      - plissken-core::render::module: api/rust/plissken-core/render/module.md
+      - plissken-core::render::module::crossref: api/rust/plissken-core/render/module/crossref.md
+      - plissken-core::render::module::layout: api/rust/plissken-core/render/module/layout.md
+      - plissken-core::render::module_renderer: api/rust/plissken-core/render/module_renderer.md
+      - plissken-core::render::renderer: api/rust/plissken-core/render/renderer.md
+      - plissken-core::render::ssg: api/rust/plissken-core/render/ssg.md
+      - plissken-core::render::ssg::mdbook: api/rust/plissken-core/render/ssg/mdbook.md
+      - plissken-core::render::ssg::mkdocs: api/rust/plissken-core/render/ssg/mkdocs.md
+      - plissken-core::render::ssg::traits: api/rust/plissken-core/render/ssg/traits.md
+      - plissken-core::render::templates: api/rust/plissken-core/render/templates.md
+      - plissken-core::render::theme: api/rust/plissken-core/render/theme.md

@@ -1,0 +1,36 @@
+# Recommended: add to markdown_extensions in mkdocs.yml
+# to hide method-level entries from the table of contents:
+#
+# markdown_extensions:
+#   - toc:
+#       toc_depth: 2
+
+nav:
+  - Rust:
+    - plissken: rust/plissken.md
+    - plissken-core: rust/plissken-core.md
+    - plissken-core::config: rust/plissken-core/config.md
+    - plissken-core::crossref: rust/plissken-core/crossref.md
+    - plissken-core::discover: rust/plissken-core/discover.md
+    - plissken-core::docstring: rust/plissken-core/docstring.md
+    - plissken-core::error: rust/plissken-core/error.md
+    - plissken-core::manifest: rust/plissken-core/manifest.md
+    - plissken-core::model: rust/plissken-core/model.md
+    - plissken-core::parser: rust/plissken-core/parser.md
+    - plissken-core::parser::python: rust/plissken-core/parser/python.md
+    - plissken-core::parser::rust: rust/plissken-core/parser/rust.md
+    - plissken-core::parser::traits: rust/plissken-core/parser/traits.md
+    - plissken-core::render: rust/plissken-core/render.md
+    - plissken-core::render::crossref_renderer: rust/plissken-core/render/crossref_renderer.md
+    - plissken-core::render::docstring_renderer: rust/plissken-core/render/docstring_renderer.md
+    - plissken-core::render::module: rust/plissken-core/render/module.md
+    - plissken-core::render::module::crossref: rust/plissken-core/render/module/crossref.md
+    - plissken-core::render::module::layout: rust/plissken-core/render/module/layout.md
+    - plissken-core::render::module_renderer: rust/plissken-core/render/module_renderer.md
+    - plissken-core::render::renderer: rust/plissken-core/render/renderer.md
+    - plissken-core::render::ssg: rust/plissken-core/render/ssg.md
+    - plissken-core::render::ssg::mdbook: rust/plissken-core/render/ssg/mdbook.md
+    - plissken-core::render::ssg::mkdocs: rust/plissken-core/render/ssg/mkdocs.md
+    - plissken-core::render::ssg::traits: rust/plissken-core/render/ssg/traits.md
+    - plissken-core::render::templates: rust/plissken-core/render/templates.md
+    - plissken-core::render::theme: rust/plissken-core/render/theme.md

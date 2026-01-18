@@ -1,0 +1,26 @@
+[project]
+name = "pure_python"
+version_from = "pyproject"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mkdocs-material"
+
+[python]
+package = "pure_python"
+source = "."
+
+[python.modules]
+"pure_python" = "python"
+"pure_python.scheduler" = "python"
+"pure_python.schedule" = "python"
+"pure_python.task" = "python"
+"pure_python.async_tasks" = "python"
+"pure_python.protocols" = "python"
+"pure_python.utils" = "python"
+"pure_python.utils.timing" = "python"
+"pure_python.utils.logging" = "python"
+
+[quality]
+require_docstrings = true

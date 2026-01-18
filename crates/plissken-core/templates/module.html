@@ -1,0 +1,20 @@
+# {{ module_name }}
+
+{{ description }}
+
+{% if functions | length > 0 %}
+## Functions
+
+{% for func in functions %}
+{{ func }}
+
+{% endfor %}
+{% endif %}
+{% if classes | length > 0 %}
+## Classes
+
+{% for class in classes %}
+{{ class }}
+
+{% endfor %}
+{% endif %}

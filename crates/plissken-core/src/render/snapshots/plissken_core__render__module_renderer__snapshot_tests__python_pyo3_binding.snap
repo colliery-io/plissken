@@ -1,0 +1,37 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# native <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #9c27b0; color: white;">Binding</span>
+
+
+Native bindings for data processing
+
+## Classes
+
+### `class DataProcessor`
+
+> **Rust Implementation**: [crate::data::DataProcessor](rust/crate/data.md#class-dataprocessor)
+
+High-performance data processor.
+
+Wraps native Rust implementation.
+
+#### Methods
+
+##### `process`
+
+<div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
+<code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">process</span>(self, data: bytes) -> <span style="color: #757575;">bytes</span></code>
+</div>
+
+> **Rust Implementation**: [crate::data::DataProcessor::process](rust/crate/data.md#process)
+
+Process data efficiently
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `self` | `-` |  |
+| `data` | `bytes` |  |

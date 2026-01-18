@@ -1,0 +1,66 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# models <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">Python</span>
+
+
+## Classes
+
+### `class User`
+
+**Inherits from:** BaseModel
+
+A user model.
+
+Represents a system user with authentication.
+
+#### Attributes
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `int` | User ID |
+| `name` | `str` | User name |
+
+#### Methods
+
+##### `__init__`
+
+<div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
+<code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">__init__</span>(self, name: str, id: int = 0)</code>
+</div>
+
+
+
+##### `get_display_name`
+
+<div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
+<code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">get_display_name</span>(self) -> <span style="color: #757575;">str</span></code>
+</div>
+
+Get formatted display name
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `self` | `-` |  |
+
+
+
+
+##### `from_dict` <span class="plissken-badge plissken-badge-classmethod" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #757575; color: white;">classmethod</span>
+
+
+<div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
+<code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">from_dict</span>(cls, data: dict) -> <span style="color: #757575;">User</span></code>
+</div>
+
+Create user from dictionary
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `cls` | `-` |  |
+| `data` | `dict` |  |

@@ -1,0 +1,28 @@
+[project]
+name = "hybrid_binary"
+version_from = "cargo"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mkdocs-material"
+
+[rust]
+crates = ["."]
+entry_point = "hybrid_binary"
+
+[python]
+package = "hybrid_binary"
+source = "python"
+
+[python.modules]
+"hybrid_binary" = "pyo3"
+"hybrid_binary.helpers" = "python"
+
+[links]
+dependencies = "cargo_lock"
+
+[quality]
+require_docstrings = true
+min_coverage = 0.9
+fail_on_broken_links = true

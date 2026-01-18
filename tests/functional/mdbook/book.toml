@@ -1,0 +1,16 @@
+[book]
+title = "Plissken Test - mdBook"
+authors = ["Plissken Test"]
+description = "Functional test for plissken documentation rendering"
+language = "en"
+multilingual = false
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/example/plissken-test"
+additional-css = []

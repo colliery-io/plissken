@@ -1,0 +1,13 @@
+[project]
+name = "hybrid_binary"
+
+[output]
+format = "markdown"
+template = "mkdocs-material"
+
+[rust]
+crates = ["../../fixtures/hybrid_binary/rust"]
+entry_point = "hybrid_binary"
+
+[python]
+package = "../../fixtures/hybrid_binary/python/hybrid_binary"

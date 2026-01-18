@@ -1,0 +1,12 @@
+# Generated SSG output - don't commit these
+mkdocs-material/site/
+mkdocs-material/docs/*.md
+mkdocs-material/docs/rust/
+mdbook/book/
+mdbook/src/*.md
+mdbook/src/rust/
+
+# Keep the static files
+!mkdocs-material/docs/index.md
+!mdbook/src/README.md
+!mdbook/src/SUMMARY.md

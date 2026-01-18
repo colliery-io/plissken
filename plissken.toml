@@ -1,0 +1,12 @@
+[project]
+name = "plissken"
+version_from = "cargo"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mkdocs-material"
+
+[rust]
+crates = ["crates/plissken-cli", "crates/plissken-core"]
+

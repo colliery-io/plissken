@@ -1,0 +1,50 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# buffer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+
+
+## Structs
+
+### `class Buffer`
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #9c27b0; color: white;">Binding</span>
+
+
+> **Python API**: [native.Buffer](../../native.md#class-buffer)
+
+High-performance buffer for Python.
+
+Exposed to Python as `Buffer`.
+
+#### Fields
+
+| Name | Type | Description |
+|------|------|-------------|
+| `data` | `Vec<u8>` | Internal data storage |
+
+#### Methods
+
+##### `new`
+
+```rust
+#[new]
+pub fn new() -> Self
+```
+
+> **Python API**: [native.Buffer.new](../../native.md#new)
+
+Create a new empty buffer
+
+
+
+##### `len`
+
+```rust
+pub fn len(&self) -> usize
+```
+
+> **Python API**: [native.Buffer.len](../../native.md#len)
+
+Get buffer length

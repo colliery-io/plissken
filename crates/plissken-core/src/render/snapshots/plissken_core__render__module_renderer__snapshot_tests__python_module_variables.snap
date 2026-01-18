@@ -1,0 +1,15 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# constants <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">Python</span>
+
+
+Module-level constants
+
+## Variables
+
+| Name | Type | Description |
+|------|------|-------------|
+| `VERSION` | `str` | Package version |
+| `MAX_RETRIES` | `int` | Maximum retry attempts |

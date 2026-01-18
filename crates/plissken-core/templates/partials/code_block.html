@@ -1,0 +1,4 @@
+{% if caption %}<div style="margin-bottom: 0.25em; font-size: 0.875em; color: {{ theme.muted }};">{{ caption }}</div>{% endif %}
+<div style="background: {{ theme.code_bg }}; color: {{ theme.code_fg }}; padding: 1em; border-radius: 0.375em; overflow-x: auto; border: 1px solid {{ theme.border }};">
+<pre style="margin: 0; font-family: monospace;"><code{% if language %} class="language-{{ language }}"{% endif %}>{{ code }}</code></pre>
+</div>

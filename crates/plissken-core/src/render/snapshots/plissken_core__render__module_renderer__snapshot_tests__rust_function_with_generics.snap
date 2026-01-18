@@ -1,0 +1,31 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# convert <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+
+
+## Functions
+
+### `fn transform`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+
+
+```rust
+pub fn transform<T, U>(input: T, mapper: impl Fn(T) -> U) -> U
+```
+
+Transform input to output.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `input` | `-` | The input value |
+| `mapper` | `-` | Transformation function |
+
+
+**Returns:**
+
+The transformed value

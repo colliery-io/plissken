@@ -1,0 +1,24 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# compute <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+
+
+## Functions
+
+### `fn compute`
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #9c27b0; color: white;">Binding</span>
+
+
+> **Python API**: [native.compute](../../native.md#compute)
+
+```rust
+#[pyfunction]
+pub fn compute(value: i64) -> i64
+```
+
+Compute result from input.
+
+Exposed to Python as `compute()`.

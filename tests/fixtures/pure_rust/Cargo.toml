@@ -1,0 +1,8 @@
+[package]
+name = "pure_rust"
+version = "0.1.0"
+edition = "2021"
+description = "A configuration management library"
+
+[dependencies]
+thiserror = "1.0"

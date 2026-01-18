@@ -1,0 +1,29 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+# async_utils <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">Python</span>
+
+
+## Functions
+
+### `fetch` <span class="plissken-badge plissken-badge-async" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">async</span>
+
+
+<div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
+<code style="color: #333333; font-family: monospace;"><span style="color: #ff4081;">async </span><span style="color: #1976d2; font-weight: 600;">fetch</span>(url: str, timeout: float = 30.0) -> <span style="color: #757575;">bytes</span></code>
+</div>
+
+Fetch data from URL.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `url` | `str` | The URL to fetch |
+| `timeout` | `float` | Request timeout in seconds |
+
+
+**Returns:**
+
+Response bytes
