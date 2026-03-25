@@ -4,14 +4,14 @@ level: task
 title: "Split render() function into smaller focused functions"
 short_code: "PLSKN-T-0042"
 created_at: 2026-01-17T19:48:44.183451+00:00
-updated_at: 2026-01-17T20:01:04.078015+00:00
+updated_at: 2026-01-18T19:23:07.421990+00:00
 parent: PLSKN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -38,6 +38,8 @@ The `render()` function is too large and handles multiple concerns:
 - Template-specific SSG generation (lines 421-457)
 
 This makes the code hard to read, test, and maintain.
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

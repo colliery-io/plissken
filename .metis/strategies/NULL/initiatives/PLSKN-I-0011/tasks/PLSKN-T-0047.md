@@ -4,14 +4,14 @@ level: task
 title: "Define constants for magic strings"
 short_code: "PLSKN-T-0047"
 created_at: 2026-01-17T19:48:45.531700+00:00
-updated_at: 2026-01-17T20:19:51.234850+00:00
+updated_at: 2026-01-18T19:23:07.941438+00:00
 parent: PLSKN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -55,6 +55,8 @@ config.push_str("crates = [\".\"]\n");
 PlisskenError::VersionSourceNotFound("cargo".to_string(), "Cargo.toml".to_string());
 PlisskenError::VersionSourceNotFound("pyproject".to_string(), "pyproject.toml".to_string());
 ```
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

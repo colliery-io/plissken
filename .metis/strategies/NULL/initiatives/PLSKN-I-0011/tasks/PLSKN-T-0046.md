@@ -4,14 +4,14 @@ level: task
 title: "Extract cross-reference path calculation helpers"
 short_code: "PLSKN-T-0046"
 created_at: 2026-01-17T19:48:45.176889+00:00
-updated_at: 2026-01-17T20:16:08.520961+00:00
+updated_at: 2026-01-18T19:23:07.803286+00:00
 parent: PLSKN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -56,6 +56,8 @@ let python_page = if module_parts.len() == 1 {
     format!("{}/{}.md", parent, last)
 };
 ```
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

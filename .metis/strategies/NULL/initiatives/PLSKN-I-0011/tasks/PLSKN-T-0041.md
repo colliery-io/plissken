@@ -4,14 +4,14 @@ level: task
 title: "Fix unsafe unwraps in renderer.rs and main.rs"
 short_code: "PLSKN-T-0041"
 created_at: 2026-01-17T19:48:44.036401+00:00
-updated_at: 2026-01-17T19:55:58.366932+00:00
+updated_at: 2026-01-18T19:23:07.308122+00:00
 parent: PLSKN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -46,6 +46,8 @@ for (key, value) in extra_context.clone().into_json().as_object().unwrap() {
 std::fs::create_dir_all(summary_path.parent().unwrap())?;
 ```
 **Risk**: `Path::parent()` returns `None` for root paths. If summary_path is ever a root path, this will panic.
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

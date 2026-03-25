@@ -57,18 +57,15 @@ mkdocs serve
 When you run `plissken render`, it generates a documentation structure like:
 
 ```
-docs/
-  api/
-    python/
-      mypackage/
-        index.md           # Package overview
-        MyClass.md         # Class documentation
-        my_function.md     # Function documentation
-    rust/
-      mycrate/
-        index.md           # Module overview
-        MyStruct.md        # Struct documentation
-    _nav.yml               # Navigation for mkdocs.yml
+docs/api/
+  mypackage.md           # Python module page
+  mypackage/
+    submodule.md         # Nested module page
+  rust/
+    mycrate.md           # Rust crate page
+    mycrate/
+      module.md          # Rust submodule page
+  _nav.yml               # Navigation for mkdocs.yml
 ```
 
 ## Cross-Reference Magic
@@ -81,9 +78,40 @@ For PyO3 bindings, plissken automatically creates bidirectional links:
 **In Rust docs:**
 > **Python API**: `mypackage.MyClass` → links to Python doc page
 
-## Next Steps
+## Learn plissken
 
-- [Installation](getting-started/installation.md) - Detailed installation instructions
-- [Quick Start](getting-started/quickstart.md) - Get your first docs generated
-- [Configuration](getting-started/configuration.md) - Customize plissken.toml
-- [API Reference](api/index.md) - Full API documentation
+<div class="grid cards" markdown>
+
+-   **Tutorials** — Learn by doing
+
+    ---
+
+    Step-by-step guides to get your first documentation site running.
+
+    [:octicons-arrow-right-24: Start a tutorial](tutorials/python-project.md)
+
+-   **How-To Guides** — Solve specific problems
+
+    ---
+
+    Practical recipes for installation, configuration, customization, and CI.
+
+    [:octicons-arrow-right-24: Browse how-to guides](how-to/install.md)
+
+-   **Reference** — Look up details
+
+    ---
+
+    CLI flags, configuration options, data model, and template variables.
+
+    [:octicons-arrow-right-24: Read the reference](reference/cli.md)
+
+-   **Explanation** — Understand the design
+
+    ---
+
+    Architecture, cross-reference algorithm, parsing, and theme system.
+
+    [:octicons-arrow-right-24: Read explanations](explanation/architecture.md)
+
+</div>

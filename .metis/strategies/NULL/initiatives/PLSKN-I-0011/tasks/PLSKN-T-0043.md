@@ -4,14 +4,14 @@ level: task
 title: "Extract duplicated Python synthesis logic to helper function"
 short_code: "PLSKN-T-0043"
 created_at: 2026-01-17T19:48:44.330131+00:00
-updated_at: 2026-01-17T20:05:30.665208+00:00
+updated_at: 2026-01-18T19:23:07.546770+00:00
 parent: PLSKN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -50,6 +50,8 @@ let (python_modules, cross_refs) = if python_modules.is_empty() && !rust_modules
 ```
 
 This violates DRY and makes it easy for the two paths to diverge.
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

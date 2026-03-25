@@ -4,14 +4,14 @@ level: task
 title: "Create generic render_module_inline for Python and Rust"
 short_code: "PLSKN-T-0044"
 created_at: 2026-01-17T19:48:44.493498+00:00
-updated_at: 2026-01-17T20:08:45.069884+00:00
+updated_at: 2026-01-18T19:23:07.668300+00:00
 parent: PLSKN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -54,6 +54,8 @@ if let Some(ref docstring) = module.docstring {
 // Items loop
 for item in items { ... }
 ```
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

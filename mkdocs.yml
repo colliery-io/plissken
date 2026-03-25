@@ -65,17 +65,31 @@ extra:
 
 nav:
   - Home: index.md
-  - Getting Started:
-    - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quickstart.md
-    - Configuration: getting-started/configuration.md
-  - User Guide:
-    - Overview: guide/overview.md
-    - Python Projects: guide/python.md
-    - Rust Projects: guide/rust.md
-    - Hybrid Projects: guide/hybrid.md
-    - Customization: guide/customization.md
-  - API Reference:
+  - Tutorials:
+    - Document a Python Project: tutorials/python-project.md
+    - Document a Rust Project: tutorials/rust-project.md
+    - Document a Hybrid Project: tutorials/hybrid-project.md
+  - How-To Guides:
+    - Install plissken: how-to/install.md
+    - Initialize a Project: how-to/initialize-project.md
+    - Configure for Different Project Types: how-to/configure-project-types.md
+    - Use mdBook Instead of MkDocs: how-to/use-mdbook.md
+    - Customize Templates: how-to/customize-templates.md
+    - Validate Configuration: how-to/validate-configuration.md
+    - Generate the JSON Doc Model: how-to/generate-json-model.md
+    - Integrate with CI/CD: how-to/ci-integration.md
+  - Reference:
+    - CLI Reference: reference/cli.md
+    - Configuration Reference: reference/configuration.md
+    - Data Model Reference: reference/data-model.md
+    - Template Variables Reference: reference/template-variables.md
+    - Theme Adapter Reference: reference/theme-adapters.md
+  - Explanation:
+    - Architecture Overview: explanation/architecture.md
+    - How Cross-References Work: explanation/cross-references.md
+    - How Parsing Works: explanation/parsing.md
+    - Theme System Design: explanation/theme-system.md
+  - API Reference (Generated):
     - Rust:
       - plissken: api/rust/plissken.md
       - plissken-core: api/rust/plissken-core.md
