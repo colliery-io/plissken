@@ -1,8 +1,6 @@
 //! MkDocs adapter implementation
 
-use super::traits::{
-    NavNode, SSGAdapter, build_nav_tree, python_nav_entries, rust_nav_entries,
-};
+use super::traits::{NavNode, SSGAdapter, build_nav_tree, python_nav_entries, rust_nav_entries};
 use crate::model::{PythonModule, RustModule};
 
 /// MkDocs adapter for Material theme.

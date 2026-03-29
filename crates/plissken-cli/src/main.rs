@@ -653,8 +653,7 @@ fn generate_ssg_files(
 
     if is_mdbook {
         // Generate mdBook SUMMARY.md
-        let summary =
-            module_renderer.generate_mdbook_summary(python_modules, rust_modules, prefix);
+        let summary = module_renderer.generate_mdbook_summary(python_modules, rust_modules, prefix);
         let summary_path = output_dir.join("src/SUMMARY.md");
         if let Some(parent) = summary_path.parent() {
             std::fs::create_dir_all(parent)?;

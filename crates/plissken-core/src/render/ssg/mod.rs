@@ -100,7 +100,10 @@ mod tests {
 
     #[test]
     fn test_prefix_path_with_prefix() {
-        assert_eq!(prefix_path(Some("api"), "rust/mycrate.md"), "api/rust/mycrate.md");
+        assert_eq!(
+            prefix_path(Some("api"), "rust/mycrate.md"),
+            "api/rust/mycrate.md"
+        );
         assert_eq!(
             prefix_path(Some("api/reference"), "rust/mycrate.md"),
             "api/reference/rust/mycrate.md"

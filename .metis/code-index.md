@@ -1,6 +1,6 @@
 # Code Index
 
-> Generated: 2026-03-25T13:39:18Z | 81 files | Python, Rust
+> Generated: 2026-03-29T14:41:06Z | 81 files | Python, Rust
 
 ## Project Structure
 
@@ -148,58 +148,59 @@
 -  `CliError` type L108-112 — `= CliError` — plissken CLI - Documentation for the Rust-Python bridge
 -  `fmt` function L109-111 — `(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result` — plissken CLI - Documentation for the Rust-Python bridge
 -  `CliError` type L114 — `= CliError` — plissken CLI - Documentation for the Rust-Python bridge
--  `Commands` enum L117-162 — `Generate | Render | Init | Check` — plissken CLI - Documentation for the Rust-Python bridge
--  `main` function L164-182 — `() -> Result<()>` — plissken CLI - Documentation for the Rust-Python bridge
--  `generate` function L185-257 — `(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) -> Result<()>` — Generate documentation model from a project
--  `render` function L260-313 — `( path: &str, output_override: Option<PathBuf>, template_override: Option<String...` — Render documentation to Markdown files
--  `load_project_config` function L316-333 — `(path: &str, verbosity: u8) -> Result<(Config, PathBuf)>` — Load project configuration from path
--  `resolve_output_directory` function L336-350 — `( config: &Config, project_root: &Path, output_override: Option<PathBuf>, ) -> P...` — Resolve output directory from config and command-line override
--  `log_output_settings` function L353-358 — `(output_dir: &Path, template: Option<&str>, verbosity: u8)` — Log output settings at appropriate verbosity level
--  `parse_and_merge_modules` function L361-398 — `( config: &Config, project_root: &Path, verbosity: u8, ) -> Result<(Vec<PythonMo...` — Parse sources and merge synthesized modules
--  `create_renderer` function L401-410 — `(template: Option<&str>, project_root: &Path) -> Result<Renderer>` — Create renderer with theme
--  `create_output_directory` function L413-423 — `(output_dir: &Path) -> Result<()>` — Create output directory with helpful error messages
--  `resolve_content_directory` function L426-432 — `(output_dir: &Path, template: Option<&str>) -> PathBuf` — Determine content directory based on SSG type
--  `merge_synthesized_python_modules` function L435-517 — `( config: &Config, mut python_modules: Vec<PythonModule>, rust_modules: &[RustMo...` — Merge synthesized Python modules from Rust PyO3 bindings into existing modules
--  `synthesize_python_if_needed` function L524-542 — `( config: &Config, python_modules: Vec<PythonModule>, rust_modules: &[RustModule...` — Synthesize Python bindings from Rust if needed, or build cross-references
--  `build_cross_references` function L545-555 — `( config: &Config, python_modules: Vec<PythonModule>, rust_modules: &[RustModule...` — Build cross-references, synthesizing Python bindings if needed
--  `write_rendered_pages` function L558-618 — `( module_renderer: &ModuleRenderer, python_modules: &[PythonModule], rust_module...` — Write rendered module pages to disk
--  `generate_ssg_files` function L621-674 — `( module_renderer: &ModuleRenderer, python_modules: &[PythonModule], rust_module...` — Generate SSG-specific files (navigation, config, CSS)
--  `init` function L677-707 — `(force: bool, verbosity: u8) -> Result<()>` — Initialize a new plissken.toml configuration file
--  `ValidationIssue` struct L711-716 — `{ severity: String, message: String, hint: Option<String> }` — Validation issue found during check
--  `CliValidationResult` struct L720-724 — `{ valid: bool, config_path: String, issues: Vec<ValidationIssue> }` — Result of configuration validation (CLI output format)
--  `CliValidationResult` type L726-751 — `= CliValidationResult` — plissken CLI - Documentation for the Rust-Python bridge
--  `new` function L727-733 — `(config_path: &Path) -> Self` — plissken CLI - Documentation for the Rust-Python bridge
--  `add_error` function L735-742 — `(&mut self, message: impl Into<String>, hint: Option<String>)` — plissken CLI - Documentation for the Rust-Python bridge
--  `add_warning` function L744-750 — `(&mut self, message: impl Into<String>, hint: Option<String>)` — plissken CLI - Documentation for the Rust-Python bridge
--  `check` function L754-834 — `(path: &str, format: &str, verbosity: u8) -> Result<()>` — Validate configuration without generating documentation
--  `output_result` function L837-871 — `(result: &CliValidationResult, format: &str, verbosity: u8) -> Result<()>` — Output validation result in requested format
--  `DetectedProject` struct L874-883 — `{ name: String, has_rust: bool, has_python: bool, rust_crates: Vec<PathBuf>, rus...` — Detected project information
--  `DetectedProject` type L885-895 — `= DetectedProject` — plissken CLI - Documentation for the Rust-Python bridge
--  `description` function L886-894 — `(&self) -> String` — plissken CLI - Documentation for the Rust-Python bridge
--  `detect_project` function L898-983 — `() -> Result<DetectedProject>` — Detect project type from current directory
--  `extract_cargo_name` function L986-1008 — `(content: &str) -> Option<String>` — Extract package name from Cargo.toml content
--  `extract_pyproject_name` function L1011-1041 — `(content: &str) -> Option<String>` — Extract project name from pyproject.toml content
--  `extract_python_source` function L1044-1099 — `(content: &str) -> Option<PathBuf>` — Extract Python source directory from pyproject.toml content
--  `generate_config` function L1102-1154 — `(project: &DetectedProject) -> Result<String>` — Generate plissken.toml content
--  `find_config` function L1157-1192 — `(path: &Path) -> Result<PathBuf>` — Find the plissken.toml config file
--  `load_config` function L1195-1224 — `(path: &Path) -> Result<Config>` — Load and parse configuration file with helpful error messages
--  `extract_toml_location` function L1227-1237 — `(err: &str) -> Option<String>` — Extract line/column from toml error message
--  `summarize_toml_error` function L1240-1261 — `(err: &str) -> String` — Summarize a toml error message for users
--  `suggest_config_fix` function L1264-1281 — `(err: &str) -> String` — Suggest a fix based on the toml error
--  `parse_rust_sources` function L1284-1339 — `( config: &Config, project_root: &Path, verbosity: u8, ) -> Result<Vec<RustModul...` — Parse Rust source files based on config
--  `read_crate_name` function L1342-1379 — `(crate_dir: &Path) -> Result<String>` — Read the crate name from a Cargo.toml file
--  `file_to_module_path` function L1389-1432 — `(file_path: &Path, crate_name: &str, src_dir: &Path) -> String` — Convert a file path to a logical Rust module path
--  `find_rust_files` function L1435-1472 — `(dir: &Path) -> Result<Vec<PathBuf>>` — Find all Rust source files in a directory
--  `walk_dir` function L1452-1468 — `(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()>` — plissken CLI - Documentation for the Rust-Python bridge
--  `parse_python_sources` function L1475-1531 — `( config: &Config, project_root: &Path, verbosity: u8, ) -> Result<Vec<PythonMod...` — Parse Python source files based on config
--  `find_python_files` function L1534-1563 — `(dir: &Path) -> Result<Vec<PathBuf>>` — Find all Python source files in a directory
--  `walk_dir` function L1537-1559 — `(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()>` — plissken CLI - Documentation for the Rust-Python bridge
--  `get_project_version` function L1566-1621 — `(config: &Config, project_root: &Path) -> Option<String>` — Get project version from configured source
--  `get_git_ref` function L1624-1639 — `(project_root: &Path) -> Option<String>` — Get current git ref (branch or tag)
--  `get_git_commit` function L1642-1657 — `(project_root: &Path) -> Option<String>` — Get current git commit hash
--  `chrono_lite_now` function L1660-1711 — `() -> String` — Get current timestamp in ISO 8601 format (lightweight, no chrono dependency)
--  `is_leap_year` function L1713-1715 — `(year: i64) -> bool` — plissken CLI - Documentation for the Rust-Python bridge
--  `normalize_python_module_path` function L1720-1764 — `(file_path: &str, config: &Config, project_root: &Path) -> String` — Normalize a Python file path to a logical module path.
+-  `Commands` enum L117-166 — `Generate | Render | Init | Check` — plissken CLI - Documentation for the Rust-Python bridge
+-  `main` function L168-187 — `() -> Result<()>` — plissken CLI - Documentation for the Rust-Python bridge
+-  `generate` function L190-262 — `(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) -> Result<()>` — Generate documentation model from a project
+-  `render` function L265-324 — `( path: &str, output_override: Option<PathBuf>, template_override: Option<String...` — Render documentation to Markdown files
+-  `load_project_config` function L327-344 — `(path: &str, verbosity: u8) -> Result<(Config, PathBuf)>` — Load project configuration from path
+-  `resolve_output_directory` function L347-361 — `( config: &Config, project_root: &Path, output_override: Option<PathBuf>, ) -> P...` — Resolve output directory from config and command-line override
+-  `resolve_prefix` function L365-369 — `(prefix_override: Option<String>, config: &Config) -> Option<String>` — Resolve prefix from CLI override and config, normalizing trailing slashes.
+-  `log_output_settings` function L372-377 — `(output_dir: &Path, template: Option<&str>, verbosity: u8)` — Log output settings at appropriate verbosity level
+-  `parse_and_merge_modules` function L380-417 — `( config: &Config, project_root: &Path, verbosity: u8, ) -> Result<(Vec<PythonMo...` — Parse sources and merge synthesized modules
+-  `create_renderer` function L420-429 — `(template: Option<&str>, project_root: &Path) -> Result<Renderer>` — Create renderer with theme
+-  `create_output_directory` function L432-442 — `(output_dir: &Path) -> Result<()>` — Create output directory with helpful error messages
+-  `resolve_content_directory` function L445-451 — `(output_dir: &Path, template: Option<&str>) -> PathBuf` — Determine content directory based on SSG type
+-  `merge_synthesized_python_modules` function L454-536 — `( config: &Config, mut python_modules: Vec<PythonModule>, rust_modules: &[RustMo...` — Merge synthesized Python modules from Rust PyO3 bindings into existing modules
+-  `synthesize_python_if_needed` function L543-561 — `( config: &Config, python_modules: Vec<PythonModule>, rust_modules: &[RustModule...` — Synthesize Python bindings from Rust if needed, or build cross-references
+-  `build_cross_references` function L564-574 — `( config: &Config, python_modules: Vec<PythonModule>, rust_modules: &[RustModule...` — Build cross-references, synthesizing Python bindings if needed
+-  `write_rendered_pages` function L577-637 — `( module_renderer: &ModuleRenderer, python_modules: &[PythonModule], rust_module...` — Write rendered module pages to disk
+-  `generate_ssg_files` function L641-696 — `( module_renderer: &ModuleRenderer, python_modules: &[PythonModule], rust_module...` — Generate SSG-specific files (navigation, config, CSS)
+-  `init` function L699-729 — `(force: bool, verbosity: u8) -> Result<()>` — Initialize a new plissken.toml configuration file
+-  `ValidationIssue` struct L733-738 — `{ severity: String, message: String, hint: Option<String> }` — Validation issue found during check
+-  `CliValidationResult` struct L742-746 — `{ valid: bool, config_path: String, issues: Vec<ValidationIssue> }` — Result of configuration validation (CLI output format)
+-  `CliValidationResult` type L748-773 — `= CliValidationResult` — plissken CLI - Documentation for the Rust-Python bridge
+-  `new` function L749-755 — `(config_path: &Path) -> Self` — plissken CLI - Documentation for the Rust-Python bridge
+-  `add_error` function L757-764 — `(&mut self, message: impl Into<String>, hint: Option<String>)` — plissken CLI - Documentation for the Rust-Python bridge
+-  `add_warning` function L766-772 — `(&mut self, message: impl Into<String>, hint: Option<String>)` — plissken CLI - Documentation for the Rust-Python bridge
+-  `check` function L776-856 — `(path: &str, format: &str, verbosity: u8) -> Result<()>` — Validate configuration without generating documentation
+-  `output_result` function L859-893 — `(result: &CliValidationResult, format: &str, verbosity: u8) -> Result<()>` — Output validation result in requested format
+-  `DetectedProject` struct L896-905 — `{ name: String, has_rust: bool, has_python: bool, rust_crates: Vec<PathBuf>, rus...` — Detected project information
+-  `DetectedProject` type L907-917 — `= DetectedProject` — plissken CLI - Documentation for the Rust-Python bridge
+-  `description` function L908-916 — `(&self) -> String` — plissken CLI - Documentation for the Rust-Python bridge
+-  `detect_project` function L920-1005 — `() -> Result<DetectedProject>` — Detect project type from current directory
+-  `extract_cargo_name` function L1008-1030 — `(content: &str) -> Option<String>` — Extract package name from Cargo.toml content
+-  `extract_pyproject_name` function L1033-1063 — `(content: &str) -> Option<String>` — Extract project name from pyproject.toml content
+-  `extract_python_source` function L1066-1121 — `(content: &str) -> Option<PathBuf>` — Extract Python source directory from pyproject.toml content
+-  `generate_config` function L1124-1176 — `(project: &DetectedProject) -> Result<String>` — Generate plissken.toml content
+-  `find_config` function L1179-1214 — `(path: &Path) -> Result<PathBuf>` — Find the plissken.toml config file
+-  `load_config` function L1217-1246 — `(path: &Path) -> Result<Config>` — Load and parse configuration file with helpful error messages
+-  `extract_toml_location` function L1249-1259 — `(err: &str) -> Option<String>` — Extract line/column from toml error message
+-  `summarize_toml_error` function L1262-1283 — `(err: &str) -> String` — Summarize a toml error message for users
+-  `suggest_config_fix` function L1286-1303 — `(err: &str) -> String` — Suggest a fix based on the toml error
+-  `parse_rust_sources` function L1306-1361 — `( config: &Config, project_root: &Path, verbosity: u8, ) -> Result<Vec<RustModul...` — Parse Rust source files based on config
+-  `read_crate_name` function L1364-1401 — `(crate_dir: &Path) -> Result<String>` — Read the crate name from a Cargo.toml file
+-  `file_to_module_path` function L1411-1454 — `(file_path: &Path, crate_name: &str, src_dir: &Path) -> String` — Convert a file path to a logical Rust module path
+-  `find_rust_files` function L1457-1494 — `(dir: &Path) -> Result<Vec<PathBuf>>` — Find all Rust source files in a directory
+-  `walk_dir` function L1474-1490 — `(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()>` — plissken CLI - Documentation for the Rust-Python bridge
+-  `parse_python_sources` function L1497-1553 — `( config: &Config, project_root: &Path, verbosity: u8, ) -> Result<Vec<PythonMod...` — Parse Python source files based on config
+-  `find_python_files` function L1556-1585 — `(dir: &Path) -> Result<Vec<PathBuf>>` — Find all Python source files in a directory
+-  `walk_dir` function L1559-1581 — `(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()>` — plissken CLI - Documentation for the Rust-Python bridge
+-  `get_project_version` function L1588-1643 — `(config: &Config, project_root: &Path) -> Option<String>` — Get project version from configured source
+-  `get_git_ref` function L1646-1661 — `(project_root: &Path) -> Option<String>` — Get current git ref (branch or tag)
+-  `get_git_commit` function L1664-1679 — `(project_root: &Path) -> Option<String>` — Get current git commit hash
+-  `chrono_lite_now` function L1682-1733 — `() -> String` — Get current timestamp in ISO 8601 format (lightweight, no chrono dependency)
+-  `is_leap_year` function L1735-1737 — `(year: i64) -> bool` — plissken CLI - Documentation for the Rust-Python bridge
+-  `normalize_python_module_path` function L1742-1786 — `(file_path: &str, config: &Config, project_root: &Path) -> String` — Normalize a Python file path to a logical module path.
 
 ### crates/plissken-cli/tests
 
@@ -240,43 +241,46 @@
 - pub `Config` struct L107-118 — `{ project: ProjectConfig, output: OutputConfig, rust: Option<RustConfig>, python...` — Root configuration from plissken.toml
 - pub `ProjectConfig` struct L122-126 — `{ name: String, version_from: VersionSource }` — Project metadata
 - pub `VersionSource` enum L135-140 — `Git | Cargo | Pyproject` — Where to get version information
-- pub `OutputConfig` struct L144-151 — `{ format: String, path: PathBuf, template: Option<String> }` — Output configuration
-- pub `RustConfig` struct L163-167 — `{ crates: Vec<PathBuf>, entry_point: Option<String> }` — Rust source configuration
-- pub `PythonConfig` struct L171-183 — `{ package: String, source: Option<PathBuf>, auto_discover: bool, modules: HashMa...` — Python source configuration
-- pub `ModuleSourceType` enum L188-191 — `Pyo3 | Python` — Source type for a Python module
-- pub `LinksConfig` struct L195-200 — `{ dependencies: DependencySource, docs_rs_base: String }` — Linking configuration
-- pub `DependencySource` enum L213-218 — `CargoLock | CargoToml | None` — Where to get dependency versions
-- pub `QualityConfig` struct L222-229 — `{ require_docstrings: bool, min_coverage: Option<f64>, fail_on_broken_links: boo...` — Quality/linting configuration
-- pub `from_file` function L238-260 — `(path: &std::path::Path) -> crate::error::Result<Self>` — Load configuration from a plissken.toml file.
-- pub `with_inferred_defaults` function L277-318 — `(mut self, project_root: &Path) -> Self` — Apply inferred defaults from manifest files (Cargo.toml, pyproject.toml).
-- pub `validate` function L332-357 — `(&self, project_root: &Path) -> Result<ValidationResult, ConfigError>` — Validate configuration semantically.
+- pub `OutputConfig` struct L144-155 — `{ format: String, path: PathBuf, template: Option<String>, prefix: Option<String...` — Output configuration
+- pub `RustConfig` struct L167-171 — `{ crates: Vec<PathBuf>, entry_point: Option<String> }` — Rust source configuration
+- pub `PythonConfig` struct L175-187 — `{ package: String, source: Option<PathBuf>, auto_discover: bool, modules: HashMa...` — Python source configuration
+- pub `ModuleSourceType` enum L192-195 — `Pyo3 | Python` — Source type for a Python module
+- pub `LinksConfig` struct L199-204 — `{ dependencies: DependencySource, docs_rs_base: String }` — Linking configuration
+- pub `DependencySource` enum L217-222 — `CargoLock | CargoToml | None` — Where to get dependency versions
+- pub `QualityConfig` struct L226-233 — `{ require_docstrings: bool, min_coverage: Option<f64>, fail_on_broken_links: boo...` — Quality/linting configuration
+- pub `from_file` function L242-264 — `(path: &std::path::Path) -> crate::error::Result<Self>` — Load configuration from a plissken.toml file.
+- pub `with_inferred_defaults` function L281-322 — `(mut self, project_root: &Path) -> Self` — Apply inferred defaults from manifest files (Cargo.toml, pyproject.toml).
+- pub `validate` function L336-361 — `(&self, project_root: &Path) -> Result<ValidationResult, ConfigError>` — Validate configuration semantically.
 -  `ConfigWarning` type L79-94 — `= ConfigWarning` — Configuration for plissken projects
 -  `default_version_from` function L128-130 — `() -> VersionSource` — Configuration for plissken projects
--  `default_format` function L153-155 — `() -> String` — Configuration for plissken projects
--  `default_output_path` function L157-159 — `() -> PathBuf` — Configuration for plissken projects
--  `default_dependencies` function L202-204 — `() -> DependencySource` — Configuration for plissken projects
--  `default_docs_rs` function L206-208 — `() -> String` — Configuration for plissken projects
--  `Config` type L231-489 — `= Config` — Configuration for plissken projects
--  `validate_version_source` function L359-393 — `(&self, project_root: &Path) -> Result<(), ConfigError>` — Configuration for plissken projects
--  `validate_rust_config` function L395-442 — `( &self, rust_config: &RustConfig, project_root: &Path, warnings: &mut Vec<Confi...` — Configuration for plissken projects
--  `validate_python_config` function L444-488 — `( &self, python_config: &PythonConfig, project_root: &Path, warnings: &mut Vec<C...` — Configuration for plissken projects
--  `tests` module L492-875 — `-` — Configuration for plissken projects
--  `minimal_config` function L497-513 — `() -> Config` — Configuration for plissken projects
--  `test_validate_no_language_configured` function L516-522 — `()` — Configuration for plissken projects
--  `test_validate_rust_crate_not_found` function L525-542 — `()` — Configuration for plissken projects
--  `test_validate_python_source_not_found` function L545-564 — `()` — Configuration for plissken projects
--  `test_validate_version_source_cargo_not_found` function L567-584 — `()` — Configuration for plissken projects
--  `test_validate_version_source_pyproject_not_found` function L587-606 — `()` — Configuration for plissken projects
--  `test_validate_valid_rust_config` function L609-630 — `()` — Configuration for plissken projects
--  `test_validate_valid_python_config` function L633-660 — `()` — Configuration for plissken projects
--  `test_validate_warnings_for_missing_init_py` function L663-692 — `()` — Configuration for plissken projects
--  `test_validate_warnings_for_missing_src_dir` function L695-721 — `()` — Configuration for plissken projects
--  `test_with_inferred_defaults_fills_project_name` function L724-737 — `()` — Configuration for plissken projects
--  `test_with_inferred_defaults_preserves_explicit_name` function L740-754 — `()` — Configuration for plissken projects
--  `test_with_inferred_defaults_fills_rust_config` function L757-787 — `()` — Configuration for plissken projects
--  `test_with_inferred_defaults_fills_python_config` function L790-819 — `()` — Configuration for plissken projects
--  `test_with_inferred_defaults_preserves_explicit_python_config` function L822-852 — `()` — Configuration for plissken projects
--  `test_with_inferred_defaults_pyproject_takes_precedence_for_name` function L855-874 — `()` — Configuration for plissken projects
+-  `default_format` function L157-159 — `() -> String` — Configuration for plissken projects
+-  `default_output_path` function L161-163 — `() -> PathBuf` — Configuration for plissken projects
+-  `default_dependencies` function L206-208 — `() -> DependencySource` — Configuration for plissken projects
+-  `default_docs_rs` function L210-212 — `() -> String` — Configuration for plissken projects
+-  `Config` type L235-493 — `= Config` — Configuration for plissken projects
+-  `validate_version_source` function L363-397 — `(&self, project_root: &Path) -> Result<(), ConfigError>` — Configuration for plissken projects
+-  `validate_rust_config` function L399-446 — `( &self, rust_config: &RustConfig, project_root: &Path, warnings: &mut Vec<Confi...` — Configuration for plissken projects
+-  `validate_python_config` function L448-492 — `( &self, python_config: &PythonConfig, project_root: &Path, warnings: &mut Vec<C...` — Configuration for plissken projects
+-  `tests` module L496-920 — `-` — Configuration for plissken projects
+-  `minimal_config` function L501-518 — `() -> Config` — Configuration for plissken projects
+-  `test_validate_no_language_configured` function L521-527 — `()` — Configuration for plissken projects
+-  `test_validate_rust_crate_not_found` function L530-547 — `()` — Configuration for plissken projects
+-  `test_validate_python_source_not_found` function L550-569 — `()` — Configuration for plissken projects
+-  `test_validate_version_source_cargo_not_found` function L572-589 — `()` — Configuration for plissken projects
+-  `test_validate_version_source_pyproject_not_found` function L592-611 — `()` — Configuration for plissken projects
+-  `test_validate_valid_rust_config` function L614-635 — `()` — Configuration for plissken projects
+-  `test_validate_valid_python_config` function L638-665 — `()` — Configuration for plissken projects
+-  `test_validate_warnings_for_missing_init_py` function L668-697 — `()` — Configuration for plissken projects
+-  `test_validate_warnings_for_missing_src_dir` function L700-726 — `()` — Configuration for plissken projects
+-  `test_with_inferred_defaults_fills_project_name` function L729-742 — `()` — Configuration for plissken projects
+-  `test_with_inferred_defaults_preserves_explicit_name` function L745-759 — `()` — Configuration for plissken projects
+-  `test_with_inferred_defaults_fills_rust_config` function L762-792 — `()` — Configuration for plissken projects
+-  `test_with_inferred_defaults_fills_python_config` function L795-824 — `()` — Configuration for plissken projects
+-  `test_with_inferred_defaults_preserves_explicit_python_config` function L827-857 — `()` — Configuration for plissken projects
+-  `test_with_inferred_defaults_pyproject_takes_precedence_for_name` function L860-879 — `()` — Configuration for plissken projects
+-  `test_output_config_prefix_deserialization` function L882-892 — `()` — Configuration for plissken projects
+-  `test_output_config_prefix_default_none` function L895-905 — `()` — Configuration for plissken projects
+-  `test_output_config_prefix_empty_string` function L908-919 — `()` — Configuration for plissken projects
 
 #### crates/plissken-core/src/crossref.rs
 
@@ -297,26 +301,26 @@
 -  `rust_type_to_python_normalized` function L540-695 — `(s: &str) -> String` — Internal conversion after whitespace normalization
 -  `split_generic_pair` function L699-712 — `(s: &str) -> Option<(&str, &str)>` — Split a generic pair like "String,PyObject" into ("String", "PyObject")
 -  `split_tuple_elements` function L716-740 — `(s: &str) -> Vec<&str>` — Split tuple elements like "i32,String,String" into ["i32", "String", "String"]
--  `tests` module L743-1253 — `-` — implementations by matching PyO3 metadata.
--  `test_config` function L747-776 — `() -> Config` — implementations by matching PyO3 metadata.
--  `test_pyclass_matching` function L779-811 — `()` — implementations by matching PyO3 metadata.
--  `test_pyfunction_matching` function L814-837 — `()` — implementations by matching PyO3 metadata.
--  `test_pymethods_matching` function L840-881 — `()` — implementations by matching PyO3 metadata.
--  `test_pure_python_unchanged` function L884-901 — `()` — implementations by matching PyO3 metadata.
--  `test_name_fallback_to_rust_name` function L904-922 — `()` — implementations by matching PyO3 metadata.
--  `test_synthesize_python_from_rust` function L925-996 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_primitives` function L999-1022 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_generics` function L1025-1044 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_pyo3_types` function L1047-1067 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_pyo3_wrappers` function L1070-1085 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_spaced_types` function L1088-1096 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_references` function L1099-1105 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_tuples` function L1108-1117 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_nested_references` function L1120-1126 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_slices` function L1129-1134 — `()` — implementations by matching PyO3 metadata.
--  `test_rust_type_to_python_complex_nested` function L1137-1144 — `()` — implementations by matching PyO3 metadata.
--  `test_synthesize_hybrid_binary_fixture` function L1147-1200 — `()` — implementations by matching PyO3 metadata.
--  `test_synthesize_separate_bindings_fixture` function L1203-1252 — `()` — implementations by matching PyO3 metadata.
+-  `tests` module L743-1254 — `-` — implementations by matching PyO3 metadata.
+-  `test_config` function L747-777 — `() -> Config` — implementations by matching PyO3 metadata.
+-  `test_pyclass_matching` function L780-812 — `()` — implementations by matching PyO3 metadata.
+-  `test_pyfunction_matching` function L815-838 — `()` — implementations by matching PyO3 metadata.
+-  `test_pymethods_matching` function L841-882 — `()` — implementations by matching PyO3 metadata.
+-  `test_pure_python_unchanged` function L885-902 — `()` — implementations by matching PyO3 metadata.
+-  `test_name_fallback_to_rust_name` function L905-923 — `()` — implementations by matching PyO3 metadata.
+-  `test_synthesize_python_from_rust` function L926-997 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_primitives` function L1000-1023 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_generics` function L1026-1045 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_pyo3_types` function L1048-1068 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_pyo3_wrappers` function L1071-1086 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_spaced_types` function L1089-1097 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_references` function L1100-1106 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_tuples` function L1109-1118 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_nested_references` function L1121-1127 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_slices` function L1130-1135 — `()` — implementations by matching PyO3 metadata.
+-  `test_rust_type_to_python_complex_nested` function L1138-1145 — `()` — implementations by matching PyO3 metadata.
+-  `test_synthesize_hybrid_binary_fixture` function L1148-1201 — `()` — implementations by matching PyO3 metadata.
+-  `test_synthesize_separate_bindings_fixture` function L1204-1253 — `()` — implementations by matching PyO3 metadata.
 
 #### crates/plissken-core/src/discover.rs
 
@@ -873,86 +877,86 @@
 
 #### crates/plissken-core/src/render/module_renderer.rs
 
-- pub `RenderedPage` struct L22-27 — `{ path: PathBuf, content: String }` — Rendered output for a documentation file
-- pub `ModuleRenderer` struct L95-98 — `{ renderer: &'a Renderer, linker: CrossRefLinker }` — Module page renderer that converts DocModel modules into Markdown files.
-- pub `new` function L104-109 — `(renderer: &'a Renderer) -> Self` — Create a new module renderer
-- pub `with_cross_refs` function L112-117 — `(renderer: &'a Renderer, cross_refs: Vec<CrossRef>) -> Self` — Create a module renderer with cross-references for bi-directional linking
-- pub `render_python_module` function L127-148 — `( &self, module: &PythonModule, ) -> Result<Vec<RenderedPage>, tera::Error>` — Render a Python module to a single Markdown file with all content inline.
-- pub `render_rust_module` function L811-837 — `( &self, module: &RustModule, ) -> Result<Vec<RenderedPage>, tera::Error>` — Render a Rust module to a single Markdown file with all content inline.
-- pub `render_python_modules` function L1494-1504 — `( &self, modules: &[PythonModule], ) -> Result<Vec<RenderedPage>, tera::Error>` — Render all Python modules from a list
-- pub `render_rust_modules` function L1507-1517 — `( &self, modules: &[RustModule], ) -> Result<Vec<RenderedPage>, tera::Error>` — Render all Rust modules from a list
-- pub `generate_nav` function L1537-1544 — `( &self, adapter: &dyn super::ssg::SSGAdapter, python_modules: &[PythonModule], ...` — Generate navigation using an SSG adapter.
+- pub `RenderedPage` struct L21-26 — `{ path: PathBuf, content: String }` — Rendered output for a documentation file
+- pub `ModuleRenderer` struct L94-97 — `{ renderer: &'a Renderer, linker: CrossRefLinker }` — Module page renderer that converts DocModel modules into Markdown files.
+- pub `new` function L103-108 — `(renderer: &'a Renderer) -> Self` — Create a new module renderer
+- pub `with_cross_refs` function L111-116 — `(renderer: &'a Renderer, cross_refs: Vec<CrossRef>) -> Self` — Create a module renderer with cross-references for bi-directional linking
+- pub `render_python_module` function L126-147 — `( &self, module: &PythonModule, ) -> Result<Vec<RenderedPage>, tera::Error>` — Render a Python module to a single Markdown file with all content inline.
+- pub `render_rust_module` function L810-836 — `( &self, module: &RustModule, ) -> Result<Vec<RenderedPage>, tera::Error>` — Render a Rust module to a single Markdown file with all content inline.
+- pub `render_python_modules` function L1493-1503 — `( &self, modules: &[PythonModule], ) -> Result<Vec<RenderedPage>, tera::Error>` — Render all Python modules from a list
+- pub `render_rust_modules` function L1506-1516 — `( &self, modules: &[RustModule], ) -> Result<Vec<RenderedPage>, tera::Error>` — Render all Rust modules from a list
+- pub `generate_nav` function L1536-1544 — `( &self, adapter: &dyn super::ssg::SSGAdapter, python_modules: &[PythonModule], ...` — Generate navigation using an SSG adapter.
 - pub `generate_config` function L1549-1556 — `( &self, adapter: &dyn super::ssg::SSGAdapter, title: &str, authors: &[String], ...` — Generate SSG config file using an adapter.
 - pub `generate_custom_css` function L1561-1563 — `(&self, adapter: &dyn super::ssg::SSGAdapter) -> Option<String>` — Generate custom CSS using an adapter.
-- pub `generate_nav_yaml` function L1580-1623 — `( &self, python_modules: &[PythonModule], rust_modules: &[RustModule], ) -> Stri...` — Generate navigation YAML for mkdocs.yml
-- pub `generate_mdbook_summary` function L1645-1682 — `( &self, python_modules: &[PythonModule], rust_modules: &[RustModule], ) -> Stri...` — Generate SUMMARY.md for mdBook navigation
-- pub `generate_mdbook_config` function L1687-1722 — `(&self, title: &str, authors: &[String]) -> String` — Generate book.toml configuration for mdBook
-- pub `generate_mdbook_css` function L1728-1738 — `(&self) -> String` — Generate custom CSS for mdBook
--  `ModulePageBuilder` struct L34-36 — `{ content: String }` — Builder for constructing module documentation pages.
--  `ModulePageBuilder` type L38-92 — `= ModulePageBuilder` — and `RustModule` structures into Markdown documentation files.
--  `new` function L40-44 — `() -> Self` — Create a new page builder
--  `add_header` function L47-50 — `(&mut self, module_name: &str, badge: &str)` — Add the module header with a badge
--  `add_docstring` function L53-56 — `(&mut self, docstring: &crate::model::ParsedDocstring)` — Add a parsed docstring section
--  `add_section` function L59-61 — `(&mut self, title: &str)` — Add a section header (h2)
--  `add_item` function L64-67 — `(&mut self, item_content: &str)` — Add rendered item content with spacing
--  `add_variables_table` function L70-86 — `(&mut self, title: &str, items: &[T], row_renderer: F)` — Add a variables/constants table
--  `build` function L89-91 — `(self) -> String` — Build the final content
--  `render_python_module_inline` function L151-200 — `( &self, module: &PythonModule, classes: &[&PythonClass], functions: &[&PythonFu...` — Render a Python module with all content inline in a single page.
--  `render_python_class_inline` function L203-292 — `( &self, class: &PythonClass, module_path: &str, ) -> Result<String, tera::Error...` — Render a Python class inline (for single-page module format).
--  `render_python_function_inline` function L295-350 — `( &self, func: &PythonFunction, module_path: &str, ) -> Result<String, tera::Err...` — Render a Python function inline (for single-page module format).
--  `render_python_module_index` function L353-442 — `( &self, module: &PythonModule, classes: &[&PythonClass], functions: &[&PythonFu...` — Render a Python module index page with class cards
--  `render_python_class_page` function L445-540 — `( &self, class: &PythonClass, module_path: &str, module_dir: &str, ) -> Result<R...` — Render a single Python class as its own page
--  `render_python_function_page` function L544-610 — `( &self, func: &PythonFunction, module_path: &str, module_dir: &str, ) -> Result...` — Render Python module-level functions as their own page
--  `render_python_function_for_class_page` function L613-621 — `( &self, func: &PythonFunction, module_path: &str, _class_name: &str, parent_cla...` — Render a Python function/method for a class page (uses h4 for methods)
--  `render_python_function_with_context` function L627-707 — `( &self, func: &PythonFunction, heading_level: usize, module_path: &str, parent_...` — Render a Python function/method with class context
--  `format_python_params` function L710-727 — `(&self, params: &[PythonParam]) -> String` — Format Python parameters for display
--  `merge_params_with_docstring` function L733-757 — `( sig_params: &[PythonParam], docstring_params: &[ParamDoc], ) -> Vec<ParamDoc>` — Merge signature params with docstring params to get types + descriptions
--  `render_docstring_with_merged_params` function L763-780 — `( sig_params: &[PythonParam], docstring: &str, is_binding: bool, ) -> String` — Render docstring with merged parameters from signature
--  `is_rust_style_docstring` function L783-792 — `(docstring: &str) -> bool` — Detect if a docstring uses Rust-style markdown headers
--  `source_badge` function L795-801 — `(&self, source_type: &SourceType) -> Result<String, tera::Error>` — Get source type badge
--  `render_rust_module_inline` function L840-890 — `( &self, module: &RustModule, structs: &[&RustStruct], enums: &[&RustEnum], func...` — Render a Rust module with all content inline in a single page.
--  `render_rust_struct_inline` function L893-999 — `( &self, s: &RustStruct, impls: &[&RustImpl], module_path: &str, ) -> Result<Str...` — Render a Rust struct inline (for single-page module format).
--  `render_rust_enum_inline` function L1002-1039 — `( &self, e: &RustEnum, module_path: &str, ) -> Result<String, tera::Error>` — Render a Rust enum inline (for single-page module format).
--  `render_rust_function_inline` function L1042-1090 — `( &self, func: &RustFunction, module_path: &str, ) -> Result<String, tera::Error...` — Render a Rust function inline (for single-page module format).
--  `render_rust_module_index` function L1093-1194 — `( &self, module: &RustModule, structs: &[&RustStruct], enums: &[&RustEnum], func...` — Render a Rust module index page with struct/enum cards
--  `render_rust_struct_page` function L1197-1304 — `( &self, s: &RustStruct, impls: &[&RustImpl], module_path: &str, module_dir: &st...` — Render a single Rust struct as its own page
--  `render_rust_enum_page` function L1307-1349 — `( &self, e: &RustEnum, module_path: &str, module_dir: &str, ) -> Result<Rendered...` — Render a single Rust enum as its own page
--  `render_rust_function_page` function L1352-1404 — `( &self, func: &RustFunction, module_path: &str, module_dir: &str, ) -> Result<R...` — Render a single Rust function to its own page
--  `render_rust_function_with_context` function L1410-1477 — `( &self, f: &RustFunction, heading_level: usize, is_pymethod: bool, module_path:...` — Render a Rust function with pymethod context
--  `visibility_badge` function L1480-1487 — `(&self, vis: &Visibility) -> Result<String, tera::Error>` — Get visibility badge
--  `tests` module L1742-2109 — `-` — and `RustModule` structures into Markdown documentation files.
--  `test_renderer` function L1746-1748 — `() -> Renderer` — and `RustModule` structures into Markdown documentation files.
--  `find_page` function L1751-1755 — `(pages: &'a [RenderedPage], suffix: &str) -> Option<&'a RenderedPage>` — Helper to find a page by path suffix
--  `test_render_simple_python_module` function L1758-1782 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_python_module_with_class` function L1785-1812 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_python_module_pyo3_binding` function L1815-1834 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_python_module_with_cross_refs` function L1837-1865 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_simple_rust_module` function L1868-1891 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_rust_module_with_struct` function L1894-1936 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_rust_struct_with_pyclass` function L1939-1975 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_rust_function_badges` function L1978-1997 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_render_rust_enum` function L2000-2039 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_batch_render_modules` function L2042-2065 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_python_async_function` function L2068-2085 — `()` — and `RustModule` structures into Markdown documentation files.
--  `test_python_class_methods_types` function L2088-2108 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_tests` module L2122-2621 — `-` — Snapshot tests for rendered output using insta.
--  `test_renderer` function L2127-2129 — `() -> Renderer` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_module_simple` function L2136-2145 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_module_with_function` function L2148-2163 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_class_with_methods` function L2166-2208 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_async_function` function L2211-2227 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_pyo3_binding` function L2230-2265 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_enum_class` function L2268-2284 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_python_module_variables` function L2287-2308 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_module_simple` function L2315-2324 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_struct_with_fields` function L2327-2364 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_enum_with_variants` function L2367-2397 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_function_with_generics` function L2400-2414 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_async_unsafe_function` function L2417-2432 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_pyclass_struct` function L2435-2476 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_rust_pyfunction` function L2479-2499 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_complex_python_module` function L2506-2553 — `()` — and `RustModule` structures into Markdown documentation files.
--  `snapshot_complex_rust_module` function L2556-2620 — `()` — and `RustModule` structures into Markdown documentation files.
+- pub `generate_nav_yaml` function L1580-1589 — `( &self, python_modules: &[PythonModule], rust_modules: &[RustModule], prefix: O...` — Generate navigation YAML for mkdocs.yml
+- pub `generate_mdbook_summary` function L1611-1620 — `( &self, python_modules: &[PythonModule], rust_modules: &[RustModule], prefix: O...` — Generate SUMMARY.md for mdBook navigation
+- pub `generate_mdbook_config` function L1625-1660 — `(&self, title: &str, authors: &[String]) -> String` — Generate book.toml configuration for mdBook
+- pub `generate_mdbook_css` function L1666-1676 — `(&self) -> String` — Generate custom CSS for mdBook
+-  `ModulePageBuilder` struct L33-35 — `{ content: String }` — Builder for constructing module documentation pages.
+-  `ModulePageBuilder` type L37-91 — `= ModulePageBuilder` — and `RustModule` structures into Markdown documentation files.
+-  `new` function L39-43 — `() -> Self` — Create a new page builder
+-  `add_header` function L46-49 — `(&mut self, module_name: &str, badge: &str)` — Add the module header with a badge
+-  `add_docstring` function L52-55 — `(&mut self, docstring: &crate::model::ParsedDocstring)` — Add a parsed docstring section
+-  `add_section` function L58-60 — `(&mut self, title: &str)` — Add a section header (h2)
+-  `add_item` function L63-66 — `(&mut self, item_content: &str)` — Add rendered item content with spacing
+-  `add_variables_table` function L69-85 — `(&mut self, title: &str, items: &[T], row_renderer: F)` — Add a variables/constants table
+-  `build` function L88-90 — `(self) -> String` — Build the final content
+-  `render_python_module_inline` function L150-199 — `( &self, module: &PythonModule, classes: &[&PythonClass], functions: &[&PythonFu...` — Render a Python module with all content inline in a single page.
+-  `render_python_class_inline` function L202-291 — `( &self, class: &PythonClass, module_path: &str, ) -> Result<String, tera::Error...` — Render a Python class inline (for single-page module format).
+-  `render_python_function_inline` function L294-349 — `( &self, func: &PythonFunction, module_path: &str, ) -> Result<String, tera::Err...` — Render a Python function inline (for single-page module format).
+-  `render_python_module_index` function L352-441 — `( &self, module: &PythonModule, classes: &[&PythonClass], functions: &[&PythonFu...` — Render a Python module index page with class cards
+-  `render_python_class_page` function L444-539 — `( &self, class: &PythonClass, module_path: &str, module_dir: &str, ) -> Result<R...` — Render a single Python class as its own page
+-  `render_python_function_page` function L543-609 — `( &self, func: &PythonFunction, module_path: &str, module_dir: &str, ) -> Result...` — Render Python module-level functions as their own page
+-  `render_python_function_for_class_page` function L612-620 — `( &self, func: &PythonFunction, module_path: &str, _class_name: &str, parent_cla...` — Render a Python function/method for a class page (uses h4 for methods)
+-  `render_python_function_with_context` function L626-706 — `( &self, func: &PythonFunction, heading_level: usize, module_path: &str, parent_...` — Render a Python function/method with class context
+-  `format_python_params` function L709-726 — `(&self, params: &[PythonParam]) -> String` — Format Python parameters for display
+-  `merge_params_with_docstring` function L732-756 — `( sig_params: &[PythonParam], docstring_params: &[ParamDoc], ) -> Vec<ParamDoc>` — Merge signature params with docstring params to get types + descriptions
+-  `render_docstring_with_merged_params` function L762-779 — `( sig_params: &[PythonParam], docstring: &str, is_binding: bool, ) -> String` — Render docstring with merged parameters from signature
+-  `is_rust_style_docstring` function L782-791 — `(docstring: &str) -> bool` — Detect if a docstring uses Rust-style markdown headers
+-  `source_badge` function L794-800 — `(&self, source_type: &SourceType) -> Result<String, tera::Error>` — Get source type badge
+-  `render_rust_module_inline` function L839-889 — `( &self, module: &RustModule, structs: &[&RustStruct], enums: &[&RustEnum], func...` — Render a Rust module with all content inline in a single page.
+-  `render_rust_struct_inline` function L892-998 — `( &self, s: &RustStruct, impls: &[&RustImpl], module_path: &str, ) -> Result<Str...` — Render a Rust struct inline (for single-page module format).
+-  `render_rust_enum_inline` function L1001-1038 — `( &self, e: &RustEnum, module_path: &str, ) -> Result<String, tera::Error>` — Render a Rust enum inline (for single-page module format).
+-  `render_rust_function_inline` function L1041-1089 — `( &self, func: &RustFunction, module_path: &str, ) -> Result<String, tera::Error...` — Render a Rust function inline (for single-page module format).
+-  `render_rust_module_index` function L1092-1193 — `( &self, module: &RustModule, structs: &[&RustStruct], enums: &[&RustEnum], func...` — Render a Rust module index page with struct/enum cards
+-  `render_rust_struct_page` function L1196-1303 — `( &self, s: &RustStruct, impls: &[&RustImpl], module_path: &str, module_dir: &st...` — Render a single Rust struct as its own page
+-  `render_rust_enum_page` function L1306-1348 — `( &self, e: &RustEnum, module_path: &str, module_dir: &str, ) -> Result<Rendered...` — Render a single Rust enum as its own page
+-  `render_rust_function_page` function L1351-1403 — `( &self, func: &RustFunction, module_path: &str, module_dir: &str, ) -> Result<R...` — Render a single Rust function to its own page
+-  `render_rust_function_with_context` function L1409-1476 — `( &self, f: &RustFunction, heading_level: usize, is_pymethod: bool, module_path:...` — Render a Rust function with pymethod context
+-  `visibility_badge` function L1479-1486 — `(&self, vis: &Visibility) -> Result<String, tera::Error>` — Get visibility badge
+-  `tests` module L1680-2047 — `-` — and `RustModule` structures into Markdown documentation files.
+-  `test_renderer` function L1684-1686 — `() -> Renderer` — and `RustModule` structures into Markdown documentation files.
+-  `find_page` function L1689-1693 — `(pages: &'a [RenderedPage], suffix: &str) -> Option<&'a RenderedPage>` — Helper to find a page by path suffix
+-  `test_render_simple_python_module` function L1696-1720 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_python_module_with_class` function L1723-1750 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_python_module_pyo3_binding` function L1753-1772 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_python_module_with_cross_refs` function L1775-1803 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_simple_rust_module` function L1806-1829 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_rust_module_with_struct` function L1832-1874 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_rust_struct_with_pyclass` function L1877-1913 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_rust_function_badges` function L1916-1935 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_render_rust_enum` function L1938-1977 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_batch_render_modules` function L1980-2003 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_python_async_function` function L2006-2023 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `test_python_class_methods_types` function L2026-2046 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_tests` module L2060-2559 — `-` — Snapshot tests for rendered output using insta.
+-  `test_renderer` function L2065-2067 — `() -> Renderer` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_module_simple` function L2074-2083 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_module_with_function` function L2086-2101 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_class_with_methods` function L2104-2146 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_async_function` function L2149-2165 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_pyo3_binding` function L2168-2203 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_enum_class` function L2206-2222 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_python_module_variables` function L2225-2246 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_module_simple` function L2253-2262 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_struct_with_fields` function L2265-2302 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_enum_with_variants` function L2305-2335 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_function_with_generics` function L2338-2352 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_async_unsafe_function` function L2355-2370 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_pyclass_struct` function L2373-2414 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_rust_pyfunction` function L2417-2437 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_complex_python_module` function L2444-2491 — `()` — and `RustModule` structures into Markdown documentation files.
+-  `snapshot_complex_rust_module` function L2494-2558 — `()` — and `RustModule` structures into Markdown documentation files.
 
 #### crates/plissken-core/src/render/renderer.rs
 
@@ -1156,64 +1160,80 @@
 
 #### crates/plissken-core/src/render/ssg/mdbook.rs
 
-- pub `MdBookAdapter` struct L25 — `-` — mdBook adapter.
--  `MdBookAdapter` type L27-130 — `impl SSGAdapter for MdBookAdapter` — mdBook adapter implementation
--  `name` function L28-30 — `(&self) -> &'static str` — mdBook adapter implementation
--  `content_dir` function L32-34 — `(&self) -> &'static str` — mdBook adapter implementation
--  `nav_filename` function L36-38 — `(&self) -> &'static str` — mdBook adapter implementation
--  `generate_nav` function L40-74 — `(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String` — mdBook adapter implementation
--  `generate_config` function L76-111 — `(&self, title: &str, authors: &[String]) -> Option<String>` — mdBook adapter implementation
--  `generate_custom_css` function L113-125 — `(&self) -> Option<String>` — mdBook adapter implementation
--  `custom_css_path` function L127-129 — `(&self) -> Option<&'static str>` — mdBook adapter implementation
--  `tests` module L133-212 — `-` — mdBook adapter implementation
--  `test_mdbook_adapter_properties` function L138-146 — `()` — mdBook adapter implementation
--  `test_generate_nav_empty` function L149-155 — `()` — mdBook adapter implementation
--  `test_generate_nav_python_only` function L158-167 — `()` — mdBook adapter implementation
--  `test_generate_nav_rust_only` function L170-179 — `()` — mdBook adapter implementation
--  `test_generate_config` function L182-192 — `()` — mdBook adapter implementation
--  `test_generate_config_no_authors` function L195-200 — `()` — mdBook adapter implementation
--  `test_generate_custom_css` function L203-211 — `()` — mdBook adapter implementation
+- pub `MdBookAdapter` struct L28 — `-` — mdBook adapter.
+-  `render_md_nodes` function L31-43 — `(nodes: &[NavNode], indent: usize) -> String` — Render a list of NavNodes as indented mdBook SUMMARY.md entries.
+-  `MdBookAdapter` type L45-141 — `impl SSGAdapter for MdBookAdapter` — mdBook adapter implementation
+-  `name` function L46-48 — `(&self) -> &'static str` — mdBook adapter implementation
+-  `content_dir` function L50-52 — `(&self) -> &'static str` — mdBook adapter implementation
+-  `nav_filename` function L54-56 — `(&self) -> &'static str` — mdBook adapter implementation
+-  `generate_nav` function L58-85 — `( &self, python_modules: &[PythonModule], rust_modules: &[RustModule], prefix: O...` — mdBook adapter implementation
+-  `generate_config` function L87-122 — `(&self, title: &str, authors: &[String]) -> Option<String>` — mdBook adapter implementation
+-  `generate_custom_css` function L124-136 — `(&self) -> Option<String>` — mdBook adapter implementation
+-  `custom_css_path` function L138-140 — `(&self) -> Option<&'static str>` — mdBook adapter implementation
+-  `tests` module L144-254 — `-` — mdBook adapter implementation
+-  `test_mdbook_adapter_properties` function L149-157 — `()` — mdBook adapter implementation
+-  `test_generate_nav_empty` function L160-166 — `()` — mdBook adapter implementation
+-  `test_generate_nav_python_only` function L169-178 — `()` — mdBook adapter implementation
+-  `test_generate_nav_rust_only` function L181-190 — `()` — mdBook adapter implementation
+-  `test_generate_config` function L193-203 — `()` — mdBook adapter implementation
+-  `test_generate_config_no_authors` function L206-211 — `()` — mdBook adapter implementation
+-  `test_generate_custom_css` function L214-222 — `()` — mdBook adapter implementation
+-  `test_generate_nav_with_prefix_python` function L225-232 — `()` — mdBook adapter implementation
+-  `test_generate_nav_with_prefix_rust` function L235-242 — `()` — mdBook adapter implementation
+-  `test_generate_nav_none_prefix_unchanged` function L245-253 — `()` — mdBook adapter implementation
 
 #### crates/plissken-core/src/render/ssg/mkdocs.rs
 
-- pub `MkDocsAdapter` struct L21 — `-` — MkDocs adapter for Material theme.
--  `MkDocsAdapter` type L23-82 — `impl SSGAdapter for MkDocsAdapter` — MkDocs adapter implementation
--  `name` function L24-26 — `(&self) -> &'static str` — MkDocs adapter implementation
--  `content_dir` function L28-30 — `(&self) -> &'static str` — MkDocs adapter implementation
--  `nav_filename` function L32-34 — `(&self) -> &'static str` — MkDocs adapter implementation
--  `generate_nav` function L36-75 — `(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String` — MkDocs adapter implementation
--  `generate_config` function L77-81 — `(&self, _title: &str, _authors: &[String]) -> Option<String>` — MkDocs adapter implementation
--  `tests` module L85-125 — `-` — MkDocs adapter implementation
--  `test_mkdocs_adapter_properties` function L90-97 — `()` — MkDocs adapter implementation
--  `test_generate_nav_empty` function L100-106 — `()` — MkDocs adapter implementation
--  `test_generate_nav_python_only` function L109-118 — `()` — MkDocs adapter implementation
--  `test_generate_config_returns_none` function L121-124 — `()` — MkDocs adapter implementation
+- pub `MkDocsAdapter` struct L27 — `-` — MkDocs adapter for Material theme.
+-  `render_yaml_nodes` function L30-48 — `(nodes: &[NavNode], indent: usize) -> String` — Render a list of NavNodes as nested MkDocs YAML.
+-  `MkDocsAdapter` type L50-106 — `impl SSGAdapter for MkDocsAdapter` — MkDocs adapter implementation
+-  `name` function L51-53 — `(&self) -> &'static str` — MkDocs adapter implementation
+-  `content_dir` function L55-57 — `(&self) -> &'static str` — MkDocs adapter implementation
+-  `nav_filename` function L59-61 — `(&self) -> &'static str` — MkDocs adapter implementation
+-  `generate_nav` function L63-99 — `( &self, python_modules: &[PythonModule], rust_modules: &[RustModule], prefix: O...` — MkDocs adapter implementation
+-  `generate_config` function L101-105 — `(&self, _title: &str, _authors: &[String]) -> Option<String>` — MkDocs adapter implementation
+-  `tests` module L109-184 — `-` — MkDocs adapter implementation
+-  `test_mkdocs_adapter_properties` function L114-121 — `()` — MkDocs adapter implementation
+-  `test_generate_nav_empty` function L124-130 — `()` — MkDocs adapter implementation
+-  `test_generate_nav_python_only` function L133-142 — `()` — MkDocs adapter implementation
+-  `test_generate_config_returns_none` function L145-148 — `()` — MkDocs adapter implementation
+-  `test_generate_nav_with_prefix` function L151-160 — `()` — MkDocs adapter implementation
+-  `test_generate_nav_with_prefix_rust` function L163-171 — `()` — MkDocs adapter implementation
+-  `test_generate_nav_none_prefix_unchanged` function L174-183 — `()` — MkDocs adapter implementation
 
 #### crates/plissken-core/src/render/ssg/mod.rs
 
-- pub `get_ssg_adapter` function L51-56 — `(template: Option<&str>) -> Box<dyn SSGAdapter>` — Get an SSG adapter for the given template name.
+- pub `get_ssg_adapter` function L54-59 — `(template: Option<&str>) -> Box<dyn SSGAdapter>` — Get an SSG adapter for the given template name.
 -  `mdbook` module L23 — `-` — This module provides adapters for different static site generators,
 -  `mkdocs` module L24 — `-` — ```
 -  `traits` module L25 — `-` — ```
--  `tests` module L59-97 — `-` — ```
--  `test_get_ssg_adapter_mkdocs` function L63-68 — `()` — ```
--  `test_get_ssg_adapter_mdbook` function L71-76 — `()` — ```
--  `test_get_ssg_adapter_mdbook_variants` function L79-84 — `()` — ```
--  `test_get_ssg_adapter_default` function L87-90 — `()` — ```
--  `test_get_ssg_adapter_unknown` function L93-96 — `()` — ```
+-  `tests` module L62-114 — `-` — ```
+-  `test_get_ssg_adapter_mkdocs` function L66-71 — `()` — ```
+-  `test_get_ssg_adapter_mdbook` function L74-79 — `()` — ```
+-  `test_get_ssg_adapter_mdbook_variants` function L82-87 — `()` — ```
+-  `test_get_ssg_adapter_default` function L90-93 — `()` — ```
+-  `test_get_ssg_adapter_unknown` function L96-99 — `()` — ```
+-  `test_prefix_path_with_prefix` function L102-108 — `()` — ```
+-  `test_prefix_path_without_prefix` function L111-113 — `()` — ```
 
 #### crates/plissken-core/src/render/ssg/traits.rs
 
-- pub `NavEntry` struct L7-14 — `{ path: String, file_path: PathBuf, depth: usize }` — Entry for a module in the navigation
-- pub `python_nav_entries` function L49-61 — `(modules: &[PythonModule]) -> Vec<NavEntry>` — Generate sorted navigation entries for Python modules
-- pub `rust_nav_entries` function L64-76 — `(modules: &[RustModule]) -> Vec<NavEntry>` — Generate sorted navigation entries for Rust modules
-- pub `SSGAdapter` interface L88-141 — `{ fn name(), fn content_dir(), fn nav_filename(), fn generate_nav(), fn generate...` — Adapter for static site generator output.
--  `python_module_page` function L20-31 — `(module_path: &str) -> PathBuf` — Compute the file path for a Python module page (inline format).
--  `rust_module_page` function L37-46 — `(module_path: &str) -> PathBuf` — Compute the file path for a Rust module page (inline format).
--  `generate_custom_css` function L121-123 — `(&self) -> Option<String>` — Generate custom CSS for the SSG, if any.
--  `custom_css_path` function L128-130 — `(&self) -> Option<&'static str>` — Path for custom CSS file, if generated.
--  `content_extension` function L133-135 — `(&self) -> &'static str` — File extension for content files.
--  `supports_nested_nav` function L138-140 — `(&self) -> bool` — Whether this SSG supports nested/hierarchical navigation.
+- pub `prefix_path` function L8-13 — `(prefix: Option<&str>, path: &str) -> String` — Prepend an optional prefix to a file path string.
+- pub `NavEntry` struct L16-23 — `{ path: String, file_path: PathBuf, depth: usize }` — Entry for a module in the navigation
+- pub `python_nav_entries` function L58-70 — `(modules: &[PythonModule]) -> Vec<NavEntry>` — Generate sorted navigation entries for Python modules
+- pub `rust_nav_entries` function L73-85 — `(modules: &[RustModule]) -> Vec<NavEntry>` — Generate sorted navigation entries for Rust modules
+- pub `NavNode` struct L92-99 — `{ name: String, file_path: String, children: Vec<NavNode> }` — A node in the hierarchical navigation tree.
+- pub `is_branch` function L103-105 — `(&self) -> bool` — Whether this node has child nodes (is a section, not a leaf).
+- pub `build_nav_tree` function L123-156 — `(entries: &[NavEntry], prefix: Option<&str>, separator: &str) -> Vec<NavNode>` — Build a hierarchical navigation tree from a sorted flat list of entries.
+- pub `SSGAdapter` interface L168-230 — `{ fn name(), fn content_dir(), fn nav_filename(), fn generate_nav(), fn generate...` — Adapter for static site generator output.
+-  `python_module_page` function L29-40 — `(module_path: &str) -> PathBuf` — Compute the file path for a Python module page (inline format).
+-  `rust_module_page` function L46-55 — `(module_path: &str) -> PathBuf` — Compute the file path for a Rust module page (inline format).
+-  `NavNode` type L101-106 — `= NavNode` — SSG adapter trait definition
+-  `short_name` function L109-114 — `(full_path: &str, separator: &str) -> String` — Extract the short display name (last segment) from a module path.
+-  `generate_custom_css` function L210-212 — `(&self) -> Option<String>` — Generate custom CSS for the SSG, if any.
+-  `custom_css_path` function L217-219 — `(&self) -> Option<&'static str>` — Path for custom CSS file, if generated.
+-  `content_extension` function L222-224 — `(&self) -> &'static str` — File extension for content files.
+-  `supports_nested_nav` function L227-229 — `(&self) -> bool` — Whether this SSG supports nested/hierarchical navigation.
 
 ### tests/fixtures/complex_generics/python
 

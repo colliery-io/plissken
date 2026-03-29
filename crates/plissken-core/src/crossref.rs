@@ -528,10 +528,7 @@ pub fn synthesize_python_modules_from_rust(
 /// (e.g., `PyResult < String >` -> unwrapped to Python equivalent).
 fn rust_type_to_python(rust_type: &str) -> String {
     // Normalize whitespace: "PyResult < String >" -> "PyResult<String>"
-    let normalized: String = rust_type
-        .chars()
-        .filter(|c| !c.is_whitespace())
-        .collect();
+    let normalized: String = rust_type.chars().filter(|c| !c.is_whitespace()).collect();
 
     rust_type_to_python_normalized(&normalized)
 }
@@ -588,8 +585,8 @@ fn rust_type_to_python_normalized(s: &str) -> String {
     // Handle the full string for generics and wrappers
     match s {
         // Rust primitives
-        "i8" | "i16" | "i32" | "i64" | "i128" | "isize"
-        | "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => "int".to_string(),
+        "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
+        | "usize" => "int".to_string(),
         "f32" | "f64" => "float".to_string(),
         "bool" => "bool".to_string(),
         "String" | "str" | "&str" | "&String" => "str".to_string(),
@@ -624,7 +621,11 @@ fn rust_type_to_python_normalized(s: &str) -> String {
             let start = s.find('<').unwrap() + 1;
             let inner = &s[start..s.len() - 1];
             if let Some((key, val)) = split_generic_pair(inner) {
-                format!("Dict[{}, {}]", rust_type_to_python_normalized(key), rust_type_to_python_normalized(val))
+                format!(
+                    "Dict[{}, {}]",
+                    rust_type_to_python_normalized(key),
+                    rust_type_to_python_normalized(val)
+                )
             } else {
                 "Dict[str, Any]".to_string()
             }
@@ -649,7 +650,8 @@ fn rust_type_to_python_normalized(s: &str) -> String {
             let inner = &s[6..s.len() - 1];
             // Skip lifetime parameter: "'_," or "'py," etc.
             if let Some(comma_pos) = inner.find(',') {
-                let type_part = inner[comma_pos + 1..].trim_start_matches(|c: char| c.is_whitespace());
+                let type_part =
+                    inner[comma_pos + 1..].trim_start_matches(|c: char| c.is_whitespace());
                 rust_type_to_python_normalized(type_part)
             } else {
                 rust_type_to_python_normalized(inner)
@@ -666,12 +668,8 @@ fn rust_type_to_python_normalized(s: &str) -> String {
         }
 
         // Reference stripping
-        _ if s.starts_with("&mut") => {
-            rust_type_to_python_normalized(s[4..].trim_start())
-        }
-        _ if s.starts_with("&") => {
-            rust_type_to_python_normalized(&s[1..])
-        }
+        _ if s.starts_with("&mut") => rust_type_to_python_normalized(s[4..].trim_start()),
+        _ if s.starts_with("&") => rust_type_to_python_normalized(&s[1..]),
 
         // Python<'_> is the GIL token, not a real type - return empty or skip
         _ if s.starts_with("Python<") => "".to_string(),
@@ -1033,8 +1031,14 @@ mod tests {
         assert_eq!(rust_type_to_python("Option<String>"), "Optional[str]");
 
         // HashMap/BTreeMap
-        assert_eq!(rust_type_to_python("HashMap<String, i32>"), "Dict[str, int]");
-        assert_eq!(rust_type_to_python("BTreeMap<String, bool>"), "Dict[str, bool]");
+        assert_eq!(
+            rust_type_to_python("HashMap<String, i32>"),
+            "Dict[str, int]"
+        );
+        assert_eq!(
+            rust_type_to_python("BTreeMap<String, bool>"),
+            "Dict[str, bool]"
+        );
 
         // HashSet/BTreeSet
         assert_eq!(rust_type_to_python("HashSet<String>"), "Set[str]");
@@ -1092,7 +1096,10 @@ mod tests {
         assert_eq!(rust_type_to_python("PyResult < () >"), "None");
         assert_eq!(rust_type_to_python("Option < usize >"), "Optional[int]");
         assert_eq!(rust_type_to_python("Vec < String >"), "List[str]");
-        assert_eq!(rust_type_to_python("HashMap < String , PyObject >"), "Dict[str, Any]");
+        assert_eq!(
+            rust_type_to_python("HashMap < String , PyObject >"),
+            "Dict[str, Any]"
+        );
         assert_eq!(rust_type_to_python("Bound < '_ , PyDict >"), "dict");
     }
 
@@ -1108,13 +1115,22 @@ mod tests {
     #[test]
     fn test_rust_type_to_python_tuples() {
         // Tuple types
-        assert_eq!(rust_type_to_python("(i32, String, String)"), "Tuple[int, str, str]");
+        assert_eq!(
+            rust_type_to_python("(i32, String, String)"),
+            "Tuple[int, str, str]"
+        );
         assert_eq!(rust_type_to_python("(bool, i32)"), "Tuple[bool, int]");
         assert_eq!(rust_type_to_python("(String,)"), "Tuple[str]");
         // Tuple in PyResult
-        assert_eq!(rust_type_to_python("PyResult<(i32, String, String)>"), "Tuple[int, str, str]");
+        assert_eq!(
+            rust_type_to_python("PyResult<(i32, String, String)>"),
+            "Tuple[int, str, str]"
+        );
         // Spaced tuple
-        assert_eq!(rust_type_to_python("PyResult < (i32 , String , String) >"), "Tuple[int, str, str]");
+        assert_eq!(
+            rust_type_to_python("PyResult < (i32 , String , String) >"),
+            "Tuple[int, str, str]"
+        );
     }
 
     #[test]
@@ -1122,8 +1138,14 @@ mod tests {
         // Nested references in generics (the reported bug)
         assert_eq!(rust_type_to_python("Option<&str>"), "Optional[str]");
         assert_eq!(rust_type_to_python("Option < & str >"), "Optional[str]");
-        assert_eq!(rust_type_to_python("Option<&Bound<'_, PyDict>>"), "Optional[dict]");
-        assert_eq!(rust_type_to_python("Option < & Bound < '_ , pyo3 :: types :: PyDict > >"), "Optional[dict]");
+        assert_eq!(
+            rust_type_to_python("Option<&Bound<'_, PyDict>>"),
+            "Optional[dict]"
+        );
+        assert_eq!(
+            rust_type_to_python("Option < & Bound < '_ , pyo3 :: types :: PyDict > >"),
+            "Optional[dict]"
+        );
     }
 
     #[test]
@@ -1138,10 +1160,22 @@ mod tests {
     fn test_rust_type_to_python_complex_nested() {
         // Complex nested types
         assert_eq!(rust_type_to_python("Vec<Vec<String>>"), "List[List[str]]");
-        assert_eq!(rust_type_to_python("HashMap<String, Vec<i32>>"), "Dict[str, List[int]]");
-        assert_eq!(rust_type_to_python("Option<Vec<String>>"), "Optional[List[str]]");
-        assert_eq!(rust_type_to_python("PyResult<Vec<HashMap<String, PyObject>>>"), "List[Dict[str, Any]]");
-        assert_eq!(rust_type_to_python("Vec<(String, PyObject)>"), "List[Tuple[str, Any]]");
+        assert_eq!(
+            rust_type_to_python("HashMap<String, Vec<i32>>"),
+            "Dict[str, List[int]]"
+        );
+        assert_eq!(
+            rust_type_to_python("Option<Vec<String>>"),
+            "Optional[List[str]]"
+        );
+        assert_eq!(
+            rust_type_to_python("PyResult<Vec<HashMap<String, PyObject>>>"),
+            "List[Dict[str, Any]]"
+        );
+        assert_eq!(
+            rust_type_to_python("Vec<(String, PyObject)>"),
+            "List[Tuple[str, Any]]"
+        );
     }
 
     #[test]
