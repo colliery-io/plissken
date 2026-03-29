@@ -223,6 +223,57 @@ test_mdbook() {
 }
 
 # =============================================================================
+# Dogfood Test (plissken's own docs with prefix)
+# =============================================================================
+
+test_dogfood() {
+    log_info "Testing dogfood: plissken's own docs with prefix..."
+
+    local DOCS_API_DIR="$PROJECT_ROOT/docs/api"
+    local NAV_FILE="$DOCS_API_DIR/_nav.yml"
+
+    # Render plissken's own docs (prefix comes from plissken.toml)
+    log_info "Rendering plissken's own docs..."
+    cd "$PROJECT_ROOT"
+    "$PLISSKEN" render . || {
+        log_error "plissken render failed"
+        return 1
+    }
+
+    # Verify _nav.yml exists
+    if [[ ! -f "$NAV_FILE" ]]; then
+        log_error "_nav.yml not generated at $NAV_FILE"
+        return 1
+    fi
+
+    # Verify all .md nav entries have api/ prefix
+    local BAD_ENTRIES
+    BAD_ENTRIES=$(grep '\.md' "$NAV_FILE" | grep -v '^#' | grep -v 'api/' || true)
+    if [[ -n "$BAD_ENTRIES" ]]; then
+        log_error "Nav entries missing 'api/' prefix:"
+        echo "$BAD_ENTRIES"
+        return 1
+    fi
+
+    log_info "All nav entries have 'api/' prefix"
+
+    # Build MkDocs site
+    log_info "Building MkDocs site with nested nav..."
+    mkdocs build || {
+        log_error "MkDocs build failed"
+        return 1
+    }
+
+    if [[ ! -d "$PROJECT_ROOT/site" ]]; then
+        log_error "MkDocs site directory not created"
+        return 1
+    fi
+
+    log_info "Dogfood test PASSED"
+    return 0
+}
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -243,6 +294,13 @@ if [[ "$RUN_MDBOOK" == "true" ]]; then
     fi
     echo
 fi
+
+# Always run dogfood test
+if ! test_dogfood; then
+    log_error "Dogfood test FAILED"
+    FAILED=1
+fi
+echo
 
 # Summary
 echo "=============================================="
