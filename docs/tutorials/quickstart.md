@@ -80,7 +80,7 @@ The static site is in `site/`, ready for deployment.
 
 ## Next Steps
 
-- [Configuration](configuration.md) - Customize your setup
-- [Python Projects](../guide/python.md) - Python-specific features
-- [Rust Projects](../guide/rust.md) - Rust-specific features
-- [Hybrid Projects](../guide/hybrid.md) - PyO3/maturin bindings
+- [Configure plissken](../how-to/configure-plissken.md) - Customize your setup
+- [Python Projects](../how-to/document-python-projects.md) - Python-specific features
+- [Rust Projects](../how-to/document-rust-projects.md) - Rust-specific features
+- [Hybrid Projects](../how-to/document-hybrid-projects.md) - PyO3/maturin bindings

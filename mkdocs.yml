@@ -66,15 +66,24 @@ extra:
 nav:
   - Home: index.md
   - Tutorials:
+    - Quickstart: tutorials/quickstart.md
     - Document a Python Project: tutorials/python-project.md
     - Document a Rust Project: tutorials/rust-project.md
     - Document a Hybrid Project: tutorials/hybrid-project.md
   - How-To Guides:
     - Install plissken: how-to/install.md
+    - Install (Detailed): how-to/install-plissken.md
+    - Configure plissken: how-to/configure-plissken.md
     - Initialize a Project: how-to/initialize-project.md
     - Configure for Different Project Types: how-to/configure-project-types.md
+    - Document Python Projects: how-to/document-python-projects.md
+    - Document Rust Projects: how-to/document-rust-projects.md
+    - Document Hybrid Projects: how-to/document-hybrid-projects.md
+    - Document a Monorepo: how-to/document-monorepo.md
+    - Integrate with an Existing Doc Site: how-to/integrate-with-existing-docs.md
     - Use mdBook Instead of MkDocs: how-to/use-mdbook.md
     - Customize Templates: how-to/customize-templates.md
+    - Customize Output: how-to/customize-output.md
     - Validate Configuration: how-to/validate-configuration.md
     - Generate the JSON Doc Model: how-to/generate-json-model.md
     - Integrate with CI/CD: how-to/ci-integration.md
@@ -86,6 +95,7 @@ nav:
     - Theme Adapter Reference: reference/theme-adapters.md
   - Explanation:
     - Architecture Overview: explanation/architecture.md
+    - How plissken Works: explanation/plissken-overview.md
     - How Cross-References Work: explanation/cross-references.md
     - How Parsing Works: explanation/parsing.md
     - Theme System Design: explanation/theme-system.md

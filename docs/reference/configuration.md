@@ -37,6 +37,7 @@ Output configuration.
 | `format` | string | `"markdown"` | Output format. Currently only `"markdown"` is supported. |
 | `path` | string | `"docs/api"` | Output directory, relative to project root. |
 | `template` | string | None | Theme template name. If omitted, falls back to the minimal theme with hardcoded hex colors. |
+| `prefix` | string | None | Path prefix for navigation entries. Prepended to all file paths in `_nav.yml` / `SUMMARY.md`. Use when rendering into a subfolder of an existing doc site. |
 
 ### `template`
 
@@ -56,6 +57,26 @@ Accepted aliases:
 
 Any unrecognized template name falls back to a minimal theme with hardcoded
 hex colors (no CSS variables).
+
+### `prefix`
+
+When rendering into a subfolder of an existing doc site, navigation file paths
+need to reflect the mount point. The `prefix` field prepends a path to all
+entries in `_nav.yml` (MkDocs) or `SUMMARY.md` (mdBook).
+
+```toml
+[output]
+path = "docs/api"
+prefix = "api"     # nav entries become api/rust/mycrate.md
+```
+
+Without prefix, nav entries are relative to the output directory:
+`rust/mycrate.md`. With `prefix = "api"`, they become `api/rust/mycrate.md` —
+correct for inclusion in a parent `mkdocs.yml` where `docs/` is the content
+root.
+
+The CLI `--prefix` flag overrides this config value. An empty string or
+trailing slashes are normalized (treated as no prefix).
 
 ---
 
@@ -157,6 +178,11 @@ Explicit mapping of module names to source types:
 
 Explicit modules override auto-discovered modules with the same name.
 
+When a module is marked as `"pyo3"` but has no corresponding Python source
+file, plissken synthesizes a Python module from the Rust PyO3 bindings. See
+[How Cross-References Work](../explanation/cross-references.md) for details on
+the synthesis algorithm and heuristic source type detection.
+
 ---
 
 ## `[links]`
@@ -204,6 +230,7 @@ version_from = "cargo"
 format = "markdown"
 path = "docs/api"
 template = "mkdocs-material"
+prefix = "api"
 
 [rust]
 crates = ["crates/core", "crates/bindings"]

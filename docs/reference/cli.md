@@ -103,6 +103,7 @@ plissken render [OPTIONS] [PATH]
 |------|-------------|
 | `-o`, `--output <DIR>` | Override the output directory from config. |
 | `-t`, `--template <NAME>` | Override the template/theme from config. Values: `mkdocs-material`, `mdbook`. |
+| `--prefix <PATH>` | Path prefix for nav entries. Prepended to all file paths in `_nav.yml` / `SUMMARY.md`. Overrides `output.prefix` from config. Example: `--prefix api` produces `api/rust/mycrate.md` instead of `rust/mycrate.md`. |
 
 ### Behavior
 
