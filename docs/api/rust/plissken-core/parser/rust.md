@@ -1,11 +1,11 @@
-# rust <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::parser::rust <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Rust source code parser using syn
 
 ## Structs
 
-### `struct RustParser`
+### `plissken-core::parser::rust::RustParser`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -55,8 +55,8 @@ Parse a Rust source file.
     pub fn parse_file(&self, path: &Path) -> crate::error::Result<RustModule> {
         use crate::error::PlisskenError;
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| PlisskenError::file_read(path, e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| PlisskenError::file_read(path, e))?;
         self.parse_str(&content, path)
     }
 ```
@@ -97,6 +97,8 @@ Parse Rust source from a string.
 
         // Extract module doc comment from inner attributes
         let doc_comment = extract_inner_doc_comments(&syntax.attrs);
+        // Parse doc comment into structured form
+        let parsed_doc = doc_comment.as_ref().map(|d| parse_rust_doc(d));
 
         // Extract items
         let items = syntax
@@ -108,6 +110,7 @@ Parse Rust source from a string.
         Ok(RustModule {
             path: path.display().to_string(),
             doc_comment,
+            parsed_doc,
             items,
             source: SourceSpan::new(
                 path.to_path_buf(),
@@ -176,10 +179,14 @@ fn extract_struct (& self , s : & ItemStruct , content : & str , path : & Path) 
             path,
         );
 
+        let doc_comment = extract_doc_comments(&s.attrs);
+        let parsed_doc = doc_comment.as_ref().map(|d| parse_rust_doc(d));
+
         RustStruct {
             name: s.ident.to_string(),
             visibility: convert_visibility(&s.vis),
-            doc_comment: extract_doc_comments(&s.attrs),
+            doc_comment,
+            parsed_doc,
             generics: extract_generics(&s.generics),
             fields: extract_fields(&s.fields),
             derives: extract_derives(&s.attrs),
@@ -212,10 +219,14 @@ fn extract_enum (& self , e : & ItemEnum , content : & str , path : & Path) -> R
             path,
         );
 
+        let doc_comment = extract_doc_comments(&e.attrs);
+        let parsed_doc = doc_comment.as_ref().map(|d| parse_rust_doc(d));
+
         RustEnum {
             name: e.ident.to_string(),
             visibility: convert_visibility(&e.vis),
-            doc_comment: extract_doc_comments(&e.attrs),
+            doc_comment,
+            parsed_doc,
             generics: extract_generics(&e.generics),
             variants: e
                 .variants
@@ -348,10 +359,14 @@ fn extract_trait (& self , t : & ItemTrait , content : & str , path : & Path) ->
             })
             .collect();
 
+        let doc_comment = extract_doc_comments(&t.attrs);
+        let parsed_doc = doc_comment.as_ref().map(|d| parse_rust_doc(d));
+
         RustTrait {
             name: t.ident.to_string(),
             visibility: convert_visibility(&t.vis),
-            doc_comment: extract_doc_comments(&t.attrs),
+            doc_comment,
+            parsed_doc,
             generics: extract_generics(&t.generics),
             bounds,
             associated_types,
@@ -497,7 +512,7 @@ fn extract_type_alias (& self , t : & ItemType , content : & str , path : & Path
 
 ## Functions
 
-### `fn convert_visibility`
+### `plissken-core::parser::rust::convert_visibility`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -532,7 +547,7 @@ fn convert_visibility(vis: &SynVisibility) -> Visibility {
 
 
 
-### `fn extract_doc_comments`
+### `plissken-core::parser::rust::extract_doc_comments`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -578,7 +593,7 @@ fn extract_doc_comments(attrs: &[Attribute]) -> Option<String> {
 
 
 
-### `fn extract_inner_doc_comments`
+### `plissken-core::parser::rust::extract_inner_doc_comments`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -624,7 +639,7 @@ fn extract_inner_doc_comments(attrs: &[Attribute]) -> Option<String> {
 
 
 
-### `fn extract_generics`
+### `plissken-core::parser::rust::extract_generics`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -675,7 +690,7 @@ fn extract_generics(generics: &Generics) -> Option<String> {
 
 
 
-### `fn extract_fields`
+### `plissken-core::parser::rust::extract_fields`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -720,7 +735,7 @@ fn extract_fields(fields: &Fields) -> Vec<RustField> {
 
 
 
-### `fn extract_derives`
+### `plissken-core::parser::rust::extract_derives`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -759,7 +774,7 @@ fn extract_derives(attrs: &[Attribute]) -> Vec<String> {
 
 
 
-### `fn extract_pyclass`
+### `plissken-core::parser::rust::extract_pyclass`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -804,7 +819,7 @@ fn extract_pyclass(attrs: &[Attribute]) -> Option<PyClassMeta> {
 
 
 
-### `fn extract_pyfunction`
+### `plissken-core::parser::rust::extract_pyfunction`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -860,7 +875,7 @@ fn extract_pyfunction(attrs: &[Attribute]) -> Option<PyFunctionMeta> {
 
 
 
-### `fn extract_function_common`
+### `plissken-core::parser::rust::extract_function_common`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -923,10 +938,14 @@ fn extract_function_common(
     let end_span = block_end.unwrap_or(&sig.fn_token.span);
     let span = get_source_span(&sig.fn_token.span, end_span, content, path);
 
+    let doc_comment = extract_doc_comments(attrs);
+    let parsed_doc = doc_comment.as_ref().map(|d| parse_rust_doc(d));
+
     RustFunction {
         name: name.to_string(),
         visibility: convert_visibility(vis),
-        doc_comment: extract_doc_comments(attrs),
+        doc_comment,
+        parsed_doc,
         generics: extract_generics(&sig.generics),
         signature_str,
         signature: RustFunctionSig {
@@ -946,7 +965,7 @@ fn extract_function_common(
 
 
 
-### `fn get_source_span`
+### `plissken-core::parser::rust::get_source_span`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

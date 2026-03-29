@@ -142,6 +142,10 @@ enum Commands {
         /// Theme template (e.g., "mkdocs-material", "mdbook")
         #[arg(short, long)]
         template: Option<String>,
+
+        /// Path prefix for nav entries (e.g., "api" makes nav entries like "api/rust/mycrate.md")
+        #[arg(long)]
+        prefix: Option<String>,
     },
     /// Initialize a new plissken.toml configuration file
     Init {
@@ -175,7 +179,8 @@ fn main() -> Result<()> {
             path,
             output,
             template,
-        } => render(&path, output, template, verbosity),
+            prefix,
+        } => render(&path, output, template, prefix, verbosity),
         Commands::Init { force } => init(force, verbosity),
         Commands::Check { path, format } => check(&path, &format, verbosity),
     }
@@ -261,6 +266,7 @@ fn render(
     path: &str,
     output_override: Option<PathBuf>,
     template_override: Option<String>,
+    prefix_override: Option<String>,
     verbosity: u8,
 ) -> Result<()> {
     // Load configuration
@@ -269,7 +275,11 @@ fn render(
     // Resolve output settings
     let output_dir = resolve_output_directory(&config, &project_root, output_override);
     let template = template_override.or_else(|| config.output.template.clone());
+    let prefix = resolve_prefix(prefix_override, &config);
     log_output_settings(&output_dir, template.as_deref(), verbosity);
+    if let Some(ref p) = prefix {
+        verbose!(1, verbosity, "Nav prefix: {}", p);
+    }
 
     // Parse and merge modules
     let (python_modules, rust_modules, cross_refs) =
@@ -299,6 +309,7 @@ fn render(
         &config,
         &output_dir,
         template.as_deref(),
+        prefix.as_deref(),
         verbosity,
     )?;
 
@@ -347,6 +358,14 @@ fn resolve_output_directory(
             }
         })
         .unwrap_or_else(|| project_root.join(&config.output.path))
+}
+
+/// Resolve prefix from CLI override and config, normalizing trailing slashes.
+/// CLI `--prefix` wins over config `output.prefix`. Empty string treated as None.
+fn resolve_prefix(prefix_override: Option<String>, config: &Config) -> Option<String> {
+    let raw = prefix_override.or_else(|| config.output.prefix.clone());
+    raw.map(|p| p.trim_end_matches('/').to_string())
+        .filter(|p| !p.is_empty())
 }
 
 /// Log output settings at appropriate verbosity level
@@ -618,6 +637,7 @@ fn write_rendered_pages(
 }
 
 /// Generate SSG-specific files (navigation, config, CSS)
+#[allow(clippy::too_many_arguments)]
 fn generate_ssg_files(
     module_renderer: &ModuleRenderer,
     python_modules: &[PythonModule],
@@ -625,6 +645,7 @@ fn generate_ssg_files(
     config: &Config,
     output_dir: &Path,
     template: Option<&str>,
+    prefix: Option<&str>,
     verbosity: u8,
 ) -> Result<usize> {
     let mut files_written = 0;
@@ -632,7 +653,8 @@ fn generate_ssg_files(
 
     if is_mdbook {
         // Generate mdBook SUMMARY.md
-        let summary = module_renderer.generate_mdbook_summary(python_modules, rust_modules);
+        let summary =
+            module_renderer.generate_mdbook_summary(python_modules, rust_modules, prefix);
         let summary_path = output_dir.join("src/SUMMARY.md");
         if let Some(parent) = summary_path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -662,7 +684,7 @@ fn generate_ssg_files(
         files_written += 1;
     } else {
         // Generate MkDocs navigation YAML
-        let nav_yaml = module_renderer.generate_nav_yaml(python_modules, rust_modules);
+        let nav_yaml = module_renderer.generate_nav_yaml(python_modules, rust_modules, prefix);
         let nav_path = output_dir.join("_nav.yml");
         std::fs::write(&nav_path, &nav_yaml)
             .with_context(|| format!("Failed to write nav file: {}", nav_path.display()))?;

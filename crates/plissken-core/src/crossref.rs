@@ -754,6 +754,7 @@ mod tests {
                 format: "markdown".to_string(),
                 path: "docs".into(),
                 template: None,
+                prefix: None,
             },
             rust: Some(RustConfig {
                 crates: vec![".".into()],

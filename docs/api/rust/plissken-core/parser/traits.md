@@ -1,4 +1,4 @@
-# traits <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::parser::traits <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Parser trait and related types for language-agnostic parsing.
@@ -8,7 +8,7 @@ for parsing source code from different languages.
 
 ## Enums
 
-### `enum ParserLanguage` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::parser::traits::ParserLanguage` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Language identifier for parsers.
@@ -20,7 +20,7 @@ Language identifier for parsers.
 
 
 
-### `enum Module` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::parser::traits::Module` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 A parsed module, either Rust or Python.
@@ -37,7 +37,7 @@ the specific module information for each language.
 
 ## Functions
 
-### `fn create_parser`
+### `plissken-core::parser::traits::create_parser`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -73,7 +73,7 @@ pub fn create_parser(language: ParserLanguage) -> Box<dyn Parser> {
 
 
 
-### `fn parser_for_extension`
+### `plissken-core::parser::traits::parser_for_extension`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 

@@ -6,6 +6,7 @@ version_from = "cargo"
 format = "markdown"
 path = "docs/api"
 template = "mkdocs-material"
+prefix = "api"
 
 [rust]
 crates = ["crates/plissken-cli", "crates/plissken-core"]

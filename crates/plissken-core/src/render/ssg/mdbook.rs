@@ -1,28 +1,46 @@
 //! mdBook adapter implementation
 
-use super::traits::{SSGAdapter, python_nav_entries, rust_nav_entries};
+use super::traits::{
+    NavNode, SSGAdapter, build_nav_tree, python_nav_entries, rust_nav_entries,
+};
 use crate::model::{PythonModule, RustModule};
 
 /// mdBook adapter.
 ///
 /// Generates Markdown SUMMARY.md navigation and book.toml configuration.
+/// Nested modules render as indented entries for collapsible sidebar sections.
 ///
-/// # Navigation Format (Inline)
+/// # Navigation Format
 ///
-/// All content is rendered inline in single module files:
 /// ```markdown
 /// # Summary
 ///
 /// # Python
 ///
 /// - [pysnake](pysnake.md)
+///   - [handlers](pysnake/handlers.md)
 ///
 /// # Rust
 ///
 /// - [rustscale](rust/rustscale.md)
-///   - [rustscale::config](rust/rustscale/config.md)
+///   - [config](rust/rustscale/config.md)
 /// ```
 pub struct MdBookAdapter;
+
+/// Render a list of NavNodes as indented mdBook SUMMARY.md entries.
+fn render_md_nodes(nodes: &[NavNode], indent: usize) -> String {
+    let mut md = String::new();
+    let pad = "  ".repeat(indent);
+
+    for node in nodes {
+        md.push_str(&format!("{}- [{}]({})\n", pad, node.name, node.file_path));
+        if node.is_branch() {
+            md.push_str(&render_md_nodes(&node.children, indent + 1));
+        }
+    }
+
+    md
+}
 
 impl SSGAdapter for MdBookAdapter {
     fn name(&self) -> &'static str {
@@ -37,7 +55,12 @@ impl SSGAdapter for MdBookAdapter {
         "SUMMARY.md"
     }
 
-    fn generate_nav(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String {
+    fn generate_nav(
+        &self,
+        python_modules: &[PythonModule],
+        rust_modules: &[RustModule],
+        prefix: Option<&str>,
+    ) -> String {
         let mut summary = String::new();
 
         summary.push_str("# Summary\n\n");
@@ -45,29 +68,17 @@ impl SSGAdapter for MdBookAdapter {
         // Python section
         if !python_modules.is_empty() {
             summary.push_str("# Python\n\n");
-            for entry in python_nav_entries(python_modules) {
-                let indent = "  ".repeat(entry.depth);
-                summary.push_str(&format!(
-                    "{}- [{}]({})\n",
-                    indent,
-                    entry.path,
-                    entry.file_path.display()
-                ));
-            }
+            let entries = python_nav_entries(python_modules);
+            let tree = build_nav_tree(&entries, prefix, ".");
+            summary.push_str(&render_md_nodes(&tree, 0));
         }
 
         // Rust section
         if !rust_modules.is_empty() {
             summary.push_str("\n# Rust\n\n");
-            for entry in rust_nav_entries(rust_modules) {
-                let indent = "  ".repeat(entry.depth);
-                summary.push_str(&format!(
-                    "{}- [{}]({})\n",
-                    indent,
-                    entry.path,
-                    entry.file_path.display()
-                ));
-            }
+            let entries = rust_nav_entries(rust_modules);
+            let tree = build_nav_tree(&entries, prefix, "::");
+            summary.push_str(&render_md_nodes(&tree, 0));
         }
 
         summary
@@ -148,7 +159,7 @@ mod tests {
     #[test]
     fn test_generate_nav_empty() {
         let adapter = MdBookAdapter;
-        let nav = adapter.generate_nav(&[], &[]);
+        let nav = adapter.generate_nav(&[], &[], None);
         assert!(nav.contains("# Summary"));
         assert!(!nav.contains("# Python"));
         assert!(!nav.contains("# Rust"));
@@ -158,7 +169,7 @@ mod tests {
     fn test_generate_nav_python_only() {
         let adapter = MdBookAdapter;
         let module = PythonModule::test("mymodule");
-        let nav = adapter.generate_nav(&[module], &[]);
+        let nav = adapter.generate_nav(&[module], &[], None);
 
         assert!(nav.contains("# Summary"));
         assert!(nav.contains("# Python"));
@@ -170,7 +181,7 @@ mod tests {
     fn test_generate_nav_rust_only() {
         let adapter = MdBookAdapter;
         let module = RustModule::test("mycrate");
-        let nav = adapter.generate_nav(&[], &[module]);
+        let nav = adapter.generate_nav(&[], &[module], None);
 
         assert!(nav.contains("# Summary"));
         assert!(nav.contains("# Rust"));
@@ -208,5 +219,36 @@ mod tests {
         assert!(css.contains("python/"));
         assert!(css.contains("rust/"));
         assert!(css.contains("display: none"));
+    }
+
+    #[test]
+    fn test_generate_nav_with_prefix_python() {
+        let adapter = MdBookAdapter;
+        let module = PythonModule::test("mymodule");
+        let nav = adapter.generate_nav(&[module], &[], Some("api"));
+
+        assert!(nav.contains("# Python"));
+        assert!(nav.contains("[mymodule](api/mymodule.md)"));
+    }
+
+    #[test]
+    fn test_generate_nav_with_prefix_rust() {
+        let adapter = MdBookAdapter;
+        let module = RustModule::test("mycrate");
+        let nav = adapter.generate_nav(&[], &[module], Some("api/reference"));
+
+        assert!(nav.contains("# Rust"));
+        assert!(nav.contains("[mycrate](api/reference/rust/mycrate.md)"));
+    }
+
+    #[test]
+    fn test_generate_nav_none_prefix_unchanged() {
+        let adapter = MdBookAdapter;
+        let module = RustModule::test("mycrate");
+        let nav = adapter.generate_nav(&[], &[module], None);
+
+        assert!(nav.contains("[mycrate](rust/mycrate.md)"));
+        // No prefix — path should not start with /
+        assert!(!nav.contains("(/rust/"));
     }
 }

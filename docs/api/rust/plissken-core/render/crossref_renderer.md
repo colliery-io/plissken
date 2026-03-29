@@ -1,4 +1,4 @@
-# crossref_renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::crossref_renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Cross-reference link generation for Python-Rust documentation
@@ -8,7 +8,7 @@ Python items and their Rust implementations, and vice versa.
 
 ## Structs
 
-### `struct CrossRefLink`
+### `plissken-core::render::crossref_renderer::CrossRefLink`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -80,7 +80,7 @@ Render as a Markdown link with relationship indicator
 
 ## Enums
 
-### `enum Language` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::render::crossref_renderer::Language` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Language enum for determining link direction
@@ -94,7 +94,7 @@ Language enum for determining link direction
 
 ## Functions
 
-### `fn link_to_rust`
+### `plissken-core::render::crossref_renderer::link_to_rust`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -148,7 +148,7 @@ pub fn link_to_rust(rust_ref: &RustItemRef, from_python_path: &str) -> String {
 
 
 
-### `fn link_to_python`
+### `plissken-core::render::crossref_renderer::link_to_python`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -202,7 +202,7 @@ pub fn link_to_python(python_path: &str, from_rust_path: &str) -> String {
 
 
 
-### `fn crossref_link`
+### `plissken-core::render::crossref_renderer::crossref_link`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -259,7 +259,7 @@ pub fn crossref_link(xref: &CrossRef, from_path: &str, from_language: Language) 
 
 
 
-### `fn render_rust_impl_details`
+### `plissken-core::render::crossref_renderer::render_rust_impl_details`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -293,7 +293,7 @@ pub fn render_rust_impl_details(rust_ref: &RustItemRef, from_python_path: &str) 
 
 
 
-### `fn render_python_exposure_details`
+### `plissken-core::render::crossref_renderer::render_python_exposure_details`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -327,7 +327,7 @@ pub fn render_python_exposure_details(python_path: &str, from_rust_path: &str) -
 
 
 
-### `fn rust_path_to_file_path`
+### `plissken-core::render::crossref_renderer::rust_path_to_file_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -353,7 +353,7 @@ fn rust_path_to_file_path(rust_path: &str) -> String {
 
 
 
-### `fn python_path_to_file_path`
+### `plissken-core::render::crossref_renderer::python_path_to_file_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -379,7 +379,7 @@ fn python_path_to_file_path(python_path: &str) -> String {
 
 
 
-### `fn split_python_path`
+### `plissken-core::render::crossref_renderer::split_python_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -409,7 +409,7 @@ fn split_python_path(path: &str) -> (String, String) {
 
 
 
-### `fn split_rust_path`
+### `plissken-core::render::crossref_renderer::split_rust_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -439,7 +439,7 @@ fn split_rust_path(path: &str) -> (String, String) {
 
 
 
-### `fn item_to_anchor`
+### `plissken-core::render::crossref_renderer::item_to_anchor`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -465,7 +465,7 @@ fn item_to_anchor(name: &str, item_type: &str) -> String {
 
 
 
-### `fn compute_relative_path`
+### `plissken-core::render::crossref_renderer::compute_relative_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

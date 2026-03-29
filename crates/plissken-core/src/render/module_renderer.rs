@@ -11,7 +11,6 @@ use crate::model::{
 };
 use crate::render::docstring_renderer::render_docstring;
 use crate::render::module::{CrossRefLinker, PageLayout};
-use crate::render::ssg::{python_nav_entries, rust_nav_entries};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -1539,8 +1538,9 @@ impl<'a> ModuleRenderer<'a> {
         adapter: &dyn super::ssg::SSGAdapter,
         python_modules: &[PythonModule],
         rust_modules: &[RustModule],
+        prefix: Option<&str>,
     ) -> String {
-        adapter.generate_nav(python_modules, rust_modules)
+        adapter.generate_nav(python_modules, rust_modules, prefix)
     }
 
     /// Generate SSG config file using an adapter.
@@ -1581,45 +1581,11 @@ impl<'a> ModuleRenderer<'a> {
         &self,
         python_modules: &[PythonModule],
         rust_modules: &[RustModule],
+        prefix: Option<&str>,
     ) -> String {
-        let mut yaml = String::new();
-
-        // Add recommended toc setting
-        yaml.push_str("# Recommended: add to markdown_extensions in mkdocs.yml\n");
-        yaml.push_str("# to hide method-level entries from the table of contents:\n");
-        yaml.push_str("#\n");
-        yaml.push_str("# markdown_extensions:\n");
-        yaml.push_str("#   - toc:\n");
-        yaml.push_str("#       toc_depth: 2\n");
-        yaml.push('\n');
-
-        yaml.push_str("nav:\n");
-
-        // Python section
-        if !python_modules.is_empty() {
-            yaml.push_str("  - Python:\n");
-            for entry in python_nav_entries(python_modules) {
-                yaml.push_str(&format!(
-                    "    - {}: {}\n",
-                    entry.path,
-                    entry.file_path.display()
-                ));
-            }
-        }
-
-        // Rust section
-        if !rust_modules.is_empty() {
-            yaml.push_str("  - Rust:\n");
-            for entry in rust_nav_entries(rust_modules) {
-                yaml.push_str(&format!(
-                    "    - {}: {}\n",
-                    entry.path,
-                    entry.file_path.display()
-                ));
-            }
-        }
-
-        yaml
+        use crate::render::ssg::MkDocsAdapter;
+        use crate::render::ssg::SSGAdapter;
+        MkDocsAdapter.generate_nav(python_modules, rust_modules, prefix)
     }
 
     // =========================================================================
@@ -1646,39 +1612,11 @@ impl<'a> ModuleRenderer<'a> {
         &self,
         python_modules: &[PythonModule],
         rust_modules: &[RustModule],
+        prefix: Option<&str>,
     ) -> String {
-        let mut summary = String::new();
-        summary.push_str("# Summary\n\n");
-
-        // Python section
-        if !python_modules.is_empty() {
-            summary.push_str("# Python\n\n");
-            for entry in python_nav_entries(python_modules) {
-                let indent = "  ".repeat(entry.depth);
-                summary.push_str(&format!(
-                    "{}- [{}]({})\n",
-                    indent,
-                    entry.path,
-                    entry.file_path.display()
-                ));
-            }
-        }
-
-        // Rust section
-        if !rust_modules.is_empty() {
-            summary.push_str("\n# Rust\n\n");
-            for entry in rust_nav_entries(rust_modules) {
-                let indent = "  ".repeat(entry.depth);
-                summary.push_str(&format!(
-                    "{}- [{}]({})\n",
-                    indent,
-                    entry.path,
-                    entry.file_path.display()
-                ));
-            }
-        }
-
-        summary
+        use crate::render::ssg::MdBookAdapter;
+        use crate::render::ssg::SSGAdapter;
+        MdBookAdapter.generate_nav(python_modules, rust_modules, prefix)
     }
 
     /// Generate book.toml configuration for mdBook

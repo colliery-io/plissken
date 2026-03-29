@@ -1,4 +1,4 @@
-# docstring <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::docstring <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Docstring parser for Google, NumPy, and Rust doc comment styles
@@ -12,7 +12,7 @@ Supported formats:
 
 ## Enums
 
-### `enum DocstringStyle` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+### `plissken-core::docstring::DocstringStyle` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
 #### Variants
@@ -25,7 +25,7 @@ Supported formats:
 
 ## Functions
 
-### `fn parse_docstring`
+### `plissken-core::docstring::parse_docstring`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -61,7 +61,7 @@ pub fn parse_docstring(docstring: &str) -> ParsedDocstring {
 
 
 
-### `fn detect_style`
+### `plissken-core::docstring::detect_style`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -117,7 +117,7 @@ fn detect_style(docstring: &str) -> DocstringStyle {
 
 
 
-### `fn parse_google_style`
+### `plissken-core::docstring::parse_google_style`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -196,7 +196,7 @@ fn parse_google_style(docstring: &str) -> ParsedDocstring {
 
 
 
-### `fn parse_numpy_style`
+### `plissken-core::docstring::parse_numpy_style`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -278,7 +278,7 @@ fn parse_numpy_style(docstring: &str) -> ParsedDocstring {
 
 
 
-### `fn parse_plain`
+### `plissken-core::docstring::parse_plain`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -312,7 +312,7 @@ fn parse_plain(docstring: &str) -> ParsedDocstring {
 
 
 
-### `fn extract_summary_and_description`
+### `plissken-core::docstring::extract_summary_and_description`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -397,7 +397,7 @@ fn extract_summary_and_description(lines: &[&str]) -> (Option<String>, Option<St
 
 
 
-### `fn is_known_section`
+### `plissken-core::docstring::is_known_section`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -442,7 +442,7 @@ fn is_known_section(name: &str) -> bool {
 
 
 
-### `fn parse_google_params`
+### `plissken-core::docstring::parse_google_params`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -537,7 +537,7 @@ fn parse_google_params(lines: &[&str], start: usize) -> (Vec<ParamDoc>, usize) {
 
 
 
-### `fn parse_param_line`
+### `plissken-core::docstring::parse_param_line`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -586,7 +586,7 @@ fn parse_param_line(line: &str) -> (String, Option<String>, String) {
 
 
 
-### `fn parse_google_returns`
+### `plissken-core::docstring::parse_google_returns`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -657,7 +657,7 @@ fn parse_google_returns(lines: &[&str], start: usize) -> (Option<ReturnDoc>, usi
 
 
 
-### `fn parse_google_raises`
+### `plissken-core::docstring::parse_google_raises`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -739,7 +739,7 @@ fn parse_google_raises(lines: &[&str], start: usize) -> (Vec<RaisesDoc>, usize) 
 
 
 
-### `fn parse_google_examples`
+### `plissken-core::docstring::parse_google_examples`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -757,22 +757,31 @@ Parse Google-style Examples section
 fn parse_google_examples(lines: &[&str], start: usize) -> (Vec<String>, usize) {
     let mut examples = Vec::new();
     let mut current_example = Vec::new();
+    let mut in_code_block = false;
     let mut i = start;
 
     while i < lines.len() {
         let line = lines[i];
         let trimmed = line.trim();
 
-        // Check for new section header
-        if trimmed.ends_with(':') && !trimmed.contains(' ') {
+        // Check for new section header (but not if we're in a code block)
+        if !in_code_block && trimmed.ends_with(':') && !trimmed.contains(' ') {
             let section = &trimmed[..trimmed.len() - 1].to_lowercase();
             if is_known_section(section) {
                 break;
             }
         }
 
-        // Empty line might separate examples
-        if trimmed.is_empty() {
+        // Track code fence blocks
+        if trimmed.starts_with("```") {
+            in_code_block = !in_code_block;
+            current_example.push(line.to_string());
+            i += 1;
+            continue;
+        }
+
+        // Empty line outside code block might separate examples
+        if trimmed.is_empty() && !in_code_block {
             if !current_example.is_empty() {
                 examples.push(current_example.join("\n"));
                 current_example.clear();
@@ -797,7 +806,7 @@ fn parse_google_examples(lines: &[&str], start: usize) -> (Vec<String>, usize) {
 
 
 
-### `fn parse_numpy_params`
+### `plissken-core::docstring::parse_numpy_params`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -882,7 +891,7 @@ fn parse_numpy_params(lines: &[&str], start: usize) -> (Vec<ParamDoc>, usize) {
 
 
 
-### `fn parse_numpy_returns`
+### `plissken-core::docstring::parse_numpy_returns`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -957,7 +966,7 @@ fn parse_numpy_returns(lines: &[&str], start: usize) -> (Option<ReturnDoc>, usiz
 
 
 
-### `fn parse_numpy_raises`
+### `plissken-core::docstring::parse_numpy_raises`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1029,7 +1038,7 @@ fn parse_numpy_raises(lines: &[&str], start: usize) -> (Vec<RaisesDoc>, usize) {
 
 
 
-### `fn parse_numpy_examples`
+### `plissken-core::docstring::parse_numpy_examples`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1054,7 +1063,7 @@ fn parse_numpy_examples(lines: &[&str], start: usize) -> (Vec<String>, usize) {
 
 
 
-### `fn parse_rust_doc`
+### `plissken-core::docstring::parse_rust_doc`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1171,7 +1180,7 @@ pub fn parse_rust_doc(doc: &str) -> ParsedDocstring {
 
 
 
-### `fn extract_rust_summary`
+### `plissken-core::docstring::extract_rust_summary`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1241,7 +1250,7 @@ fn extract_rust_summary(lines: &[&str]) -> (Option<String>, Option<String>, usiz
 
 
 
-### `fn parse_markdown_header`
+### `plissken-core::docstring::parse_markdown_header`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1276,7 +1285,7 @@ fn parse_markdown_header(line: &str) -> Option<&str> {
 
 
 
-### `fn parse_rust_arguments`
+### `plissken-core::docstring::parse_rust_arguments`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1370,7 +1379,7 @@ fn parse_rust_arguments(lines: &[&str], start: usize) -> (Vec<ParamDoc>, usize) 
 
 
 
-### `fn parse_rust_param_line`
+### `plissken-core::docstring::parse_rust_param_line`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1437,7 +1446,7 @@ fn parse_rust_param_line(line: &str) -> Option<(String, String)> {
 
 
 
-### `fn parse_rust_returns`
+### `plissken-core::docstring::parse_rust_returns`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1473,7 +1482,7 @@ fn parse_rust_returns(lines: &[&str], start: usize) -> (Option<ReturnDoc>, usize
 
 
 
-### `fn parse_rust_errors`
+### `plissken-core::docstring::parse_rust_errors`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1588,7 +1597,7 @@ fn parse_rust_errors(lines: &[&str], start: usize, error_kind: &str) -> (Vec<Rai
 
 
 
-### `fn parse_rust_examples`
+### `plissken-core::docstring::parse_rust_examples`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1652,7 +1661,7 @@ fn parse_rust_examples(lines: &[&str], start: usize) -> (Vec<String>, usize) {
 
 
 
-### `fn parse_rust_section_text`
+### `plissken-core::docstring::parse_rust_section_text`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

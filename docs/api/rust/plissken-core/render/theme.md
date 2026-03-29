@@ -1,4 +1,4 @@
-# theme <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::theme <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Theme adapters for SSG-native CSS variable integration
@@ -21,7 +21,7 @@ let style = format!("background: {}; color: {}", adapter.code_bg(), adapter.code
 
 ## Structs
 
-### `struct MkDocsMaterial`
+### `plissken-core::render::theme::MkDocsMaterial`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -36,7 +36,7 @@ Reference: <https://squidfunk.github.io/mkdocs-material/setup/changing-the-color
 
 
 
-### `struct MdBook`
+### `plissken-core::render::theme::MdBook`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -51,7 +51,7 @@ Reference: <https://rust-lang.github.io/mdBook/format/theme/index.html>
 
 
 
-### `struct Minimal`
+### `plissken-core::render::theme::Minimal`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -68,7 +68,7 @@ Uses a light theme with accessible contrast ratios.
 
 ## Functions
 
-### `fn get_theme_adapter`
+### `plissken-core::render::theme::get_theme_adapter`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 

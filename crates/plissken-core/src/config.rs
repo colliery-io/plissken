@@ -148,6 +148,10 @@ pub struct OutputConfig {
     pub path: PathBuf,
     #[serde(default)]
     pub template: Option<String>,
+    /// Path prefix for nav entries when rendering into a subfolder of an existing doc site.
+    /// E.g., `prefix = "api"` makes nav entries like `api/rust/mycrate.md` instead of `rust/mycrate.md`.
+    #[serde(default)]
+    pub prefix: Option<String>,
 }
 
 fn default_format() -> String {
@@ -504,6 +508,7 @@ mod tests {
                 format: "markdown".to_string(),
                 path: PathBuf::from("docs/api"),
                 template: None,
+                prefix: None,
             },
             rust: None,
             python: None,
@@ -871,5 +876,45 @@ python-source = "python"
         let config = config.with_inferred_defaults(temp_dir.path());
         // pyproject.toml name should take precedence
         assert_eq!(config.project.name, "pyproject-name");
+    }
+
+    #[test]
+    fn test_output_config_prefix_deserialization() {
+        let toml_str = r#"
+            [project]
+            name = "test"
+
+            [output]
+            prefix = "api/reference"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.output.prefix, Some("api/reference".to_string()));
+    }
+
+    #[test]
+    fn test_output_config_prefix_default_none() {
+        let toml_str = r#"
+            [project]
+            name = "test"
+
+            [output]
+            format = "markdown"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.output.prefix, None);
+    }
+
+    #[test]
+    fn test_output_config_prefix_empty_string() {
+        let toml_str = r#"
+            [project]
+            name = "test"
+
+            [output]
+            prefix = ""
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        // Empty string deserializes as Some(""), but resolve_prefix in CLI normalizes to None
+        assert_eq!(config.output.prefix, Some("".to_string()));
     }
 }

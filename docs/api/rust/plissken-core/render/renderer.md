@@ -1,4 +1,4 @@
-# renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Tera-based documentation renderer
@@ -8,7 +8,7 @@ with theme adapters to generate styled documentation output.
 
 ## Structs
 
-### `struct Renderer`
+### `plissken-core::render::renderer::Renderer`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -78,15 +78,28 @@ Create a new renderer with the specified template theme.
 
         // Load templates from the template loader (supports user overrides)
         tera.add_raw_templates(vec![
-            ("partials/badge.html", template_loader.get("partials/badge.html")?),
-            ("partials/code_block.html", template_loader.get("partials/code_block.html")?),
-            ("partials/signature.html", template_loader.get("partials/signature.html")?),
+            (
+                "partials/badge.html",
+                template_loader.get("partials/badge.html")?,
+            ),
+            (
+                "partials/code_block.html",
+                template_loader.get("partials/code_block.html")?,
+            ),
+            (
+                "partials/signature.html",
+                template_loader.get("partials/signature.html")?,
+            ),
             ("module.html", template_loader.get("module.html")?),
         ])?;
 
         let theme = get_theme_adapter(template);
 
-        Ok(Self { tera, theme, template_loader })
+        Ok(Self {
+            tera,
+            theme,
+            template_loader,
+        })
     }
 ```
 
@@ -556,7 +569,7 @@ The theme values are automatically injected into the context.
 
 
 
-### `struct ThemeContext`
+### `plissken-core::render::renderer::ThemeContext`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

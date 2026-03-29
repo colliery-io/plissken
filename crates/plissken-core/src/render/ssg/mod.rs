@@ -26,7 +26,10 @@ mod traits;
 
 pub use mdbook::MdBookAdapter;
 pub use mkdocs::MkDocsAdapter;
-pub use traits::{NavEntry, SSGAdapter, python_nav_entries, rust_nav_entries};
+pub use traits::{
+    NavEntry, NavNode, SSGAdapter, build_nav_tree, prefix_path, python_nav_entries,
+    rust_nav_entries,
+};
 
 /// Get an SSG adapter for the given template name.
 ///
@@ -93,5 +96,19 @@ mod tests {
     fn test_get_ssg_adapter_unknown() {
         let adapter = get_ssg_adapter(Some("unknown-ssg"));
         assert_eq!(adapter.name(), "mkdocs"); // defaults to mkdocs
+    }
+
+    #[test]
+    fn test_prefix_path_with_prefix() {
+        assert_eq!(prefix_path(Some("api"), "rust/mycrate.md"), "api/rust/mycrate.md");
+        assert_eq!(
+            prefix_path(Some("api/reference"), "rust/mycrate.md"),
+            "api/reference/rust/mycrate.md"
+        );
+    }
+
+    #[test]
+    fn test_prefix_path_without_prefix() {
+        assert_eq!(prefix_path(None, "rust/mycrate.md"), "rust/mycrate.md");
     }
 }

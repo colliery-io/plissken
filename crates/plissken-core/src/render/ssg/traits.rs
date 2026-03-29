@@ -3,6 +3,15 @@
 use crate::model::{PythonModule, RustModule};
 use std::path::PathBuf;
 
+/// Prepend an optional prefix to a file path string.
+/// Returns `"prefix/path"` if prefix is Some, or `"path"` unchanged if None.
+pub fn prefix_path(prefix: Option<&str>, path: &str) -> String {
+    match prefix {
+        Some(p) => format!("{}/{}", p, path),
+        None => path.to_string(),
+    }
+}
+
 /// Entry for a module in the navigation
 pub struct NavEntry {
     /// Module path (dotted for Python, :: for Rust)
@@ -75,6 +84,77 @@ pub fn rust_nav_entries(modules: &[RustModule]) -> Vec<NavEntry> {
         .collect()
 }
 
+/// A node in the hierarchical navigation tree.
+///
+/// Leaf nodes have no children and render as simple links.
+/// Branch nodes have children and render as collapsible sections
+/// with their own page as the section index.
+pub struct NavNode {
+    /// Short display name (last segment of the module path)
+    pub name: String,
+    /// File path for this node's page (with prefix applied)
+    pub file_path: String,
+    /// Child nodes
+    pub children: Vec<NavNode>,
+}
+
+impl NavNode {
+    /// Whether this node has child nodes (is a section, not a leaf).
+    pub fn is_branch(&self) -> bool {
+        !self.children.is_empty()
+    }
+}
+
+/// Extract the short display name (last segment) from a module path.
+fn short_name(full_path: &str, separator: &str) -> String {
+    full_path
+        .rsplit_once(separator)
+        .map(|(_, last)| last.to_string())
+        .unwrap_or_else(|| full_path.to_string())
+}
+
+/// Build a hierarchical navigation tree from a sorted flat list of entries.
+///
+/// Entries must be sorted alphabetically. The `separator` is `"::"` for Rust
+/// and `"."` for Python. An optional `prefix` is prepended to all file paths.
+///
+/// Modules whose path is a prefix of subsequent entries become branch nodes
+/// (collapsible sections). Modules with no children become leaf nodes.
+pub fn build_nav_tree(entries: &[NavEntry], prefix: Option<&str>, separator: &str) -> Vec<NavNode> {
+    let mut nodes = Vec::new();
+    let mut i = 0;
+
+    while i < entries.len() {
+        let entry = &entries[i];
+        let file_path = prefix_path(prefix, &entry.file_path.display().to_string());
+        let name = short_name(&entry.path, separator);
+
+        // Collect children: entries whose path starts with this entry's path + separator
+        let child_prefix = format!("{}{}", entry.path, separator);
+        let mut children_end = i + 1;
+        while children_end < entries.len() && entries[children_end].path.starts_with(&child_prefix)
+        {
+            children_end += 1;
+        }
+
+        let children = if children_end > i + 1 {
+            build_nav_tree(&entries[i + 1..children_end], prefix, separator)
+        } else {
+            Vec::new()
+        };
+
+        nodes.push(NavNode {
+            name,
+            file_path,
+            children,
+        });
+
+        i = children_end;
+    }
+
+    nodes
+}
+
 /// Adapter for static site generator output.
 ///
 /// This trait abstracts the differences between static site generators,
@@ -106,7 +186,16 @@ pub trait SSGAdapter: Send + Sync {
     /// Returns the navigation content in the SSG's expected format:
     /// - MkDocs: YAML format for the `nav:` section
     /// - mdBook: Markdown format for SUMMARY.md
-    fn generate_nav(&self, python_modules: &[PythonModule], rust_modules: &[RustModule]) -> String;
+    ///
+    /// The optional `prefix` is prepended to all file paths in nav entries,
+    /// enabling output to be mounted in a subfolder of an existing doc site.
+    /// E.g., `prefix = Some("api")` produces `api/rust/mycrate.md` instead of `rust/mycrate.md`.
+    fn generate_nav(
+        &self,
+        python_modules: &[PythonModule],
+        rust_modules: &[RustModule],
+        prefix: Option<&str>,
+    ) -> String;
 
     /// Generate SSG config file content.
     ///

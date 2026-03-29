@@ -294,3 +294,94 @@ def functional_clean():
 
     print("Clean complete!")
     return 0
+
+
+@flox_required(get_project_root())
+@functional()
+@angreal.command(name="dogfood", about="Test prefix rendering with plissken's own docs")
+@angreal.argument(
+    name="serve",
+    long="serve",
+    is_flag=True,
+    takes_value=False,
+    help="Start local server after building"
+)
+@angreal.argument(
+    name="open_browser",
+    long="open",
+    is_flag=True,
+    takes_value=False,
+    help="Open browser (with --serve)"
+)
+def functional_dogfood(serve=False, open_browser=False):
+    """Test prefix rendering with plissken's own docs (dogfood)."""
+    project_root = get_project_root()
+    docs_dir = os.path.join(project_root, "docs")
+    api_dir = os.path.join(docs_dir, "api")
+    nav_file = os.path.join(api_dir, "_nav.yml")
+
+    # Get plissken binary
+    plissken = get_plissken_binary()
+    if not os.path.exists(plissken):
+        print("Error: plissken not built. Run 'angreal functional build' first.")
+        return 1
+
+    # Render docs — prefix comes from plissken.toml [output] prefix = "api"
+    print("Rendering plissken's own docs with prefix...")
+    result = run_cmd([plissken, "render", ".", "-v"], cwd=project_root)
+    if result is None:
+        return 1
+    print(result.stderr)
+
+    # Verify _nav.yml exists
+    if not os.path.exists(nav_file):
+        print(f"Error: {nav_file} not generated")
+        return 1
+
+    # Verify nav entries have api/ prefix
+    with open(nav_file) as f:
+        nav_content = f.read()
+
+    # Check that all Rust nav entries have the api/ prefix
+    lines_with_paths = [
+        line.strip() for line in nav_content.splitlines()
+        if ".md" in line and not line.strip().startswith("#")
+    ]
+
+    errors = []
+    for line in lines_with_paths:
+        # Extract the path part (after the colon in YAML)
+        if ":" in line:
+            path_part = line.split(":", 1)[1].strip()
+            if not path_part.startswith("api/"):
+                errors.append(f"  Missing prefix: {line}")
+
+    if errors:
+        print("Error: Nav entries missing 'api/' prefix:")
+        for e in errors:
+            print(e)
+        return 1
+
+    print(f"Verified {len(lines_with_paths)} nav entries have 'api/' prefix!")
+
+    # Build MkDocs site to verify everything resolves
+    print("Building MkDocs site...")
+    result = run_cmd(["mkdocs", "build"], cwd=project_root)
+    if result is None:
+        return 1
+
+    site_dir = os.path.join(project_root, "site")
+    if not os.path.isdir(site_dir):
+        print("Error: MkDocs site directory not created")
+        return 1
+
+    print("Dogfood test PASSED!")
+
+    if serve:
+        print("\nStarting MkDocs server...")
+        cmd = ["mkdocs", "serve"]
+        if open_browser:
+            cmd.append("--open")
+        subprocess.run(cmd, cwd=project_root)
+
+    return 0

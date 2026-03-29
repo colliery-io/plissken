@@ -1,4 +1,4 @@
-# templates <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::templates <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Template loading with user override support
@@ -10,7 +10,7 @@ User templates take precedence over bundled defaults on a per-file basis.
 
 ## Structs
 
-### `struct TemplateLoader`
+### `plissken-core::render::templates::TemplateLoader`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -66,14 +66,14 @@ Create a new template loader.
 
 ```rust
     pub fn new(project_root: Option<&Path>) -> Self {
-        let user_dir = project_root.map(|root| {
+        let user_dir = project_root.and_then(|root| {
             let dir = root.join(".plissken").join("templates");
             if dir.exists() && dir.is_dir() {
                 Some(dir)
             } else {
                 None
             }
-        }).flatten();
+        });
 
         Self {
             bundled: Self::load_bundled(),
@@ -128,7 +128,10 @@ The template content as a string, or an error if not found.
             .map(|s| s.to_string())
             .ok_or_else(|| crate::error::PlisskenError::Template {
                 message: format!("template not found: {}", name),
-                source: tera::Error::msg(format!("template '{}' not found in bundled templates", name)),
+                source: tera::Error::msg(format!(
+                    "template '{}' not found in bundled templates",
+                    name
+                )),
             })
     }
 ```

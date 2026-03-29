@@ -1,4 +1,4 @@
-# crossref <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::crossref <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Cross-reference builder for linking Python and Rust items
@@ -8,7 +8,7 @@ implementations by matching PyO3 metadata.
 
 ## Structs
 
-### `struct CrossRefBuilder`<'a>
+### `plissken-core::crossref::CrossRefBuilder`<'a>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -28,7 +28,7 @@ Builds cross-references between Python and Rust items
 
 ## Functions
 
-### `fn build_cross_refs`
+### `plissken-core::crossref::build_cross_refs`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -57,7 +57,7 @@ pub fn build_cross_refs(
 
 
 
-### `fn synthesize_python_from_rust`
+### `plissken-core::crossref::synthesize_python_from_rust`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -118,6 +118,7 @@ pub fn synthesize_python_from_rust(
                         let class = PythonClass {
                             name: py_name.clone(),
                             docstring: s.doc_comment.clone(),
+                            parsed_doc: None,
                             bases: Vec::new(),
                             methods,
                             attributes: Vec::new(),
@@ -157,6 +158,7 @@ pub fn synthesize_python_from_rust(
     let python_module = PythonModule {
         path: module_name.to_string(),
         docstring: rust_modules.first().and_then(|m| m.doc_comment.clone()),
+        parsed_doc: None,
         items,
         source_type: SourceType::PyO3Binding,
         source: rust_modules
@@ -173,7 +175,7 @@ pub fn synthesize_python_from_rust(
 
 
 
-### `fn synthesize_python_function`
+### `plissken-core::crossref::synthesize_python_function`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -247,7 +249,7 @@ fn synthesize_python_function(rust_fn: &RustFunction, rust_path: &str) -> Python
 
 
 
-### `fn synthesize_python_method`
+### `plissken-core::crossref::synthesize_python_method`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -276,7 +278,7 @@ fn synthesize_python_method(
 
 
 
-### `fn synthesize_python_modules_from_rust`
+### `plissken-core::crossref::synthesize_python_modules_from_rust`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -348,18 +350,18 @@ pub fn synthesize_python_modules_from_rust(
         // Collect methods from pymethods impl blocks
         let mut pyclass_methods: HashMap<String, Vec<PythonFunction>> = HashMap::new();
         for item in &module.items {
-            if let RustItem::Impl(impl_block) = item {
-                if impl_block.pymethods {
-                    let methods: Vec<_> = impl_block
-                        .methods
-                        .iter()
-                        .map(|m| synthesize_python_method(m, &impl_block.target, &module.path))
-                        .collect();
-                    pyclass_methods
-                        .entry(impl_block.target.clone())
-                        .or_default()
-                        .extend(methods);
-                }
+            if let RustItem::Impl(impl_block) = item
+                && impl_block.pymethods
+            {
+                let methods: Vec<_> = impl_block
+                    .methods
+                    .iter()
+                    .map(|m| synthesize_python_method(m, &impl_block.target, &module.path))
+                    .collect();
+                pyclass_methods
+                    .entry(impl_block.target.clone())
+                    .or_default()
+                    .extend(methods);
             }
         }
 
@@ -376,6 +378,7 @@ pub fn synthesize_python_modules_from_rust(
                         let class = PythonClass {
                             name: py_name.clone(),
                             docstring: s.doc_comment.clone(),
+                            parsed_doc: None,
                             bases: Vec::new(),
                             methods,
                             attributes: Vec::new(),
@@ -415,6 +418,7 @@ pub fn synthesize_python_modules_from_rust(
             let python_module = PythonModule {
                 path: py_module_path,
                 docstring: module.doc_comment.clone(),
+                parsed_doc: None,
                 items,
                 source_type: SourceType::PyO3Binding,
                 source: module.source.clone(),
@@ -432,7 +436,7 @@ pub fn synthesize_python_modules_from_rust(
 
 
 
-### `fn rust_type_to_python`
+### `plissken-core::crossref::rust_type_to_python`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -443,40 +447,279 @@ fn rust_type_to_python (rust_type : & str) -> String
 
 Convert a Rust type to Python type hint (best effort)
 
+Handles PyO3 types, generic wrappers, and normalizes whitespace in type strings
+(e.g., `PyResult < String >` -> unwrapped to Python equivalent).
+
 <details>
 <summary>Source</summary>
 
 ```rust
 fn rust_type_to_python(rust_type: &str) -> String {
-    match rust_type {
-        "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32" | "u64" | "usize" => {
-            "int".to_string()
+    // Normalize whitespace: "PyResult < String >" -> "PyResult<String>"
+    let normalized: String = rust_type
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
+
+    rust_type_to_python_normalized(&normalized)
+}
+```
+
+</details>
+
+
+
+### `plissken-core::crossref::rust_type_to_python_normalized`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn rust_type_to_python_normalized (s : & str) -> String
+```
+
+Internal conversion after whitespace normalization
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn rust_type_to_python_normalized(s: &str) -> String {
+    // Handle tuple types first: (T1, T2, ...) -> Tuple[T1, T2, ...]
+    if s.starts_with('(') && s.ends_with(')') {
+        let inner = &s[1..s.len() - 1];
+        if inner.is_empty() {
+            return "None".to_string(); // () -> None
         }
+        let elements = split_tuple_elements(inner);
+        let converted: Vec<String> = elements
+            .iter()
+            .map(|e| rust_type_to_python_normalized(e.trim()))
+            .collect();
+        return format!("Tuple[{}]", converted.join(", "));
+    }
+
+    // Handle slice types: [T] -> List[T], with special case for [u8] -> bytes
+    if s.starts_with('[') && s.ends_with(']') {
+        let inner = &s[1..s.len() - 1];
+        if inner == "u8" {
+            return "bytes".to_string();
+        }
+        return format!("List[{}]", rust_type_to_python_normalized(inner));
+    }
+
+    // Strip path qualifiers (e.g., "pyo3::types::PyString" -> "PyString")
+    let base_type = s.rsplit("::").next().unwrap_or(s);
+
+    // Handle direct PyO3 type mappings first
+    match base_type {
+        // PyO3 primitive types
+        "PyString" => return "str".to_string(),
+        "PyList" => return "list".to_string(),
+        "PyDict" => return "dict".to_string(),
+        "PyTuple" => return "tuple".to_string(),
+        "PySet" => return "set".to_string(),
+        "PyFrozenSet" => return "frozenset".to_string(),
+        "PyBytes" => return "bytes".to_string(),
+        "PyByteArray" => return "bytearray".to_string(),
+        "PyInt" | "PyLong" => return "int".to_string(),
+        "PyFloat" => return "float".to_string(),
+        "PyBool" => return "bool".to_string(),
+        "PyNone" => return "None".to_string(),
+        "PyModule" => return "ModuleType".to_string(),
+        "PyType" => return "type".to_string(),
+        "PyObject" | "PyAny" => return "Any".to_string(),
+        _ => {}
+    }
+
+    // Handle the full string for generics and wrappers
+    match s {
+        // Rust primitives
+        "i8" | "i16" | "i32" | "i64" | "i128" | "isize"
+        | "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => "int".to_string(),
         "f32" | "f64" => "float".to_string(),
         "bool" => "bool".to_string(),
-        "String" | "&str" | "&String" => "str".to_string(),
+        "String" | "str" | "&str" | "&String" => "str".to_string(),
         "()" => "None".to_string(),
         "Self" => "Self".to_string(),
-        s if s.starts_with("Vec<") => {
+        "char" => "str".to_string(),
+
+        // PyO3 direct types (without path)
+        "PyObject" | "PyAny" => "Any".to_string(),
+        "PyString" => "str".to_string(),
+        "PyList" => "list".to_string(),
+        "PyDict" => "dict".to_string(),
+        "PyTuple" => "tuple".to_string(),
+        "PySet" => "set".to_string(),
+        "PyBytes" => "bytes".to_string(),
+        "PyBool" => "bool".to_string(),
+        "PyInt" | "PyLong" => "int".to_string(),
+        "PyFloat" => "float".to_string(),
+        "PyNone" => "None".to_string(),
+
+        // Generic wrappers - extract inner type
+        _ if s.starts_with("Vec<") && s.ends_with(">") => {
             let inner = &s[4..s.len() - 1];
-            format!("List[{}]", rust_type_to_python(inner))
+            format!("List[{}]", rust_type_to_python_normalized(inner))
         }
-        s if s.starts_with("Option<") => {
+        _ if s.starts_with("Option<") && s.ends_with(">") => {
             let inner = &s[7..s.len() - 1];
-            format!("Optional[{}]", rust_type_to_python(inner))
+            format!("Optional[{}]", rust_type_to_python_normalized(inner))
         }
-        s if s.starts_with("HashMap<") || s.starts_with("BTreeMap<") => {
-            // Simplified - would need proper parsing for complex types
-            "Dict[str, Any]".to_string()
+        _ if (s.starts_with("HashMap<") || s.starts_with("BTreeMap<")) && s.ends_with(">") => {
+            // Try to extract key and value types
+            let start = s.find('<').unwrap() + 1;
+            let inner = &s[start..s.len() - 1];
+            if let Some((key, val)) = split_generic_pair(inner) {
+                format!("Dict[{}, {}]", rust_type_to_python_normalized(key), rust_type_to_python_normalized(val))
+            } else {
+                "Dict[str, Any]".to_string()
+            }
         }
-        s if s.starts_with("PyResult<") => {
+        _ if (s.starts_with("HashSet<") || s.starts_with("BTreeSet<")) && s.ends_with(">") => {
+            let start = s.find('<').unwrap() + 1;
+            let inner = &s[start..s.len() - 1];
+            format!("Set[{}]", rust_type_to_python_normalized(inner))
+        }
+
+        // PyO3 wrappers - unwrap to inner type
+        _ if s.starts_with("PyResult<") && s.ends_with(">") => {
             let inner = &s[9..s.len() - 1];
-            rust_type_to_python(inner)
+            rust_type_to_python_normalized(inner)
         }
-        s if s.starts_with("&") => rust_type_to_python(&s[1..]),
-        s if s.starts_with("&mut ") => rust_type_to_python(&s[5..]),
+        _ if s.starts_with("Py<") && s.ends_with(">") => {
+            let inner = &s[3..s.len() - 1];
+            rust_type_to_python_normalized(inner)
+        }
+        _ if s.starts_with("Bound<") && s.ends_with(">") => {
+            // Bound<'_, PyDict> -> extract the type after the lifetime
+            let inner = &s[6..s.len() - 1];
+            // Skip lifetime parameter: "'_," or "'py," etc.
+            if let Some(comma_pos) = inner.find(',') {
+                let type_part = inner[comma_pos + 1..].trim_start_matches(|c: char| c.is_whitespace());
+                rust_type_to_python_normalized(type_part)
+            } else {
+                rust_type_to_python_normalized(inner)
+            }
+        }
+        _ if s.starts_with("Result<") && s.ends_with(">") => {
+            // Result<T, E> -> T (assuming success type is what matters for Python)
+            let inner = &s[7..s.len() - 1];
+            if let Some((ok_type, _err_type)) = split_generic_pair(inner) {
+                rust_type_to_python_normalized(ok_type)
+            } else {
+                rust_type_to_python_normalized(inner)
+            }
+        }
+
+        // Reference stripping
+        _ if s.starts_with("&mut") => {
+            rust_type_to_python_normalized(s[4..].trim_start())
+        }
+        _ if s.starts_with("&") => {
+            rust_type_to_python_normalized(&s[1..])
+        }
+
+        // Python<'_> is the GIL token, not a real type - return empty or skip
+        _ if s.starts_with("Python<") => "".to_string(),
+
+        // Path-qualified types - try stripping the path
+        _ if s.contains("::") => {
+            let last_segment = s.rsplit("::").next().unwrap_or(s);
+            // Recurse to handle the base type
+            let converted = rust_type_to_python_normalized(last_segment);
+            // If it converted to something different, use that; otherwise keep original
+            if converted != last_segment {
+                converted
+            } else {
+                last_segment.to_string()
+            }
+        }
+
+        // Default: return as-is
         other => other.to_string(),
     }
+}
+```
+
+</details>
+
+
+
+### `plissken-core::crossref::split_generic_pair`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn split_generic_pair (s : & str) -> Option < (& str , & str) >
+```
+
+Split a generic pair like "String,PyObject" into ("String", "PyObject") Handles nested generics by counting angle brackets
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn split_generic_pair(s: &str) -> Option<(&str, &str)> {
+    let mut depth = 0;
+    for (i, c) in s.char_indices() {
+        match c {
+            '<' | '(' => depth += 1,
+            '>' | ')' => depth -= 1,
+            ',' if depth == 0 => {
+                return Some((&s[..i], s[i + 1..].trim_start()));
+            }
+            _ => {}
+        }
+    }
+    None
+}
+```
+
+</details>
+
+
+
+### `plissken-core::crossref::split_tuple_elements`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn split_tuple_elements (s : & str) -> Vec < & str >
+```
+
+Split tuple elements like "i32,String,String" into ["i32", "String", "String"] Handles nested generics and tuples by counting brackets
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn split_tuple_elements(s: &str) -> Vec<&str> {
+    let mut elements = Vec::new();
+    let mut depth = 0;
+    let mut start = 0;
+
+    for (i, c) in s.char_indices() {
+        match c {
+            '<' | '(' | '[' => depth += 1,
+            '>' | ')' | ']' => depth -= 1,
+            ',' if depth == 0 => {
+                elements.push(s[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+
+    // Don't forget the last element
+    let last = s[start..].trim();
+    if !last.is_empty() {
+        elements.push(last);
+    }
+
+    elements
 }
 ```
 

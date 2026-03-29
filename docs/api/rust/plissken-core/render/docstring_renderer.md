@@ -1,4 +1,4 @@
-# docstring_renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::docstring_renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Docstring rendering for parsed documentation
@@ -9,7 +9,7 @@ raises tables, and code examples.
 
 ## Functions
 
-### `fn render_docstring`
+### `plissken-core::render::docstring_renderer::render_docstring`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -96,7 +96,7 @@ pub fn render_docstring(doc: &ParsedDocstring) -> String {
 
 
 
-### `fn render_params_table`
+### `plissken-core::render::docstring_renderer::render_params_table`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -139,7 +139,7 @@ pub fn render_params_table(params: &[ParamDoc]) -> String {
 
 
 
-### `fn render_returns`
+### `plissken-core::render::docstring_renderer::render_returns`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -178,7 +178,7 @@ pub fn render_returns(returns: &ReturnDoc) -> String {
 
 
 
-### `fn render_raises_table`
+### `plissken-core::render::docstring_renderer::render_raises_table`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -219,7 +219,7 @@ pub fn render_raises_table(raises: &[RaisesDoc]) -> String {
 
 
 
-### `fn render_examples`
+### `plissken-core::render::docstring_renderer::render_examples`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -246,7 +246,9 @@ pub fn render_examples(examples: &[String]) -> String {
     let mut output = String::from("**Examples:**\n\n");
 
     for example in examples {
-        let trimmed = example.trim();
+        // Dedent the example to remove common leading whitespace
+        let dedented = dedent_code(example);
+        let trimmed = dedented.trim();
 
         // If example already has code fences, include directly
         if trimmed.starts_with("```") {
@@ -254,7 +256,7 @@ pub fn render_examples(examples: &[String]) -> String {
             output.push_str("\n\n");
         } else {
             // Wrap in code fence with detected language
-            let lang = detect_example_language(example);
+            let lang = detect_example_language(&dedented);
             output.push_str(&format!("```{}\n{}\n```\n\n", lang, trimmed));
         }
     }
@@ -267,7 +269,58 @@ pub fn render_examples(examples: &[String]) -> String {
 
 
 
-### `fn detect_example_language`
+### `plissken-core::render::docstring_renderer::dedent_code`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn dedent_code (code : & str) -> String
+```
+
+Remove common leading whitespace from all lines in a code block.
+
+This handles indented docstring examples where all lines have
+a consistent leading indent that should be removed.
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn dedent_code(code: &str) -> String {
+    let lines: Vec<&str> = code.lines().collect();
+    if lines.is_empty() {
+        return String::new();
+    }
+
+    // Find the minimum indent of non-empty lines
+    let min_indent = lines
+        .iter()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.len() - line.trim_start().len())
+        .min()
+        .unwrap_or(0);
+
+    // Remove that many leading spaces from each line
+    lines
+        .iter()
+        .map(|line| {
+            if line.len() >= min_indent {
+                &line[min_indent..]
+            } else {
+                line.trim_start()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+```
+
+</details>
+
+
+
+### `plissken-core::render::docstring_renderer::detect_example_language`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -316,7 +369,7 @@ fn detect_example_language(example: &str) -> &'static str {
 
 
 
-### `fn escape_table_content`
+### `plissken-core::render::docstring_renderer::escape_table_content`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

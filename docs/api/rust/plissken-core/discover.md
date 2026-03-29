@@ -1,4 +1,4 @@
-# discover <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::discover <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Python module auto-discovery
@@ -8,7 +8,7 @@ to dotted module names.
 
 ## Structs
 
-### `struct DiscoveredModule`
+### `plissken-core::discover::DiscoveredModule`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -29,7 +29,7 @@ A discovered Python module
 
 ## Functions
 
-### `fn discover_python_modules`
+### `plissken-core::discover::discover_python_modules`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -75,10 +75,10 @@ pub fn discover_python_modules(
         let path = entry.path();
 
         // Only process .py files
-        if path.extension().map(|e| e == "py").unwrap_or(false) {
-            if let Some(module) = path_to_module(path, source_dir, package_name) {
-                modules.push(module);
-            }
+        if path.extension().map(|e| e == "py").unwrap_or(false)
+            && let Some(module) = path_to_module(path, source_dir, package_name)
+        {
+            modules.push(module);
         }
     }
 
@@ -93,7 +93,7 @@ pub fn discover_python_modules(
 
 
 
-### `fn should_skip_entry`
+### `plissken-core::discover::should_skip_entry`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -135,7 +135,7 @@ fn should_skip_entry(entry: &walkdir::DirEntry) -> bool {
 
 
 
-### `fn path_to_module`
+### `plissken-core::discover::path_to_module`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -176,7 +176,7 @@ fn path_to_module(
 
 
 
-### `fn path_to_module_name`
+### `plissken-core::discover::path_to_module_name`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -246,7 +246,7 @@ fn path_to_module_name(relative_path: &Path, package_name: &str) -> Option<Strin
 
 
 
-### `fn detect_module_type`
+### `plissken-core::discover::detect_module_type`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -278,7 +278,8 @@ fn detect_module_type(file_path: &Path) -> ModuleSourceType {
         // Check for PyO3 markers
         if preview.contains("# pyo3")
             || preview.contains("#pyo3")
-            || preview.contains("# type: ignore[import]")  // Common in PyO3 stubs
+            || preview.contains("# type: ignore[import]")
+        // Common in PyO3 stubs
         {
             return ModuleSourceType::Pyo3;
         }
@@ -302,7 +303,7 @@ fn detect_module_type(file_path: &Path) -> ModuleSourceType {
 
 
 
-### `fn merge_modules`
+### `plissken-core::discover::merge_modules`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 

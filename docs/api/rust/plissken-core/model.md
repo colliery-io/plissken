@@ -1,11 +1,11 @@
-# model <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::model <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Unified documentation model for Rust and Python items
 
 ## Structs
 
-### `struct SourceLocation`
+### `plissken-core::model::SourceLocation`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -52,7 +52,7 @@ Create a test source location
 
 
 
-### `struct SourceSpan`
+### `plissken-core::model::SourceSpan`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -127,7 +127,7 @@ Create a source span with actual source code
 
 
 
-### `struct RustModule`
+### `plissken-core::model::RustModule`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -142,6 +142,7 @@ A Rust module with its items
 |------|------|-------------|
 | `path` | `String` |  |
 | `doc_comment` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `items` | `Vec < RustItem >` |  |
 | `source` | `SourceSpan` |  |
 
@@ -164,6 +165,7 @@ Create a test Rust module
         Self {
             path: path.into(),
             doc_comment: None,
+            parsed_doc: None,
             items: Vec::new(),
             source: SourceSpan::test("test.rs", 1, 1),
         }
@@ -239,7 +241,7 @@ fn with_source (mut self , source : SourceSpan) -> Self
 
 
 
-### `struct RustStruct`
+### `plissken-core::model::RustStruct`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -255,6 +257,7 @@ A Rust struct definition
 | `name` | `String` |  |
 | `visibility` | `Visibility` |  |
 | `doc_comment` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `generics` | `Option < String >` | Generic parameters as string, e.g. "<T: Clone, const N: usize>" |
 | `fields` | `Vec < RustField >` |  |
 | `derives` | `Vec < String >` |  |
@@ -281,6 +284,7 @@ Create a test struct
             name: name.into(),
             visibility: Visibility::Public,
             doc_comment: None,
+            parsed_doc: None,
             generics: None,
             fields: Vec::new(),
             derives: Vec::new(),
@@ -443,7 +447,7 @@ fn with_source (mut self , source : SourceSpan) -> Self
 
 
 
-### `struct PyClassMeta`
+### `plissken-core::model::PyClassMeta`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -528,7 +532,7 @@ fn with_module (mut self , module : impl Into < String >) -> Self
 
 
 
-### `struct RustField`
+### `plissken-core::model::RustField`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -619,7 +623,7 @@ fn with_doc (mut self , doc : impl Into < String >) -> Self
 
 
 
-### `struct RustEnum`
+### `plissken-core::model::RustEnum`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -635,13 +639,14 @@ A Rust enum definition
 | `name` | `String` |  |
 | `visibility` | `Visibility` |  |
 | `doc_comment` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `generics` | `Option < String >` | Generic parameters as string |
 | `variants` | `Vec < RustVariant >` |  |
 | `source` | `SourceSpan` |  |
 
 
 
-### `struct RustVariant`
+### `plissken-core::model::RustVariant`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -660,7 +665,7 @@ A Rust enum variant
 
 
 
-### `struct RustFunction`
+### `plissken-core::model::RustFunction`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -676,6 +681,7 @@ A Rust function definition
 | `name` | `String` |  |
 | `visibility` | `Visibility` |  |
 | `doc_comment` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `generics` | `Option < String >` | Generic parameters as string, e.g. "<'a, T: Clone>" |
 | `signature_str` | `String` | Full signature as string for display |
 | `signature` | `RustFunctionSig` | Parsed signature for structured access |
@@ -706,6 +712,7 @@ Create a test function
             name: name.clone(),
             visibility: Visibility::Public,
             doc_comment: None,
+            parsed_doc: None,
             generics: None,
             signature_str: format!("fn {}()", name),
             signature: RustFunctionSig {
@@ -937,7 +944,7 @@ fn with_source (mut self , source : SourceSpan) -> Self
 
 
 
-### `struct RustFunctionSig`
+### `plissken-core::model::RustFunctionSig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -955,7 +962,7 @@ Rust function signature
 
 
 
-### `struct RustParam`
+### `plissken-core::model::RustParam`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1023,7 +1030,7 @@ fn with_default (mut self , default : impl Into < String >) -> Self
 
 
 
-### `struct PyFunctionMeta`
+### `plissken-core::model::PyFunctionMeta`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1108,7 +1115,7 @@ fn with_signature (mut self , sig : impl Into < String >) -> Self
 
 
 
-### `struct RustTrait`
+### `plissken-core::model::RustTrait`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1124,6 +1131,7 @@ A Rust trait definition
 | `name` | `String` |  |
 | `visibility` | `Visibility` |  |
 | `doc_comment` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `generics` | `Option < String >` | Generic parameters as string |
 | `bounds` | `Option < String >` | Supertraits as string, e.g. ": Clone + Send" |
 | `associated_types` | `Vec < RustAssociatedType >` |  |
@@ -1132,7 +1140,7 @@ A Rust trait definition
 
 
 
-### `struct RustAssociatedType`
+### `plissken-core::model::RustAssociatedType`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1152,7 +1160,7 @@ A Rust associated type in a trait
 
 
 
-### `struct RustImpl`
+### `plissken-core::model::RustImpl`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1175,7 +1183,7 @@ A Rust impl block
 
 
 
-### `struct RustConst`
+### `plissken-core::model::RustConst`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1197,7 +1205,7 @@ A Rust const item
 
 
 
-### `struct RustTypeAlias`
+### `plissken-core::model::RustTypeAlias`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1219,7 +1227,7 @@ A Rust type alias
 
 
 
-### `struct PythonModule`
+### `plissken-core::model::PythonModule`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1234,6 +1242,7 @@ A Python module
 |------|------|-------------|
 | `path` | `String` |  |
 | `docstring` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `items` | `Vec < PythonItem >` |  |
 | `source_type` | `SourceType` |  |
 | `source` | `SourceSpan` |  |
@@ -1257,6 +1266,7 @@ Create a test Python module
         Self {
             path: path.into(),
             docstring: None,
+            parsed_doc: None,
             items: Vec::new(),
             source_type: SourceType::Python,
             source: SourceSpan::test("test.py", 1, 1),
@@ -1354,7 +1364,7 @@ fn with_source (mut self , source : SourceSpan) -> Self
 
 
 
-### `struct PythonClass`
+### `plissken-core::model::PythonClass`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1369,6 +1379,7 @@ A Python class
 |------|------|-------------|
 | `name` | `String` |  |
 | `docstring` | `Option < String >` |  |
+| `parsed_doc` | `Option < ParsedDocstring >` |  |
 | `bases` | `Vec < String >` |  |
 | `methods` | `Vec < PythonFunction >` |  |
 | `attributes` | `Vec < PythonVariable >` |  |
@@ -1395,6 +1406,7 @@ Create a test Python class
         Self {
             name: name.into(),
             docstring: None,
+            parsed_doc: None,
             bases: Vec::new(),
             methods: Vec::new(),
             attributes: Vec::new(),
@@ -1558,7 +1570,7 @@ fn with_source (mut self , source : SourceSpan) -> Self
 
 
 
-### `struct PythonFunction`
+### `plissken-core::model::PythonFunction`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1858,7 +1870,7 @@ fn with_source (mut self , source : SourceSpan) -> Self
 
 
 
-### `struct PythonFunctionSig`
+### `plissken-core::model::PythonFunctionSig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1876,7 +1888,7 @@ Python function signature
 
 
 
-### `struct PythonParam`
+### `plissken-core::model::PythonParam`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -1965,7 +1977,7 @@ fn with_default (mut self , default : impl Into < String >) -> Self
 
 
 
-### `struct PythonVariable`
+### `plissken-core::model::PythonVariable`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2077,7 +2089,7 @@ fn with_docstring (mut self , doc : impl Into < String >) -> Self
 
 
 
-### `struct ParsedDocstring`
+### `plissken-core::model::ParsedDocstring`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2099,7 +2111,7 @@ Parsed docstring (Google/NumPy style)
 
 
 
-### `struct ParamDoc`
+### `plissken-core::model::ParamDoc`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2118,7 +2130,7 @@ Documented parameter
 
 
 
-### `struct ReturnDoc`
+### `plissken-core::model::ReturnDoc`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2136,7 +2148,7 @@ Documented return value
 
 
 
-### `struct RaisesDoc`
+### `plissken-core::model::RaisesDoc`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2154,7 +2166,7 @@ Documented exception
 
 
 
-### `struct RustItemRef`
+### `plissken-core::model::RustItemRef`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2197,7 +2209,7 @@ fn new (path : impl Into < String > , name : impl Into < String >) -> Self
 
 
 
-### `struct CrossRef`
+### `plissken-core::model::CrossRef`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2290,7 +2302,7 @@ fn delegates (python_path : impl Into < String > , rust_path : impl Into < Strin
 
 
 
-### `struct DocModel`
+### `plissken-core::model::DocModel`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2402,7 +2414,7 @@ fn with_cross_ref (mut self , cross_ref : CrossRef) -> Self
 
 
 
-### `struct ProjectMetadata`
+### `plissken-core::model::ProjectMetadata`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -2541,7 +2553,7 @@ fn with_git_commit (mut self , commit : impl Into < String >) -> Self
 
 ## Enums
 
-### `enum SourceType` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::model::SourceType` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Source type indicator for Python modules
@@ -2554,7 +2566,7 @@ Source type indicator for Python modules
 
 
 
-### `enum Visibility` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::model::Visibility` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Visibility level for Rust items
@@ -2568,7 +2580,7 @@ Visibility level for Rust items
 
 
 
-### `enum RustItem` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::model::RustItem` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 A Rust item (struct, enum, function, etc.)
@@ -2585,7 +2597,7 @@ A Rust item (struct, enum, function, etc.)
 
 
 
-### `enum PythonItem` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::model::PythonItem` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 A Python item
@@ -2598,7 +2610,7 @@ A Python item
 
 
 
-### `enum CrossRefKind` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::model::CrossRefKind` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Kind of cross-reference

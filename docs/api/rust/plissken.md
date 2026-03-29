@@ -5,7 +5,7 @@ plissken CLI - Documentation for the Rust-Python bridge
 
 ## Structs
 
-### `struct Cli`
+### `plissken::Cli`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -21,12 +21,12 @@ plissken CLI - Documentation for the Rust-Python bridge
 
 
 
-### `struct CliError`
+### `plissken::CliError`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
-User-facing error with optional hint for recovery
+User-facing error with optional hint for recovery.
 
 #### Fields
 
@@ -106,7 +106,7 @@ fn with_context (mut self , context : impl Into < String >) -> Self
 
 
 
-### `struct ValidationIssue`
+### `plissken::ValidationIssue`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -125,7 +125,7 @@ Validation issue found during check
 
 
 
-### `struct CliValidationResult`
+### `plissken::CliValidationResult`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -219,7 +219,7 @@ fn add_warning (& mut self , message : impl Into < String > , hint : Option < St
 
 
 
-### `struct DetectedProject`
+### `plissken::DetectedProject`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -271,7 +271,7 @@ fn description (& self) -> String
 
 ## Enums
 
-### `enum Commands` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+### `plissken::Commands` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
 #### Variants
@@ -285,7 +285,36 @@ fn description (& self) -> String
 
 ## Functions
 
-### `fn main`
+### `plissken::warn_parse_error`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn warn_parse_error (file_type : & str , file : & Path , error : & dyn std :: fmt :: Display)
+```
+
+Emit a structured warning for parser errors.
+
+Parser errors are non-fatal by design - we continue processing other files.
+This provides consistent formatting for all parser warnings across Python and Rust.
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn warn_parse_error(file_type: &str, file: &Path, error: &dyn std::fmt::Display) {
+    eprintln!("warning: failed to parse {} file", file_type);
+    eprintln!("  --> {}", file.display());
+    eprintln!("  {}", error);
+}
+```
+
+</details>
+
+
+
+### `plissken::main`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -312,7 +341,8 @@ fn main() -> Result<()> {
             path,
             output,
             template,
-        } => render(&path, output, template, verbosity),
+            prefix,
+        } => render(&path, output, template, prefix, verbosity),
         Commands::Init { force } => init(force, verbosity),
         Commands::Check { path, format } => check(&path, &format, verbosity),
     }
@@ -323,7 +353,7 @@ fn main() -> Result<()> {
 
 
 
-### `fn generate`
+### `plissken::generate`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -347,7 +377,12 @@ fn generate(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) ->
         .parent()
         .ok_or_else(|| CliError::new("Config path has no parent directory"))?;
 
-    verbose!(1, verbosity, "Loading config from: {}", config_path.display());
+    verbose!(
+        1,
+        verbosity,
+        "Loading config from: {}",
+        config_path.display()
+    );
     let config = load_config(&config_path)?;
 
     // Parse Rust sources
@@ -356,12 +391,23 @@ fn generate(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) ->
 
     // Parse Python sources
     let python_modules = parse_python_sources(&config, project_root, verbosity)?;
-    verbose!(1, verbosity, "Parsed {} Python module(s)", python_modules.len());
+    verbose!(
+        1,
+        verbosity,
+        "Parsed {} Python module(s)",
+        python_modules.len()
+    );
 
     // Build cross-references (synthesizing Python bindings if needed)
-    let (python_modules, cross_refs) = synthesize_python_if_needed(&config, python_modules, &rust_modules);
+    let (python_modules, cross_refs) =
+        synthesize_python_if_needed(&config, python_modules, &rust_modules);
 
-    verbose!(1, verbosity, "Built {} cross-reference(s)", cross_refs.len());
+    verbose!(
+        1,
+        verbosity,
+        "Built {} cross-reference(s)",
+        cross_refs.len()
+    );
 
     // Build the doc model
     let model = DocModel {
@@ -401,13 +447,13 @@ fn generate(path: &str, output: Option<PathBuf>, pretty: bool, verbosity: u8) ->
 
 
 
-### `fn render`
+### `plissken::render`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
 ```rust
-fn render (path : & str , output_override : Option < PathBuf > , template_override : Option < String > , verbosity : u8 ,) -> Result < () >
+fn render (path : & str , output_override : Option < PathBuf > , template_override : Option < String > , prefix_override : Option < String > , verbosity : u8 ,) -> Result < () >
 ```
 
 Render documentation to Markdown files
@@ -420,6 +466,7 @@ fn render(
     path: &str,
     output_override: Option<PathBuf>,
     template_override: Option<String>,
+    prefix_override: Option<String>,
     verbosity: u8,
 ) -> Result<()> {
     // Load configuration
@@ -428,14 +475,15 @@ fn render(
     // Resolve output settings
     let output_dir = resolve_output_directory(&config, &project_root, output_override);
     let template = template_override.or_else(|| config.output.template.clone());
+    let prefix = resolve_prefix(prefix_override, &config);
     log_output_settings(&output_dir, template.as_deref(), verbosity);
+    if let Some(ref p) = prefix {
+        verbose!(1, verbosity, "Nav prefix: {}", p);
+    }
 
     // Parse and merge modules
-    let (python_modules, rust_modules, cross_refs) = parse_and_merge_modules(
-        &config,
-        &project_root,
-        verbosity,
-    )?;
+    let (python_modules, rust_modules, cross_refs) =
+        parse_and_merge_modules(&config, &project_root, verbosity)?;
 
     // Create renderer with theme and cross-references
     let renderer = create_renderer(template.as_deref(), &project_root)?;
@@ -461,10 +509,17 @@ fn render(
         &config,
         &output_dir,
         template.as_deref(),
+        prefix.as_deref(),
         verbosity,
     )?;
 
-    verbose!(1, verbosity, "\nRendered {} file(s) to {}", files_written + ssg_files, output_dir.display());
+    verbose!(
+        1,
+        verbosity,
+        "\nRendered {} file(s) to {}",
+        files_written + ssg_files,
+        output_dir.display()
+    );
     Ok(())
 }
 ```
@@ -473,7 +528,7 @@ fn render(
 
 
 
-### `fn load_project_config`
+### `plissken::load_project_config`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -496,7 +551,12 @@ fn load_project_config(path: &str, verbosity: u8) -> Result<(Config, PathBuf)> {
         .ok_or_else(|| CliError::new("Config path has no parent directory"))?
         .to_path_buf();
 
-    verbose!(1, verbosity, "Loading config from: {}", config_path.display());
+    verbose!(
+        1,
+        verbosity,
+        "Loading config from: {}",
+        config_path.display()
+    );
     let config = load_config(&config_path)?;
 
     Ok((config, project_root))
@@ -507,7 +567,7 @@ fn load_project_config(path: &str, verbosity: u8) -> Result<(Config, PathBuf)> {
 
 
 
-### `fn resolve_output_directory`
+### `plissken::resolve_output_directory`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -543,7 +603,33 @@ fn resolve_output_directory(
 
 
 
-### `fn log_output_settings`
+### `plissken::resolve_prefix`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn resolve_prefix (prefix_override : Option < String > , config : & Config) -> Option < String >
+```
+
+Resolve prefix from CLI override and config, normalizing trailing slashes. CLI `--prefix` wins over config `output.prefix`. Empty string treated as None.
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn resolve_prefix(prefix_override: Option<String>, config: &Config) -> Option<String> {
+    let raw = prefix_override.or_else(|| config.output.prefix.clone());
+    raw.map(|p| p.trim_end_matches('/').to_string())
+        .filter(|p| !p.is_empty())
+}
+```
+
+</details>
+
+
+
+### `plissken::log_output_settings`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -570,7 +656,7 @@ fn log_output_settings(output_dir: &Path, template: Option<&str>, verbosity: u8)
 
 
 
-### `fn parse_and_merge_modules`
+### `plissken::parse_and_merge_modules`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -595,7 +681,12 @@ fn parse_and_merge_modules(
     verbose!(1, verbosity, "Parsed {} Rust module(s)", rust_modules.len());
 
     let mut python_modules = parse_python_sources(config, project_root, verbosity)?;
-    verbose!(1, verbosity, "Parsed {} Python module(s)", python_modules.len());
+    verbose!(
+        1,
+        verbosity,
+        "Parsed {} Python module(s)",
+        python_modules.len()
+    );
 
     // Normalize Python module paths
     for module in &mut python_modules {
@@ -603,21 +694,18 @@ fn parse_and_merge_modules(
     }
 
     // Merge synthesized Python modules
-    let (python_modules, initial_cross_refs) = merge_synthesized_python_modules(
-        config,
-        python_modules,
-        &rust_modules,
-        verbosity,
-    );
+    let (python_modules, initial_cross_refs) =
+        merge_synthesized_python_modules(config, python_modules, &rust_modules, verbosity);
 
     // Build cross-references
-    let (python_modules, cross_refs) = build_cross_references(
-        config,
-        python_modules,
-        &rust_modules,
-        initial_cross_refs,
+    let (python_modules, cross_refs) =
+        build_cross_references(config, python_modules, &rust_modules, initial_cross_refs);
+    verbose!(
+        1,
+        verbosity,
+        "Built {} cross-reference(s)",
+        cross_refs.len()
     );
-    verbose!(1, verbosity, "Built {} cross-reference(s)", cross_refs.len());
 
     Ok((python_modules, rust_modules, cross_refs))
 }
@@ -627,7 +715,7 @@ fn parse_and_merge_modules(
 
 
 
-### `fn create_renderer`
+### `plissken::create_renderer`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -645,7 +733,10 @@ Create renderer with theme
 fn create_renderer(template: Option<&str>, project_root: &Path) -> Result<Renderer> {
     Renderer::new(template, Some(project_root)).map_err(|e| {
         CliError::new(format!("failed to create renderer: {}", e))
-            .with_hint("valid templates are 'mkdocs-material' and 'mdbook'")
+            .with_hint(format!(
+                "valid templates are '{}' and '{}'",
+                TEMPLATE_MKDOCS_MATERIAL, TEMPLATE_MDBOOK
+            ))
             .into()
     })
 }
@@ -655,7 +746,7 @@ fn create_renderer(template: Option<&str>, project_root: &Path) -> Result<Render
 
 
 
-### `fn create_output_directory`
+### `plissken::create_output_directory`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -687,7 +778,7 @@ fn create_output_directory(output_dir: &Path) -> Result<()> {
 
 
 
-### `fn resolve_content_directory`
+### `plissken::resolve_content_directory`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -703,7 +794,7 @@ Determine content directory based on SSG type
 
 ```rust
 fn resolve_content_directory(output_dir: &Path, template: Option<&str>) -> PathBuf {
-    if template == Some("mdbook") {
+    if template == Some(TEMPLATE_MDBOOK) {
         output_dir.join("src")
     } else {
         output_dir.to_path_buf()
@@ -715,7 +806,7 @@ fn resolve_content_directory(output_dir: &Path, template: Option<&str>) -> PathB
 
 
 
-### `fn merge_synthesized_python_modules`
+### `plissken::merge_synthesized_python_modules`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -748,13 +839,16 @@ fn merge_synthesized_python_modules(
         .as_ref()
         .and_then(|r| r.entry_point.clone())
         .unwrap_or_else(|| config.project.name.clone());
-    let synth_results = synthesize_python_modules_from_rust(rust_modules, &python_package, &rust_entry_point);
+    let synth_results =
+        synthesize_python_modules_from_rust(rust_modules, &python_package, &rust_entry_point);
     let mut all_cross_refs: Vec<CrossRef> = Vec::new();
 
     // Add synthesized Python modules (merging with existing ones)
     for (synth_module, synth_refs) in synth_results {
         // Check if we already have a Python module with this path
-        let existing = python_modules.iter_mut().find(|m| m.path == synth_module.path);
+        let existing = python_modules
+            .iter_mut()
+            .find(|m| m.path == synth_module.path);
         if let Some(existing_module) = existing {
             // Merge: add synthesized items to existing module
             for synth_item in synth_module.items {
@@ -765,23 +859,44 @@ fn merge_synthesized_python_modules(
                 };
 
                 // Check if item already exists
-                let exists = existing_module.items.iter().any(|item| {
-                    match (item, &synth_item) {
-                        (plissken_core::PythonItem::Class(a), plissken_core::PythonItem::Class(b)) => a.name == b.name,
-                        (plissken_core::PythonItem::Function(a), plissken_core::PythonItem::Function(b)) => a.name == b.name,
-                        (plissken_core::PythonItem::Variable(a), plissken_core::PythonItem::Variable(b)) => a.name == b.name,
+                let exists = existing_module
+                    .items
+                    .iter()
+                    .any(|item| match (item, &synth_item) {
+                        (
+                            plissken_core::PythonItem::Class(a),
+                            plissken_core::PythonItem::Class(b),
+                        ) => a.name == b.name,
+                        (
+                            plissken_core::PythonItem::Function(a),
+                            plissken_core::PythonItem::Function(b),
+                        ) => a.name == b.name,
+                        (
+                            plissken_core::PythonItem::Variable(a),
+                            plissken_core::PythonItem::Variable(b),
+                        ) => a.name == b.name,
                         _ => false,
-                    }
-                });
+                    });
 
                 if !exists {
-                    verbose!(2, verbosity, "  Merging synthesized {} into {}", item_name, existing_module.path);
+                    verbose!(
+                        2,
+                        verbosity,
+                        "  Merging synthesized {} into {}",
+                        item_name,
+                        existing_module.path
+                    );
                     existing_module.items.push(synth_item);
                 }
             }
         } else {
             // No existing module - add the synthesized one
-            verbose!(2, verbosity, "  Synthesized Python module: {} (from Rust bindings)", synth_module.path);
+            verbose!(
+                2,
+                verbosity,
+                "  Synthesized Python module: {} (from Rust bindings)",
+                synth_module.path
+            );
             python_modules.push(synth_module);
         }
         all_cross_refs.extend(synth_refs);
@@ -795,7 +910,7 @@ fn merge_synthesized_python_modules(
 
 
 
-### `fn synthesize_python_if_needed`
+### `plissken::synthesize_python_if_needed`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -839,7 +954,7 @@ fn synthesize_python_if_needed(
 
 
 
-### `fn build_cross_references`
+### `plissken::build_cross_references`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -860,7 +975,8 @@ fn build_cross_references(
     rust_modules: &[RustModule],
     initial_cross_refs: Vec<CrossRef>,
 ) -> (Vec<PythonModule>, Vec<CrossRef>) {
-    let (python_modules, mut cross_refs) = synthesize_python_if_needed(config, python_modules, rust_modules);
+    let (python_modules, mut cross_refs) =
+        synthesize_python_if_needed(config, python_modules, rust_modules);
     cross_refs.extend(initial_cross_refs);
     (python_modules, cross_refs)
 }
@@ -870,7 +986,7 @@ fn build_cross_references(
 
 
 
-### `fn write_rendered_pages`
+### `plissken::write_rendered_pages`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -952,13 +1068,13 @@ fn write_rendered_pages(
 
 
 
-### `fn generate_ssg_files`
+### `plissken::generate_ssg_files`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
 ```rust
-fn generate_ssg_files (module_renderer : & ModuleRenderer , python_modules : & [PythonModule] , rust_modules : & [RustModule] , config : & Config , output_dir : & Path , template : Option < & str > , verbosity : u8 ,) -> Result < usize >
+fn generate_ssg_files (module_renderer : & ModuleRenderer , python_modules : & [PythonModule] , rust_modules : & [RustModule] , config : & Config , output_dir : & Path , template : Option < & str > , prefix : Option < & str > , verbosity : u8 ,) -> Result < usize >
 ```
 
 Generate SSG-specific files (navigation, config, CSS)
@@ -974,14 +1090,16 @@ fn generate_ssg_files(
     config: &Config,
     output_dir: &Path,
     template: Option<&str>,
+    prefix: Option<&str>,
     verbosity: u8,
 ) -> Result<usize> {
     let mut files_written = 0;
-    let is_mdbook = template == Some("mdbook");
+    let is_mdbook = template == Some(TEMPLATE_MDBOOK);
 
     if is_mdbook {
         // Generate mdBook SUMMARY.md
-        let summary = module_renderer.generate_mdbook_summary(python_modules, rust_modules);
+        let summary =
+            module_renderer.generate_mdbook_summary(python_modules, rust_modules, prefix);
         let summary_path = output_dir.join("src/SUMMARY.md");
         if let Some(parent) = summary_path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -1011,7 +1129,7 @@ fn generate_ssg_files(
         files_written += 1;
     } else {
         // Generate MkDocs navigation YAML
-        let nav_yaml = module_renderer.generate_nav_yaml(python_modules, rust_modules);
+        let nav_yaml = module_renderer.generate_nav_yaml(python_modules, rust_modules, prefix);
         let nav_path = output_dir.join("_nav.yml");
         std::fs::write(&nav_path, &nav_yaml)
             .with_context(|| format!("Failed to write nav file: {}", nav_path.display()))?;
@@ -1027,7 +1145,7 @@ fn generate_ssg_files(
 
 
 
-### `fn init`
+### `plissken::init`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1043,11 +1161,11 @@ Initialize a new plissken.toml configuration file
 
 ```rust
 fn init(force: bool, verbosity: u8) -> Result<()> {
-    let config_path = PathBuf::from("plissken.toml");
+    let config_path = PathBuf::from(PLISSKEN_CONFIG);
 
     // Check if config already exists
     if config_path.exists() && !force {
-        return Err(CliError::new("plissken.toml already exists")
+        return Err(CliError::new(format!("{} already exists", PLISSKEN_CONFIG))
             .with_hint("use --force to overwrite the existing configuration")
             .into());
     }
@@ -1064,12 +1182,12 @@ fn init(force: bool, verbosity: u8) -> Result<()> {
 
     // Write config file
     std::fs::write(&config_path, &config_content).map_err(|e| {
-        CliError::new("failed to write plissken.toml")
+        CliError::new(format!("failed to write {}", PLISSKEN_CONFIG))
             .with_context(e.to_string())
             .with_hint("check that you have write permissions in this directory")
     })?;
 
-    verbose!(1, verbosity, "Created plissken.toml");
+    verbose!(1, verbosity, "Created {}", PLISSKEN_CONFIG);
 
     Ok(())
 }
@@ -1079,7 +1197,7 @@ fn init(force: bool, verbosity: u8) -> Result<()> {
 
 
 
-### `fn check`
+### `plissken::check`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1104,11 +1222,13 @@ fn check(path: &str, format: &str, verbosity: u8) -> Result<()> {
             if format == "json" {
                 let result = CliValidationResult {
                     valid: false,
-                    config_path: project_path.join("plissken.toml").display().to_string(),
+                    config_path: project_path.join(PLISSKEN_CONFIG).display().to_string(),
                     issues: vec![ValidationIssue {
                         severity: "error".to_string(),
                         message: "configuration file not found".to_string(),
-                        hint: Some("run 'plissken init' to create a configuration file".to_string()),
+                        hint: Some(
+                            "run 'plissken init' to create a configuration file".to_string(),
+                        ),
                     }],
                 };
                 println!("{}", serde_json::to_string_pretty(&result)?);
@@ -1179,7 +1299,7 @@ fn check(path: &str, format: &str, verbosity: u8) -> Result<()> {
 
 
 
-### `fn output_result`
+### `plissken::output_result`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1235,7 +1355,7 @@ fn output_result(result: &CliValidationResult, format: &str, verbosity: u8) -> R
 
 
 
-### `fn detect_project`
+### `plissken::detect_project`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1269,7 +1389,7 @@ fn detect_project() -> Result<DetectedProject> {
     };
 
     // Check for Cargo.toml
-    let cargo_toml = cwd.join("Cargo.toml");
+    let cargo_toml = cwd.join(CARGO_MANIFEST);
     if cargo_toml.exists() {
         project.has_rust = true;
         project.rust_crates.push(PathBuf::from("."));
@@ -1291,7 +1411,7 @@ fn detect_project() -> Result<DetectedProject> {
     }
 
     // Check for pyproject.toml
-    let pyproject_toml = cwd.join("pyproject.toml");
+    let pyproject_toml = cwd.join(PYPROJECT_MANIFEST);
     if pyproject_toml.exists() {
         project.has_python = true;
 
@@ -1327,7 +1447,10 @@ fn detect_project() -> Result<DetectedProject> {
     // If neither Rust nor Python detected, return error
     if !project.has_rust && !project.has_python {
         return Err(CliError::new("no Rust or Python project detected")
-            .with_hint("run this command from a directory containing Cargo.toml or pyproject.toml")
+            .with_hint(format!(
+                "run this command from a directory containing {} or {}",
+                CARGO_MANIFEST, PYPROJECT_MANIFEST
+            ))
             .into());
     }
 
@@ -1339,7 +1462,7 @@ fn detect_project() -> Result<DetectedProject> {
 
 
 
-### `fn extract_cargo_name`
+### `plissken::extract_cargo_name`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1367,11 +1490,12 @@ fn extract_cargo_name(content: &str) -> Option<String> {
             in_package = false;
             continue;
         }
-        if in_package && line.starts_with("name") {
-            if let Some(val) = line.split('=').nth(1) {
-                let name = val.trim().trim_matches('"').trim_matches('\'');
-                return Some(name.to_string());
-            }
+        if in_package
+            && line.starts_with("name")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            let name = val.trim().trim_matches('"').trim_matches('\'');
+            return Some(name.to_string());
         }
     }
     None
@@ -1382,7 +1506,7 @@ fn extract_cargo_name(content: &str) -> Option<String> {
 
 
 
-### `fn extract_pyproject_name`
+### `plissken::extract_pyproject_name`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1418,11 +1542,12 @@ fn extract_pyproject_name(content: &str) -> Option<String> {
             in_poetry = false;
             continue;
         }
-        if (in_project || in_poetry) && line.starts_with("name") {
-            if let Some(val) = line.split('=').nth(1) {
-                let name = val.trim().trim_matches('"').trim_matches('\'');
-                return Some(name.to_string());
-            }
+        if (in_project || in_poetry)
+            && line.starts_with("name")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            let name = val.trim().trim_matches('"').trim_matches('\'');
+            return Some(name.to_string());
         }
     }
     None
@@ -1433,7 +1558,7 @@ fn extract_pyproject_name(content: &str) -> Option<String> {
 
 
 
-### `fn extract_python_source`
+### `plissken::extract_python_source`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1461,11 +1586,12 @@ fn extract_python_source(content: &str) -> Option<PathBuf> {
             in_maturin = false;
             continue;
         }
-        if in_maturin && line.starts_with("python-source") {
-            if let Some(val) = line.split('=').nth(1) {
-                let source = val.trim().trim_matches('"').trim_matches('\'');
-                return Some(PathBuf::from(source));
-            }
+        if in_maturin
+            && line.starts_with("python-source")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            let source = val.trim().trim_matches('"').trim_matches('\'');
+            return Some(PathBuf::from(source));
         }
     }
 
@@ -1481,18 +1607,19 @@ fn extract_python_source(content: &str) -> Option<PathBuf> {
             in_find = false;
             continue;
         }
-        if in_find && line.starts_with("where") {
-            if let Some(val) = line.split('=').nth(1) {
-                // where = ["src"] format
-                let val = val.trim();
-                if val.starts_with('[') {
-                    // Parse array - take first element
-                    let inner = val.trim_start_matches('[').trim_end_matches(']');
-                    if let Some(first) = inner.split(',').next() {
-                        let source = first.trim().trim_matches('"').trim_matches('\'');
-                        if !source.is_empty() && source != "." {
-                            return Some(PathBuf::from(source));
-                        }
+        if in_find
+            && line.starts_with("where")
+            && let Some(val) = line.split('=').nth(1)
+        {
+            // where = ["src"] format
+            let val = val.trim();
+            if val.starts_with('[') {
+                // Parse array - take first element
+                let inner = val.trim_start_matches('[').trim_end_matches(']');
+                if let Some(first) = inner.split(',').next() {
+                    let source = first.trim().trim_matches('"').trim_matches('\'');
+                    if !source.is_empty() && source != "." {
+                        return Some(PathBuf::from(source));
                     }
                 }
             }
@@ -1508,7 +1635,7 @@ fn extract_python_source(content: &str) -> Option<PathBuf> {
 
 
 
-### `fn generate_config`
+### `plissken::generate_config`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1532,23 +1659,26 @@ fn generate_config(project: &DetectedProject) -> Result<String> {
 
     // Version source - prefer Cargo for Rust projects
     if project.has_rust {
-        config.push_str("version_from = \"cargo\"\n");
+        config.push_str(&format!("version_from = \"{}\"\n", VERSION_SOURCE_CARGO));
     } else {
-        config.push_str("version_from = \"pyproject\"\n");
+        config.push_str(&format!(
+            "version_from = \"{}\"\n",
+            VERSION_SOURCE_PYPROJECT
+        ));
     }
     config.push('\n');
 
     // [output] section
     config.push_str("[output]\n");
-    config.push_str("format = \"markdown\"\n");
-    config.push_str("path = \"docs/api\"\n");
-    config.push_str("template = \"mkdocs-material\"\n");
+    config.push_str(&format!("format = \"{}\"\n", DEFAULT_OUTPUT_FORMAT));
+    config.push_str(&format!("path = \"{}\"\n", DEFAULT_OUTPUT_PATH));
+    config.push_str(&format!("template = \"{}\"\n", TEMPLATE_MKDOCS_MATERIAL));
     config.push('\n');
 
     // [rust] section
     if project.has_rust {
         config.push_str("[rust]\n");
-        config.push_str("crates = [\".\"]\n");
+        config.push_str(&format!("crates = [\"{}\"]\n", DEFAULT_CRATES));
         if let Some(ref entry_point) = project.rust_entry_point {
             config.push_str(&format!("entry_point = \"{}\"\n", entry_point));
         }
@@ -1579,7 +1709,7 @@ fn generate_config(project: &DetectedProject) -> Result<String> {
 
 
 
-### `fn find_config`
+### `plissken::find_config`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1605,7 +1735,7 @@ fn find_config(path: &Path) -> Result<PathBuf> {
     if path.is_file()
         && path
             .file_name()
-            .map(|f| f == "plissken.toml")
+            .map(|f| f == PLISSKEN_CONFIG)
             .unwrap_or(false)
     {
         return Ok(path);
@@ -1613,7 +1743,7 @@ fn find_config(path: &Path) -> Result<PathBuf> {
 
     // Otherwise look for plissken.toml in directory
     let config_path = if path.is_dir() {
-        path.join("plissken.toml")
+        path.join(PLISSKEN_CONFIG)
     } else {
         path
     };
@@ -1622,7 +1752,8 @@ fn find_config(path: &Path) -> Result<PathBuf> {
         Ok(config_path)
     } else {
         Err(CliError::new(format!(
-            "plissken.toml not found at {}",
+            "{} not found at {}",
+            PLISSKEN_CONFIG,
             config_path.display()
         ))
         .with_hint("run 'plissken init' to create a configuration file")
@@ -1635,7 +1766,7 @@ fn find_config(path: &Path) -> Result<PathBuf> {
 
 
 
-### `fn load_config`
+### `plissken::load_config`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1670,9 +1801,12 @@ fn load_config(path: &Path) -> Result<Config> {
         }
 
         // Add the actual error message and hint
-        err = CliError::new(format!("invalid configuration: {}", summarize_toml_error(&err_str)))
-            .with_context(err.context.unwrap_or_default())
-            .with_hint(suggest_config_fix(&err_str));
+        err = CliError::new(format!(
+            "invalid configuration: {}",
+            summarize_toml_error(&err_str)
+        ))
+        .with_context(err.context.unwrap_or_default())
+        .with_hint(suggest_config_fix(&err_str));
 
         err.into()
     })
@@ -1683,7 +1817,7 @@ fn load_config(path: &Path) -> Result<Config> {
 
 
 
-### `fn extract_toml_location`
+### `plissken::extract_toml_location`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1702,7 +1836,7 @@ fn extract_toml_location(err: &str) -> Option<String> {
     // toml errors often contain "at line X column Y"
     if let Some(idx) = err.find("at line") {
         let rest = &err[idx..];
-        if let Some(end) = rest.find(|c: char| c == '\n' || c == ',') {
+        if let Some(end) = rest.find(['\n', ',']) {
             return Some(rest[..end].to_string());
         }
         return Some(rest.to_string());
@@ -1715,7 +1849,7 @@ fn extract_toml_location(err: &str) -> Option<String> {
 
 
 
-### `fn summarize_toml_error`
+### `plissken::summarize_toml_error`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1732,21 +1866,19 @@ Summarize a toml error message for users
 ```rust
 fn summarize_toml_error(err: &str) -> String {
     // Extract the most useful part of the error
-    if err.contains("missing field") {
-        if let Some(start) = err.find('`') {
-            if let Some(end) = err[start + 1..].find('`') {
-                let field = &err[start + 1..start + 1 + end];
-                return format!("missing required field '{}'", field);
-            }
-        }
+    if err.contains("missing field")
+        && let Some(start) = err.find('`')
+        && let Some(end) = err[start + 1..].find('`')
+    {
+        let field = &err[start + 1..start + 1 + end];
+        return format!("missing required field '{}'", field);
     }
-    if err.contains("unknown field") {
-        if let Some(start) = err.find('`') {
-            if let Some(end) = err[start + 1..].find('`') {
-                let field = &err[start + 1..start + 1 + end];
-                return format!("unknown field '{}'", field);
-            }
-        }
+    if err.contains("unknown field")
+        && let Some(start) = err.find('`')
+        && let Some(end) = err[start + 1..].find('`')
+    {
+        let field = &err[start + 1..start + 1 + end];
+        return format!("unknown field '{}'", field);
     }
     if err.contains("invalid type") {
         return "invalid value type".to_string();
@@ -1760,7 +1892,7 @@ fn summarize_toml_error(err: &str) -> String {
 
 
 
-### `fn suggest_config_fix`
+### `plissken::suggest_config_fix`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1799,13 +1931,13 @@ fn suggest_config_fix(err: &str) -> String {
 
 
 
-### `fn parse_rust_sources`
+### `plissken::parse_rust_sources`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
 ```rust
-fn parse_rust_sources (config : & Config , project_root : & Path , verbosity : u8) -> Result < Vec < RustModule > >
+fn parse_rust_sources (config : & Config , project_root : & Path , verbosity : u8 ,) -> Result < Vec < RustModule > >
 ```
 
 Parse Rust source files based on config
@@ -1814,7 +1946,11 @@ Parse Rust source files based on config
 <summary>Source</summary>
 
 ```rust
-fn parse_rust_sources(config: &Config, project_root: &Path, verbosity: u8) -> Result<Vec<RustModule>> {
+fn parse_rust_sources(
+    config: &Config,
+    project_root: &Path,
+    verbosity: u8,
+) -> Result<Vec<RustModule>> {
     let Some(ref rust_config) = config.rust else {
         return Ok(Vec::new());
     };
@@ -1827,12 +1963,19 @@ fn parse_rust_sources(config: &Config, project_root: &Path, verbosity: u8) -> Re
 
         // Read crate name from Cargo.toml
         let crate_name = read_crate_name(&crate_dir)?;
-        verbose!(2, verbosity, "  Crate: {} ({})", crate_name, crate_dir.display());
+        verbose!(
+            2,
+            verbosity,
+            "  Crate: {} ({})",
+            crate_name,
+            crate_dir.display()
+        );
 
         // Determine src directory (check common source directory names)
         let src_dir = if crate_dir.join("src").exists() {
             crate_dir.join("src")
-        } else if crate_dir.join("rust").exists() && crate_dir.join("rust").join("lib.rs").exists() {
+        } else if crate_dir.join("rust").exists() && crate_dir.join("rust").join("lib.rs").exists()
+        {
             crate_dir.join("rust")
         } else {
             crate_dir.clone()
@@ -1850,10 +1993,7 @@ fn parse_rust_sources(config: &Config, project_root: &Path, verbosity: u8) -> Re
                     modules.push(module);
                 }
                 Err(e) => {
-                    // Warnings always go to stderr with consistent format
-                    eprintln!("warning: failed to parse Rust file");
-                    eprintln!("  --> {}", rs_file.display());
-                    eprintln!("  {}", e);
+                    warn_parse_error("Rust", &rs_file, &e);
                 }
             }
         }
@@ -1868,7 +2008,7 @@ fn parse_rust_sources(config: &Config, project_root: &Path, verbosity: u8) -> Re
 
 
 
-### `fn read_crate_name`
+### `plissken::read_crate_name`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1884,7 +2024,7 @@ Read the crate name from a Cargo.toml file
 
 ```rust
 fn read_crate_name(crate_dir: &Path) -> Result<String> {
-    let cargo_toml = crate_dir.join("Cargo.toml");
+    let cargo_toml = crate_dir.join(CARGO_MANIFEST);
     if !cargo_toml.exists() {
         // Fall back to directory name if no Cargo.toml
         return Ok(crate_dir
@@ -1916,10 +2056,7 @@ fn read_crate_name(crate_dir: &Path) -> Result<String> {
         .and_then(|p| p.get("name"))
         .and_then(|n| n.as_str())
         .ok_or_else(|| {
-            CliError::new(format!(
-                "missing package.name in {}",
-                cargo_toml.display()
-            ))
+            CliError::new(format!("missing package.name in {}", cargo_toml.display()))
         })?;
 
     Ok(name.to_string())
@@ -1930,7 +2067,7 @@ fn read_crate_name(crate_dir: &Path) -> Result<String> {
 
 
 
-### `fn file_to_module_path`
+### `plissken::file_to_module_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -1959,10 +2096,7 @@ fn file_to_module_path(file_path: &Path, crate_name: &str, src_dir: &Path) -> St
         Err(_) => return crate_name.to_string(),
     };
 
-    let file_name = relative
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("");
+    let file_name = relative.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     // Handle crate root files
     if file_name == "lib.rs" || file_name == "main.rs" {
@@ -1973,10 +2107,10 @@ fn file_to_module_path(file_path: &Path, crate_name: &str, src_dir: &Path) -> St
     let mut parts: Vec<&str> = Vec::new();
 
     for component in relative.parent().unwrap_or(Path::new("")).components() {
-        if let std::path::Component::Normal(name) = component {
-            if let Some(name_str) = name.to_str() {
-                parts.push(name_str);
-            }
+        if let std::path::Component::Normal(name) = component
+            && let Some(name_str) = name.to_str()
+        {
+            parts.push(name_str);
         }
     }
 
@@ -2005,7 +2139,7 @@ fn file_to_module_path(file_path: &Path, crate_name: &str, src_dir: &Path) -> St
 
 
 
-### `fn find_rust_files`
+### `plissken::find_rust_files`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2064,13 +2198,13 @@ fn find_rust_files(dir: &Path) -> Result<Vec<PathBuf>> {
 
 
 
-### `fn parse_python_sources`
+### `plissken::parse_python_sources`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
 
 ```rust
-fn parse_python_sources (config : & Config , project_root : & Path , verbosity : u8) -> Result < Vec < PythonModule > >
+fn parse_python_sources (config : & Config , project_root : & Path , verbosity : u8 ,) -> Result < Vec < PythonModule > >
 ```
 
 Parse Python source files based on config
@@ -2079,7 +2213,11 @@ Parse Python source files based on config
 <summary>Source</summary>
 
 ```rust
-fn parse_python_sources(config: &Config, project_root: &Path, verbosity: u8) -> Result<Vec<PythonModule>> {
+fn parse_python_sources(
+    config: &Config,
+    project_root: &Path,
+    verbosity: u8,
+) -> Result<Vec<PythonModule>> {
     let Some(ref python_config) = config.python else {
         return Ok(Vec::new());
     };
@@ -2100,10 +2238,21 @@ fn parse_python_sources(config: &Config, project_root: &Path, verbosity: u8) -> 
 
     // Use auto-discovery or explicit file finding
     let py_files: Vec<PathBuf> = if python_config.auto_discover {
-        verbose!(1, verbosity, "Auto-discovering Python modules in {}...", python_dir.display());
-        let discovered = plissken_core::discover_python_modules(&python_dir, &python_config.package)
-            .map_err(|e| CliError::new(format!("failed to discover Python modules: {}", e)))?;
-        verbose!(2, verbosity, "  Discovered {} Python modules", discovered.len());
+        verbose!(
+            1,
+            verbosity,
+            "Auto-discovering Python modules in {}...",
+            python_dir.display()
+        );
+        let discovered =
+            plissken_core::discover_python_modules(&python_dir, &python_config.package)
+                .map_err(|e| CliError::new(format!("failed to discover Python modules: {}", e)))?;
+        verbose!(
+            2,
+            verbosity,
+            "  Discovered {} Python modules",
+            discovered.len()
+        );
         discovered.into_iter().map(|m| m.path).collect()
     } else {
         find_python_files(&python_dir)?
@@ -2113,10 +2262,7 @@ fn parse_python_sources(config: &Config, project_root: &Path, verbosity: u8) -> 
         match parser.parse_file(&py_file) {
             Ok(module) => modules.push(module),
             Err(e) => {
-                // Warnings always go to stderr with consistent format
-                eprintln!("warning: failed to parse Python file");
-                eprintln!("  --> {}", py_file.display());
-                eprintln!("  {}", e);
+                warn_parse_error("Python", &py_file, &e);
             }
         }
     }
@@ -2130,7 +2276,7 @@ fn parse_python_sources(config: &Config, project_root: &Path, verbosity: u8) -> 
 
 
 
-### `fn find_python_files`
+### `plissken::find_python_files`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2181,7 +2327,7 @@ fn find_python_files(dir: &Path) -> Result<Vec<PathBuf>> {
 
 
 
-### `fn get_project_version`
+### `plissken::get_project_version`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2202,7 +2348,7 @@ fn get_project_version(config: &Config, project_root: &Path) -> Option<String> {
     match config.project.version_from {
         VersionSource::Cargo => {
             // Try to read version from Cargo.toml
-            let cargo_toml = project_root.join("Cargo.toml");
+            let cargo_toml = project_root.join(CARGO_MANIFEST);
             if let Ok(content) = std::fs::read_to_string(&cargo_toml) {
                 // Simple TOML parsing for version
                 for line in content.lines() {
@@ -2219,7 +2365,7 @@ fn get_project_version(config: &Config, project_root: &Path) -> Option<String> {
         }
         VersionSource::Pyproject => {
             // Try to read version from pyproject.toml
-            let pyproject = project_root.join("pyproject.toml");
+            let pyproject = project_root.join(PYPROJECT_MANIFEST);
             if let Ok(content) = std::fs::read_to_string(&pyproject) {
                 for line in content.lines() {
                     let line = line.trim();
@@ -2258,7 +2404,7 @@ fn get_project_version(config: &Config, project_root: &Path) -> Option<String> {
 
 
 
-### `fn get_git_ref`
+### `plissken::get_git_ref`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2295,7 +2441,7 @@ fn get_git_ref(project_root: &Path) -> Option<String> {
 
 
 
-### `fn get_git_commit`
+### `plissken::get_git_commit`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2332,7 +2478,7 @@ fn get_git_commit(project_root: &Path) -> Option<String> {
 
 
 
-### `fn chrono_lite_now`
+### `plissken::chrono_lite_now`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2405,7 +2551,7 @@ fn chrono_lite_now() -> String {
 
 
 
-### `fn is_leap_year`
+### `plissken::is_leap_year`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -2427,7 +2573,7 @@ fn is_leap_year(year: i64) -> bool {
 
 
 
-### `fn normalize_python_module_path`
+### `plissken::normalize_python_module_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

@@ -1,11 +1,11 @@
-# config <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::config <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Configuration for plissken projects
 
 ## Structs
 
-### `struct ConfigWarning`
+### `plissken-core::config::ConfigWarning`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -75,7 +75,7 @@ Add a hint to the warning
 
 
 
-### `struct ValidationResult`
+### `plissken-core::config::ValidationResult`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -93,7 +93,7 @@ Result of configuration validation
 
 
 
-### `struct Config`
+### `plissken-core::config::Config`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -194,19 +194,19 @@ inferred values.
         let inferred = InferredConfig::from_directory(project_root);
 
         // Fill in project name if empty
-        if self.project.name.is_empty() {
-            if let Some(name) = inferred.project_name {
-                self.project.name = name;
-            }
+        if self.project.name.is_empty()
+            && let Some(name) = inferred.project_name
+        {
+            self.project.name = name;
         }
 
         // Fill in Rust config if present but incomplete
         if let Some(ref mut rust) = self.rust {
             // Fill in crates if empty
-            if rust.crates.is_empty() {
-                if let Some(crates) = inferred.rust_crates {
-                    rust.crates = crates;
-                }
+            if rust.crates.is_empty()
+                && let Some(crates) = inferred.rust_crates
+            {
+                rust.crates = crates;
             }
             // Fill in entry_point if not set
             if rust.entry_point.is_none() {
@@ -217,10 +217,10 @@ inferred values.
         // Fill in Python config if present but incomplete
         if let Some(ref mut python) = self.python {
             // Fill in package name if empty
-            if python.package.is_empty() {
-                if let Some(pkg) = inferred.python_package {
-                    python.package = pkg;
-                }
+            if python.package.is_empty()
+                && let Some(pkg) = inferred.python_package
+            {
+                python.package = pkg;
             }
             // Fill in source if not set
             if python.source.is_none() {
@@ -309,20 +309,20 @@ fn validate_version_source (& self , project_root : & Path) -> Result < () , Con
     fn validate_version_source(&self, project_root: &Path) -> Result<(), ConfigError> {
         match self.project.version_from {
             VersionSource::Cargo => {
-                let cargo_toml = project_root.join("Cargo.toml");
+                let cargo_toml = project_root.join(CARGO_MANIFEST);
                 if !cargo_toml.exists() {
                     return Err(ConfigError::VersionSourceNotFound(
-                        "cargo".to_string(),
-                        "Cargo.toml".to_string(),
+                        VERSION_SOURCE_CARGO.to_string(),
+                        CARGO_MANIFEST.to_string(),
                     ));
                 }
             }
             VersionSource::Pyproject => {
-                let pyproject = project_root.join("pyproject.toml");
+                let pyproject = project_root.join(PYPROJECT_MANIFEST);
                 if !pyproject.exists() {
                     return Err(ConfigError::VersionSourceNotFound(
-                        "pyproject".to_string(),
-                        "pyproject.toml".to_string(),
+                        VERSION_SOURCE_PYPROJECT.to_string(),
+                        PYPROJECT_MANIFEST.to_string(),
                     ));
                 }
             }
@@ -366,8 +366,11 @@ fn validate_rust_config (& self , rust_config : & RustConfig , project_root : & 
     ) -> Result<(), ConfigError> {
         if rust_config.crates.is_empty() {
             warnings.push(
-                ConfigWarning::new("rust.crates", "no crates configured; no Rust docs will be generated")
-                    .with_hint("add crate paths to the crates array"),
+                ConfigWarning::new(
+                    "rust.crates",
+                    "no crates configured; no Rust docs will be generated",
+                )
+                .with_hint("add crate paths to the crates array"),
             );
             return Ok(());
         }
@@ -380,8 +383,8 @@ fn validate_rust_config (& self , rust_config : & RustConfig , project_root : & 
             }
 
             // Check for Cargo.toml in crate directory (warning, not error)
-            let cargo_toml = crate_dir.join("Cargo.toml");
-            if !cargo_toml.exists() && crate_path.as_os_str() != "." {
+            let cargo_toml = crate_dir.join(CARGO_MANIFEST);
+            if !cargo_toml.exists() && crate_path.as_os_str() != DEFAULT_CRATES {
                 warnings.push(ConfigWarning::new(
                     "rust.crates",
                     format!("no Cargo.toml found in crate '{}'", crate_path.display()),
@@ -473,7 +476,7 @@ fn validate_python_config (& self , python_config : & PythonConfig , project_roo
 
 
 
-### `struct ProjectConfig`
+### `plissken-core::config::ProjectConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -491,7 +494,7 @@ Project metadata
 
 
 
-### `struct OutputConfig`
+### `plissken-core::config::OutputConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -507,10 +510,12 @@ Output configuration
 | `format` | `String` |  |
 | `path` | `PathBuf` |  |
 | `template` | `Option < String >` |  |
+| `prefix` | `Option < String >` | Path prefix for nav entries when rendering into a subfolder of an existing doc site.
+E.g., `prefix = "api"` makes nav entries like `api/rust/mycrate.md` instead of `rust/mycrate.md`. |
 
 
 
-### `struct RustConfig`
+### `plissken-core::config::RustConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -528,7 +533,7 @@ Rust source configuration
 
 
 
-### `struct PythonConfig`
+### `plissken-core::config::PythonConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -548,7 +553,7 @@ Python source configuration
 
 
 
-### `struct LinksConfig`
+### `plissken-core::config::LinksConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -566,7 +571,7 @@ Linking configuration
 
 
 
-### `struct QualityConfig`
+### `plissken-core::config::QualityConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -587,7 +592,7 @@ Quality/linting configuration
 
 ## Enums
 
-### `enum ConfigError` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::config::ConfigError` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Configuration validation error
@@ -602,7 +607,7 @@ Configuration validation error
 
 
 
-### `enum VersionSource` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::config::VersionSource` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Where to get version information
@@ -615,7 +620,7 @@ Where to get version information
 
 
 
-### `enum ModuleSourceType` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::config::ModuleSourceType` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Source type for a Python module
@@ -627,7 +632,7 @@ Source type for a Python module
 
 
 
-### `enum DependencySource` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::config::DependencySource` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Where to get dependency versions
@@ -642,7 +647,7 @@ Where to get dependency versions
 
 ## Functions
 
-### `fn default_version_from`
+### `plissken-core::config::default_version_from`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -664,7 +669,7 @@ fn default_version_from() -> VersionSource {
 
 
 
-### `fn default_format`
+### `plissken-core::config::default_format`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -678,7 +683,7 @@ fn default_format () -> String
 
 ```rust
 fn default_format() -> String {
-    "markdown".to_string()
+    DEFAULT_OUTPUT_FORMAT.to_string()
 }
 ```
 
@@ -686,7 +691,7 @@ fn default_format() -> String {
 
 
 
-### `fn default_output_path`
+### `plissken-core::config::default_output_path`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -700,7 +705,7 @@ fn default_output_path () -> PathBuf
 
 ```rust
 fn default_output_path() -> PathBuf {
-    PathBuf::from("docs/api")
+    PathBuf::from(DEFAULT_OUTPUT_PATH)
 }
 ```
 
@@ -708,7 +713,7 @@ fn default_output_path() -> PathBuf {
 
 
 
-### `fn default_dependencies`
+### `plissken-core::config::default_dependencies`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -730,7 +735,7 @@ fn default_dependencies() -> DependencySource {
 
 
 
-### `fn default_docs_rs`
+### `plissken-core::config::default_docs_rs`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -744,7 +749,7 @@ fn default_docs_rs () -> String
 
 ```rust
 fn default_docs_rs() -> String {
-    "https://docs.rs".to_string()
+    DEFAULT_DOCS_RS_URL.to_string()
 }
 ```
 

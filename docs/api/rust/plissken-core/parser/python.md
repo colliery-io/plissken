@@ -1,11 +1,11 @@
-# python <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::parser::python <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Python source code parser using tree-sitter
 
 ## Structs
 
-### `struct PythonParser`
+### `plissken-core::parser::python::PythonParser`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -65,8 +65,8 @@ Parse a Python source file.
     pub fn parse_file(&mut self, path: &Path) -> crate::error::Result<PythonModule> {
         use crate::error::PlisskenError;
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| PlisskenError::file_read(path, e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| PlisskenError::file_read(path, e))?;
         self.parse_str(&content, path)
     }
 ```
@@ -107,6 +107,8 @@ Parse Python source from a string.
 
         // Extract module docstring
         let docstring = extract_module_docstring(&root, content);
+        // Parse docstring into structured form
+        let parsed_doc = docstring.as_ref().map(|d| parse_docstring(d));
 
         // Extract items
         let items = extract_module_items(&root, content, path);
@@ -114,6 +116,7 @@ Parse Python source from a string.
         Ok(PythonModule {
             path: path.display().to_string(),
             docstring,
+            parsed_doc,
             items,
             source_type: SourceType::Python,
             source: SourceSpan::new(
@@ -134,7 +137,7 @@ Parse Python source from a string.
 
 ## Functions
 
-### `fn extract_module_docstring`
+### `plissken-core::parser::python::extract_module_docstring`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -171,7 +174,7 @@ fn extract_module_docstring(root: &Node, content: &str) -> Option<String> {
 
 
 
-### `fn extract_module_items`
+### `plissken-core::parser::python::extract_module_items`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -242,13 +245,11 @@ fn extract_module_items(root: &Node, content: &str, path: &Path) -> Vec<PythonIt
                         // A string literal immediately following a variable is its docstring
                         if i + 1 < children.len() {
                             let next = &children[i + 1];
-                            if next.kind() == "expression_statement" {
-                                if let Some(docstring) =
-                                    extract_expression_string(next, content)
-                                {
-                                    var.docstring = Some(docstring);
-                                    i += 1; // Skip the docstring node
-                                }
+                            if next.kind() == "expression_statement"
+                                && let Some(docstring) = extract_expression_string(next, content)
+                            {
+                                var.docstring = Some(docstring);
+                                i += 1; // Skip the docstring node
                             }
                         }
                         items.push(PythonItem::Variable(var));
@@ -268,7 +269,7 @@ fn extract_module_items(root: &Node, content: &str, path: &Path) -> Vec<PythonIt
 
 
 
-### `fn extract_expression_string`
+### `plissken-core::parser::python::extract_expression_string`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -298,7 +299,7 @@ fn extract_expression_string(node: &Node, content: &str) -> Option<String> {
 
 
 
-### `fn extract_class`
+### `plissken-core::parser::python::extract_class`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -327,6 +328,8 @@ fn extract_class(node: &Node, content: &str, path: &Path) -> PythonClass {
     } else {
         (None, vec![], vec![])
     };
+    // Parse docstring into structured form
+    let parsed_doc = docstring.as_ref().map(|d| parse_docstring(d));
 
     let start_line = node.start_position().row + 1;
     let end_line = node.end_position().row + 1;
@@ -335,6 +338,7 @@ fn extract_class(node: &Node, content: &str, path: &Path) -> PythonClass {
     PythonClass {
         name,
         docstring,
+        parsed_doc,
         bases,
         methods,
         attributes,
@@ -356,7 +360,7 @@ fn extract_class(node: &Node, content: &str, path: &Path) -> PythonClass {
 
 
 
-### `fn extract_bases`
+### `plissken-core::parser::python::extract_bases`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -401,7 +405,7 @@ fn extract_bases(node: &Node, content: &str) -> Vec<String> {
 
 
 
-### `fn extract_class_body`
+### `plissken-core::parser::python::extract_class_body`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -491,7 +495,7 @@ fn extract_class_body(
 
 
 
-### `fn extract_function`
+### `plissken-core::parser::python::extract_function`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -525,6 +529,8 @@ fn extract_function(node: &Node, content: &str, path: &Path) -> PythonFunction {
     let docstring = node
         .child_by_field_name("body")
         .and_then(|body| extract_function_docstring(&body, content));
+    // Parse docstring into structured form
+    let parsed_doc = docstring.as_ref().map(|d| parse_docstring(d));
 
     let start_line = node.start_position().row + 1;
     let end_line = node.end_position().row + 1;
@@ -550,7 +556,7 @@ fn extract_function(node: &Node, content: &str, path: &Path) -> PythonFunction {
         is_staticmethod: false,
         is_classmethod: false,
         is_property: false,
-        parsed_doc: None,
+        parsed_doc,
         rust_impl: None,
         source: SourceSpan {
             location: SourceLocation {
@@ -568,7 +574,7 @@ fn extract_function(node: &Node, content: &str, path: &Path) -> PythonFunction {
 
 
 
-### `fn extract_parameters`
+### `plissken-core::parser::python::extract_parameters`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -699,7 +705,7 @@ fn extract_parameters(node: &Node, content: &str) -> (Vec<PythonParam>, String) 
 
 
 
-### `fn extract_function_docstring`
+### `plissken-core::parser::python::extract_function_docstring`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -736,7 +742,7 @@ fn extract_function_docstring(body: &Node, content: &str) -> Option<String> {
 
 
 
-### `fn extract_decorators`
+### `plissken-core::parser::python::extract_decorators`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -770,7 +776,7 @@ fn extract_decorators(node: &Node, content: &str) -> Vec<String> {
 
 
 
-### `fn extract_variable`
+### `plissken-core::parser::python::extract_variable`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -812,7 +818,7 @@ fn extract_variable(node: &Node, content: &str) -> Option<PythonVariable> {
 
 
 
-### `fn extract_string_content`
+### `plissken-core::parser::python::extract_string_content`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -862,7 +868,7 @@ fn extract_string_content(node: &Node, content: &str) -> Option<String> {
 
 
 
-### `fn dedent`
+### `plissken-core::parser::python::dedent`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -915,7 +921,7 @@ fn dedent(text: &str) -> String {
 
 
 
-### `fn extract_source_text`
+### `plissken-core::parser::python::extract_source_text`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -939,7 +945,7 @@ fn extract_source_text(node: &Node, content: &str) -> String {
 
 
 
-### `fn node_text`
+### `plissken-core::parser::python::node_text`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 

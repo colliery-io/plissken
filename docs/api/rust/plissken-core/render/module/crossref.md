@@ -1,4 +1,4 @@
-# crossref <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::module::crossref <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Cross-reference link generation for bidirectional Python/Rust documentation.
@@ -9,7 +9,7 @@ between binding implementations and their Python APIs.
 
 ## Structs
 
-### `struct CrossRefLinker`
+### `plissken-core::render::module::crossref::CrossRefLinker`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -156,19 +156,8 @@ For standalone functions (parent_struct is None), links to the function anchor.
                             };
 
                         // Compute path to Python module page
-                        let rust_depth = 1 + rust_path.matches("::").count();
-                        let prefix = "../".repeat(rust_depth);
-
-                        // Python module page path
-                        let module_parts: Vec<&str> = python_module.split('.').collect();
-                        let python_page = if module_parts.len() == 1 {
-                            format!("{}.md", module_parts[0])
-                        } else {
-                            let last = module_parts.last().unwrap();
-                            let parent = module_parts[..module_parts.len()-1].join("/");
-                            format!("{}/{}.md", parent, last)
-                        };
-
+                        let prefix = compute_rust_relative_prefix(rust_path);
+                        let python_page = compute_python_page_path(python_module);
                         let anchor = method_name.to_lowercase();
                         let python_method_path = format!("{}.{}", xref.python_path, method_name);
                         return Some(format!(
@@ -225,20 +214,10 @@ From: `rust/{crate}.md` -> To: `{module}.md#{funcname}`
                 };
 
                 // Compute path to Python module page
-                let rust_depth = 1 + rust_path.matches("::").count();
-                let prefix = "../".repeat(rust_depth);
-
-                // Python module page path
-                let module_parts: Vec<&str> = python_module.split('.').collect();
-                let python_page = if module_parts.len() == 1 {
-                    format!("{}.md", module_parts[0])
-                } else {
-                    let last = module_parts.last().unwrap();
-                    let parent = module_parts[..module_parts.len()-1].join("/");
-                    format!("{}/{}.md", parent, last)
-                };
-
+                let prefix = compute_rust_relative_prefix(rust_path);
+                let python_page = compute_python_page_path(python_module);
                 let anchor = func_name.to_lowercase();
+
                 return Some(format!(
                     "> **Python API**: [{}]({}{}#{})\n\n",
                     xref.python_path, prefix, python_page, anchor
@@ -283,28 +262,15 @@ the Python class name.
                 || xref.rust_path.ends_with(&format!("::{}", struct_name))
             {
                 // Get Python module and class name
-                let (python_module, python_class) =
-                    if let Some(pos) = xref.python_path.rfind('.') {
-                        (&xref.python_path[..pos], &xref.python_path[pos + 1..])
-                    } else {
-                        (xref.python_path.as_str(), xref.python_path.as_str())
-                    };
-
-                // Compute path to Python module page
-                // From rust/{path}.md to {module}.md (or nested path)
-                let rust_depth = 1 + rust_path.matches("::").count(); // rust/ + submodules
-                let prefix = "../".repeat(rust_depth);
-
-                // Python module page path
-                let module_parts: Vec<&str> = python_module.split('.').collect();
-                let python_page = if module_parts.len() == 1 {
-                    format!("{}.md", module_parts[0])
+                let (python_module, python_class) = if let Some(pos) = xref.python_path.rfind('.') {
+                    (&xref.python_path[..pos], &xref.python_path[pos + 1..])
                 } else {
-                    let last = module_parts.last().unwrap();
-                    let parent = module_parts[..module_parts.len()-1].join("/");
-                    format!("{}/{}.md", parent, last)
+                    (xref.python_path.as_str(), xref.python_path.as_str())
                 };
 
+                // Compute path to Python module page
+                let prefix = compute_rust_relative_prefix(rust_path);
+                let python_page = compute_python_page_path(python_module);
                 // Use Python class name for anchor (matches the rendered heading)
                 let anchor = python_class.to_lowercase();
                 return Some(format!(
@@ -356,12 +322,8 @@ Note: Rust function headings use `### \`fn funcname\`` format, generating `#fn-f
                 };
 
                 // Compute path from Python module page to Rust module page
-                let python_parts: Vec<&str> = python_path.split('.').collect();
-                let python_depth = if python_parts.len() == 1 { 0 } else { python_parts.len() - 1 };
-                let prefix = "../".repeat(python_depth);
-
-                // Rust module page path
-                let rust_page = format!("rust/{}.md", rust_module.replace("::", "/"));
+                let prefix = compute_python_relative_prefix(python_path);
+                let rust_page = compute_rust_page_path(rust_module);
                 // Rust function anchor includes "fn-" prefix (from heading `### \`fn funcname\``)
                 let anchor = format!("fn-{}", rust_func.to_lowercase());
 
@@ -416,14 +378,8 @@ Python binding name.
                 };
 
                 // Compute path from Python module page to Rust module page
-                // Python pages are at: {module}.md or {parent}/{module}.md
-                // Rust pages are at: rust/{crate}.md or rust/{crate}/{submod}.md
-                let python_parts: Vec<&str> = python_path.split('.').collect();
-                let python_depth = if python_parts.len() == 1 { 0 } else { python_parts.len() - 1 };
-                let prefix = "../".repeat(python_depth);
-
-                // Rust module page path
-                let rust_page = format!("rust/{}.md", rust_module.replace("::", "/"));
+                let prefix = compute_python_relative_prefix(python_path);
+                let rust_page = compute_rust_page_path(rust_module);
                 // Use Python class name for anchor (Rust docs show binding name in heading)
                 let anchor = class_name.to_lowercase();
 
@@ -482,12 +438,8 @@ For standalone functions (parent_class is None), falls back to function linking.
                         };
 
                         // Compute path from Python module page to Rust module page
-                        let python_parts: Vec<&str> = python_path.split('.').collect();
-                        let python_depth = if python_parts.len() == 1 { 0 } else { python_parts.len() - 1 };
-                        let prefix = "../".repeat(python_depth);
-
-                        // Rust module page path
-                        let rust_page = format!("rust/{}.md", rust_module.replace("::", "/"));
+                        let prefix = compute_python_relative_prefix(python_path);
+                        let rust_page = compute_rust_page_path(rust_module);
                         let anchor = method_name.to_lowercase();
                         let rust_method_path = format!("{}::{}", xref.rust_path, method_name);
 
@@ -510,6 +462,125 @@ For standalone functions (parent_class is None), falls back to function linking.
 </details>
 
 
+
+
+
+## Functions
+
+### `plissken-core::render::module::crossref::compute_python_page_path`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn compute_python_page_path (module_path : & str) -> String
+```
+
+Compute the relative file path for a Python module page.
+
+Single segment: `mymodule` -> `mymodule.md`
+Nested: `mypackage.sub.module` -> `mypackage/sub/module.md`
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn compute_python_page_path(module_path: &str) -> String {
+    let parts: Vec<&str> = module_path.split('.').collect();
+    if parts.len() == 1 {
+        format!("{}.md", parts[0])
+    } else {
+        let last = parts.last().unwrap();
+        let parent = parts[..parts.len() - 1].join("/");
+        format!("{}/{}.md", parent, last)
+    }
+}
+```
+
+</details>
+
+
+
+### `plissken-core::render::module::crossref::compute_rust_page_path`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn compute_rust_page_path (module_path : & str) -> String
+```
+
+Compute the relative file path for a Rust module page.
+
+Single segment: `mycrate` -> `rust/mycrate.md`
+Nested: `mycrate::sub::module` -> `rust/mycrate/sub/module.md`
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn compute_rust_page_path(module_path: &str) -> String {
+    format!("rust/{}.md", module_path.replace("::", "/"))
+}
+```
+
+</details>
+
+
+
+### `plissken-core::render::module::crossref::compute_rust_relative_prefix`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn compute_rust_relative_prefix (rust_path : & str) -> String
+```
+
+Compute the `../` prefix to navigate from a Rust module to the root.
+
+The depth is 1 (for `rust/` directory) plus the number of `::` separators.
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn compute_rust_relative_prefix(rust_path: &str) -> String {
+    let depth = 1 + rust_path.matches("::").count();
+    "../".repeat(depth)
+}
+```
+
+</details>
+
+
+
+### `plissken-core::render::module::crossref::compute_python_relative_prefix`
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
+
+
+```rust
+fn compute_python_relative_prefix (python_path : & str) -> String
+```
+
+Compute the `../` prefix to navigate from a Python module to the root.
+
+Single segment modules (e.g., `mypackage`) are at root level (depth 0).
+Nested modules need to go up for each parent directory.
+
+<details>
+<summary>Source</summary>
+
+```rust
+fn compute_python_relative_prefix(python_path: &str) -> String {
+    let parts: Vec<&str> = python_path.split('.').collect();
+    let depth = if parts.len() == 1 { 0 } else { parts.len() - 1 };
+    "../".repeat(depth)
+}
+```
+
+</details>
 
 
 

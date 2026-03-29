@@ -1,4 +1,4 @@
-# module_renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::render::module_renderer <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Module page rendering for Python and Rust documentation
@@ -8,7 +8,7 @@ and `RustModule` structures into Markdown documentation files.
 
 ## Structs
 
-### `struct RenderedPage`
+### `plissken-core::render::module_renderer::RenderedPage`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -26,7 +26,7 @@ Rendered output for a documentation file
 
 
 
-### `struct ModulePageBuilder`
+### `plissken-core::render::module_renderer::ModulePageBuilder`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -83,7 +83,8 @@ Add the module header with a badge
 
 ```rust
     fn add_header(&mut self, module_name: &str, badge: &str) {
-        self.content.push_str(&format!("# {} {}\n\n", module_name, badge));
+        self.content
+            .push_str(&format!("# {} {}\n\n", module_name, badge));
     }
 ```
 
@@ -184,7 +185,8 @@ Add a variables/constants table
         self.content.push_str("|------|------|-------------|\n");
         for item in items {
             let (name, ty, desc) = row_renderer(item);
-            self.content.push_str(&format!("| `{}` | `{}` | {} |\n", name, ty, desc));
+            self.content
+                .push_str(&format!("| `{}` | `{}` | {} |\n", name, ty, desc));
         }
         self.content.push('\n');
     }
@@ -218,7 +220,7 @@ Build the final content
 
 
 
-### `struct ModuleRenderer`<'a>
+### `plissken-core::render::module_renderer::ModuleRenderer`<'a>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 

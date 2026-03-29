@@ -1,4 +1,4 @@
-# manifest <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
+# plissken-core::manifest <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
 
 Manifest file parsing for Cargo.toml and pyproject.toml
@@ -8,7 +8,7 @@ extract metadata that can be used to infer default configuration values.
 
 ## Structs
 
-### `struct CargoManifest`
+### `plissken-core::manifest::CargoManifest`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -94,7 +94,7 @@ Parse Cargo.toml content from a string
 
 
 
-### `struct PyProjectManifest`
+### `plissken-core::manifest::PyProjectManifest`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -162,11 +162,7 @@ Parse pyproject.toml content from a string
         let package_dir = if let Some(tool) = toml.tool {
             // First check maturin python-source
             if let Some(maturin) = tool.maturin {
-                if let Some(src) = maturin.python_source {
-                    Some(PathBuf::from(src))
-                } else {
-                    None
-                }
+                maturin.python_source.map(PathBuf::from)
             // Then check setuptools package-dir
             } else if let Some(setuptools) = tool.setuptools {
                 if let Some(pkg_dir) = setuptools.package_dir {
@@ -196,7 +192,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct CargoToml`
+### `plissken-core::manifest::CargoToml`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -212,7 +208,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct CargoPackage`
+### `plissken-core::manifest::CargoPackage`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -228,7 +224,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct CargoWorkspace`
+### `plissken-core::manifest::CargoWorkspace`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -243,7 +239,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct PyProjectToml`
+### `plissken-core::manifest::PyProjectToml`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -259,7 +255,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct PyProject`
+### `plissken-core::manifest::PyProject`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -275,7 +271,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct PyProjectTool`
+### `plissken-core::manifest::PyProjectTool`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -291,7 +287,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct SetuptoolsConfig`
+### `plissken-core::manifest::SetuptoolsConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -306,7 +302,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct MaturinConfig`
+### `plissken-core::manifest::MaturinConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: var(--md-default-fg-color--light); color: white;">private</span>
 
@@ -322,7 +318,7 @@ Parse pyproject.toml content from a string
 
 
 
-### `struct InferredConfig`
+### `plissken-core::manifest::InferredConfig`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
@@ -361,40 +357,40 @@ Infer configuration from manifest files in the given directory
 
         // Try to parse Cargo.toml
         let cargo_path = project_root.join("Cargo.toml");
-        if cargo_path.exists() {
-            if let Ok(cargo) = CargoManifest::parse(&cargo_path) {
-                // Project name from package name
-                if let Some(name) = &cargo.name {
-                    inferred.project_name = Some(name.clone());
-                    inferred.rust_entry_point = Some(name.clone());
-                }
+        if cargo_path.exists()
+            && let Ok(cargo) = CargoManifest::parse(&cargo_path)
+        {
+            // Project name from package name
+            if let Some(name) = &cargo.name {
+                inferred.project_name = Some(name.clone());
+                inferred.rust_entry_point = Some(name.clone());
+            }
 
-                // Rust crates from workspace members or current directory
-                if cargo.is_workspace && !cargo.workspace_members.is_empty() {
-                    inferred.rust_crates =
-                        Some(cargo.workspace_members.iter().map(PathBuf::from).collect());
-                } else if cargo.name.is_some() {
-                    // Single crate project
-                    inferred.rust_crates = Some(vec![PathBuf::from(".")]);
-                }
+            // Rust crates from workspace members or current directory
+            if cargo.is_workspace && !cargo.workspace_members.is_empty() {
+                inferred.rust_crates =
+                    Some(cargo.workspace_members.iter().map(PathBuf::from).collect());
+            } else if cargo.name.is_some() {
+                // Single crate project
+                inferred.rust_crates = Some(vec![PathBuf::from(".")]);
             }
         }
 
         // Try to parse pyproject.toml
         let pyproject_path = project_root.join("pyproject.toml");
-        if pyproject_path.exists() {
-            if let Ok(pyproject) = PyProjectManifest::parse(&pyproject_path) {
-                // Project name from pyproject takes precedence
-                if let Some(name) = &pyproject.name {
-                    inferred.project_name = Some(name.clone());
-                    // Python package name (convert dashes to underscores)
-                    inferred.python_package = Some(name.replace('-', "_"));
-                }
+        if pyproject_path.exists()
+            && let Ok(pyproject) = PyProjectManifest::parse(&pyproject_path)
+        {
+            // Project name from pyproject takes precedence
+            if let Some(name) = &pyproject.name {
+                inferred.project_name = Some(name.clone());
+                // Python package name (convert dashes to underscores)
+                inferred.python_package = Some(name.replace('-', "_"));
+            }
 
-                // Python source directory
-                if let Some(pkg_dir) = pyproject.package_dir {
-                    inferred.python_source = Some(pkg_dir);
-                }
+            // Python source directory
+            if let Some(pkg_dir) = pyproject.package_dir {
+                inferred.python_source = Some(pkg_dir);
             }
         }
 
@@ -410,7 +406,7 @@ Infer configuration from manifest files in the given directory
 
 ## Enums
 
-### `enum ManifestError` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
+### `plissken-core::manifest::ManifestError` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
 
 Errors that can occur when parsing manifest files
