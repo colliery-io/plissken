@@ -1,0 +1,69 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+---
+title: "crate::buffer"
+description: "Buffers for Python."
+sidebar:
+  order: 2
+  hidden: true
+---
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
+
+
+Buffers for Python.
+
+## Structs
+
+### <span id="struct.RustBuffer"></span>`class Buffer`
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
+
+
+> **Python API**: [native.Buffer](../../../native/#class.Buffer)
+
+A byte buffer.
+
+```rust
+let b = RustBuffer::new();
+```
+
+#### Fields
+
+| Name | Type | Description |
+|------|------|-------------|
+| `data` | `Vec<u8>` | The bytes |
+
+#### Methods
+
+##### <span id="RustBuffer.len"></span>`len`
+
+```rust
+pub fn len(&self) -> usize
+```
+
+> **Python API**: [native.Buffer.len](../../../native/#Buffer.len)
+
+Get buffer length
+
+
+
+
+
+## Functions
+
+### <span id="fn.checksum"></span>`fn checksum`
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
+
+
+> **Python API**: [native.checksum](../../../native/#fn.checksum)
+
+```rust
+#[pyfunction]
+pub fn checksum(buffer: &RustBuffer) -> u64
+```
+
+Checksum of a buffer.

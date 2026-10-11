@@ -29,5 +29,5 @@
 mod crossref;
 mod layout;
 
-pub use crossref::CrossRefLinker;
+pub use crossref::{CrossRefLinker, LinkStyle};
 pub use layout::PageLayout;

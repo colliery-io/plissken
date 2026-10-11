@@ -8,6 +8,8 @@
 //!
 //! - **MkDocs** (with Material theme): YAML navigation, `docs/` content directory
 //! - **mdBook**: Markdown SUMMARY.md, `src/` content directory
+//! - **Astro Starlight**: a sidebar group in `_sidebar.mjs`, pages in a folder
+//!   of `src/content/docs/`
 //!
 //! # Example
 //!
@@ -22,10 +24,16 @@
 
 mod mdbook;
 mod mkdocs;
+mod starlight;
 mod traits;
 
 pub use mdbook::MdBookAdapter;
 pub use mkdocs::MkDocsAdapter;
+pub use starlight::{
+    STARLIGHT_DEFAULT_ROUTE_BASE, STARLIGHT_SIDEBAR_FILE, StarlightAdapter, anchor_span,
+    content_route_base, front_matter, github_slug, normalize_rustdoc_fences, page_route,
+    route_href, starlight_file_path,
+};
 pub use traits::{NavEntry, SSGAdapter, python_nav_entries, rust_nav_entries};
 
 /// Get an SSG adapter for the given template name.
@@ -51,6 +59,7 @@ pub use traits::{NavEntry, SSGAdapter, python_nav_entries, rust_nav_entries};
 pub fn get_ssg_adapter(template: Option<&str>) -> Box<dyn SSGAdapter> {
     match template.map(|s| s.to_lowercase()).as_deref() {
         Some("mdbook") | Some("md-book") | Some("md_book") => Box::new(MdBookAdapter),
+        Some("starlight") | Some("astro-starlight") => Box::new(StarlightAdapter::default()),
         _ => Box::new(MkDocsAdapter),
     }
 }
@@ -81,6 +90,14 @@ mod tests {
             let adapter = get_ssg_adapter(Some(name));
             assert_eq!(adapter.name(), "mdbook", "Failed for: {}", name);
         }
+    }
+
+    #[test]
+    fn test_get_ssg_adapter_starlight() {
+        let adapter = get_ssg_adapter(Some("starlight"));
+        assert_eq!(adapter.name(), "starlight");
+        assert_eq!(adapter.content_dir(), "src/content/docs");
+        assert_eq!(adapter.nav_filename(), "_sidebar.mjs");
     }
 
     #[test]

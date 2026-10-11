@@ -1,0 +1,67 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+---
+title: "native"
+description: "Native buffers."
+sidebar:
+  order: 1
+  hidden: true
+---
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
+
+
+Native buffers.
+
+Written in Rust.
+
+## Classes
+
+### <span id="class.Buffer"></span>`class Buffer`
+
+> **Rust Implementation**: [crate::buffer::RustBuffer](../rust/crate/buffer/#struct.RustBuffer)
+
+A byte buffer.
+
+#### Methods
+
+##### <span id="Buffer.len"></span>`len`
+
+```python
+def len(self) -> int
+```
+
+> **Rust Implementation**: [crate::buffer::RustBuffer::len](../rust/crate/buffer/#RustBuffer.len)
+
+Get buffer length
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `self` | `-` |  |
+
+
+
+
+
+
+## Functions
+
+### <span id="fn.checksum"></span>`checksum`
+
+```python
+def checksum(buffer: Buffer) -> int
+```
+
+> **Rust Implementation**: [crate::buffer::checksum](../rust/crate/buffer/#fn.checksum)
+
+Checksum of a buffer.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `buffer` | `Buffer` |  |

@@ -2,12 +2,13 @@
 
 use anyhow::{Context, Result};
 use clap::Parser;
+use plissken_core::render::ssg::{SSGAdapter, StarlightAdapter};
 use plissken_core::{
     CARGO_MANIFEST, Config, CrossRef, DEFAULT_CRATES, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_PATH,
-    DocModel, ModuleRenderer, PLISSKEN_CONFIG, PYPROJECT_MANIFEST, ProjectMetadata, PythonModule,
-    Renderer, RustModule, TEMPLATE_MDBOOK, TEMPLATE_MKDOCS_MATERIAL, VERSION_SOURCE_CARGO,
-    VERSION_SOURCE_PYPROJECT, build_cross_refs, synthesize_python_from_rust,
-    synthesize_python_modules_from_rust,
+    DEFAULT_STARLIGHT_OUTPUT_PATH, DocModel, ModuleRenderer, PLISSKEN_CONFIG, PYPROJECT_MANIFEST,
+    ProjectMetadata, PythonModule, Renderer, RustModule, TEMPLATE_MDBOOK, TEMPLATE_MKDOCS_MATERIAL,
+    TEMPLATE_STARLIGHT, VERSION_SOURCE_CARGO, VERSION_SOURCE_PYPROJECT, build_cross_refs,
+    get_theme_adapter, synthesize_python_from_rust, synthesize_python_modules_from_rust,
 };
 use std::path::{Path, PathBuf};
 
@@ -139,7 +140,7 @@ enum Commands {
         #[arg(short, long)]
         output: Option<PathBuf>,
 
-        /// Theme template (e.g., "mkdocs-material", "mdbook")
+        /// Theme template: "mkdocs-material", "mdbook" or "starlight"
         #[arg(short, long)]
         template: Option<String>,
     },
@@ -148,6 +149,10 @@ enum Commands {
         /// Overwrite existing plissken.toml
         #[arg(long)]
         force: bool,
+
+        /// Site generator: "mkdocs-material" (default), "mdbook" or "starlight"
+        #[arg(short, long)]
+        template: Option<String>,
     },
     /// Validate configuration without generating documentation
     Check {
@@ -176,7 +181,7 @@ fn main() -> Result<()> {
             output,
             template,
         } => render(&path, output, template, verbosity),
-        Commands::Init { force } => init(force, verbosity),
+        Commands::Init { force, template } => init(force, template, verbosity),
         Commands::Check { path, format } => check(&path, &format, verbosity),
     }
 }
@@ -277,7 +282,8 @@ fn render(
 
     // Create renderer with theme and cross-references
     let renderer = create_renderer(template.as_deref(), &project_root)?;
-    let module_renderer = ModuleRenderer::with_cross_refs(&renderer, cross_refs);
+    let module_renderer = ModuleRenderer::with_cross_refs(&renderer, cross_refs)
+        .with_module_order(&python_modules, &rust_modules);
 
     // Prepare output directory
     create_output_directory(&output_dir)?;
@@ -402,8 +408,8 @@ fn create_renderer(template: Option<&str>, project_root: &Path) -> Result<Render
     Renderer::new(template, Some(project_root)).map_err(|e| {
         CliError::new(format!("failed to create renderer: {}", e))
             .with_hint(format!(
-                "valid templates are '{}' and '{}'",
-                TEMPLATE_MKDOCS_MATERIAL, TEMPLATE_MDBOOK
+                "valid templates are '{}', '{}' and '{}'",
+                TEMPLATE_MKDOCS_MATERIAL, TEMPLATE_MDBOOK, TEMPLATE_STARLIGHT
             ))
             .into()
     })
@@ -629,8 +635,28 @@ fn generate_ssg_files(
 ) -> Result<usize> {
     let mut files_written = 0;
     let is_mdbook = template == Some(TEMPLATE_MDBOOK);
+    let is_starlight = get_theme_adapter(template).name() == TEMPLATE_STARLIGHT;
 
-    if is_mdbook {
+    if is_starlight {
+        // Generate the Starlight sidebar group (_sidebar.mjs)
+        let adapter = StarlightAdapter::for_output_path(output_dir).unwrap_or_else(|| {
+            eprintln!(
+                "warning: the output path is not in a Starlight content folder (src/content/docs/)"
+            );
+            eprintln!("  --> {}", output_dir.display());
+            eprintln!(
+                "hint: set [output] path to a folder of src/content/docs/, e.g. \"{}\"",
+                DEFAULT_STARLIGHT_OUTPUT_PATH
+            );
+            StarlightAdapter::default()
+        });
+        let sidebar = module_renderer.generate_nav(&adapter, python_modules, rust_modules);
+        let sidebar_path = output_dir.join(adapter.nav_filename());
+        std::fs::write(&sidebar_path, &sidebar)
+            .with_context(|| format!("Failed to write sidebar: {}", sidebar_path.display()))?;
+        verbose!(2, verbosity, "  Wrote: {}", sidebar_path.display());
+        files_written += 1;
+    } else if is_mdbook {
         // Generate mdBook SUMMARY.md
         let summary = module_renderer.generate_mdbook_summary(python_modules, rust_modules);
         let summary_path = output_dir.join("src/SUMMARY.md");
@@ -674,7 +700,21 @@ fn generate_ssg_files(
 }
 
 /// Initialize a new plissken.toml configuration file
-fn init(force: bool, verbosity: u8) -> Result<()> {
+fn init(force: bool, template: Option<String>, verbosity: u8) -> Result<()> {
+    let template = match template.as_deref().map(str::to_lowercase).as_deref() {
+        None | Some("mkdocs-material") => TEMPLATE_MKDOCS_MATERIAL,
+        Some("mdbook") => TEMPLATE_MDBOOK,
+        Some("starlight") => TEMPLATE_STARLIGHT,
+        Some(other) => {
+            return Err(CliError::new(format!("unknown template '{}'", other))
+                .with_hint(format!(
+                    "valid templates are '{}', '{}' and '{}'",
+                    TEMPLATE_MKDOCS_MATERIAL, TEMPLATE_MDBOOK, TEMPLATE_STARLIGHT
+                ))
+                .into());
+        }
+    };
+
     let config_path = PathBuf::from(PLISSKEN_CONFIG);
 
     // Check if config already exists
@@ -692,7 +732,7 @@ fn init(force: bool, verbosity: u8) -> Result<()> {
     verbose!(1, verbosity, "Detected: {}", project.description());
 
     // Generate config content
-    let config_content = generate_config(&project)?;
+    let config_content = generate_config(&project, template)?;
 
     // Write config file
     std::fs::write(&config_path, &config_content).map_err(|e| {
@@ -1099,7 +1139,7 @@ fn extract_python_source(content: &str) -> Option<PathBuf> {
 }
 
 /// Generate plissken.toml content
-fn generate_config(project: &DetectedProject) -> Result<String> {
+fn generate_config(project: &DetectedProject, template: &str) -> Result<String> {
     let mut config = String::new();
 
     // [project] section
@@ -1120,8 +1160,13 @@ fn generate_config(project: &DetectedProject) -> Result<String> {
     // [output] section
     config.push_str("[output]\n");
     config.push_str(&format!("format = \"{}\"\n", DEFAULT_OUTPUT_FORMAT));
-    config.push_str(&format!("path = \"{}\"\n", DEFAULT_OUTPUT_PATH));
-    config.push_str(&format!("template = \"{}\"\n", TEMPLATE_MKDOCS_MATERIAL));
+    let output_path = if template == TEMPLATE_STARLIGHT {
+        DEFAULT_STARLIGHT_OUTPUT_PATH
+    } else {
+        DEFAULT_OUTPUT_PATH
+    };
+    config.push_str(&format!("path = \"{}\"\n", output_path));
+    config.push_str(&format!("template = \"{}\"\n", template));
     config.push('\n');
 
     // [rust] section

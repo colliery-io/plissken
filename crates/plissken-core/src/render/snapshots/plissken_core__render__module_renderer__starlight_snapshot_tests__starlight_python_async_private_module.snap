@@ -1,0 +1,37 @@
+---
+source: crates/plissken-core/src/render/module_renderer.rs
+expression: "&pages[0].content"
+---
+---
+title: "pkg._internal"
+description: "API reference of the Python module pkg._internal."
+sidebar:
+  order: 0
+  hidden: true
+---
+
+<span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-blue-low); color: var(--sl-color-blue-high);">Python</span>
+
+
+## Functions
+
+### <span id="fn.fetch"></span>`fetch`
+
+<span class="plissken-badge plissken-badge-async" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-blue-low); color: var(--sl-color-blue-high);">async</span>
+
+
+```python
+async def fetch(
+    url: str,
+    timeout_in_seconds_for_the_whole_request: float = 30.0,
+) -> bytes
+```
+
+Fetch data from URL.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `url` | `str` | The URL to fetch |
+| `timeout_in_seconds_for_the_whole_request` | `float` |  |

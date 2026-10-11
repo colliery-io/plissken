@@ -37,5 +37,5 @@ pub use docstring_renderer::{
 pub use module_renderer::{ModuleRenderer, RenderedPage};
 pub use renderer::Renderer;
 pub use templates::TemplateLoader;
-pub use theme::{MdBook, Minimal, MkDocsMaterial};
+pub use theme::{MdBook, Minimal, MkDocsMaterial, Starlight};
 pub use theme::{ThemeAdapter, get_theme_adapter};

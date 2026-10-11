@@ -19,7 +19,7 @@ format = "markdown"
 # Output directory for generated docs
 path = "docs/api"
 
-# Template/theme: "mkdocs-material" or "mdbook"
+# Template/theme: "mkdocs-material", "mdbook" or "starlight"
 template = "mkdocs-material"
 
 [rust]
@@ -63,6 +63,7 @@ Directory for generated documentation. Relative to project root.
 ```toml
 path = "docs/api"      # Recommended for MkDocs
 path = "src"           # For mdBook
+path = "docs/src/content/docs/reference/api"  # For Starlight
 ```
 
 ### `template`
@@ -73,6 +74,7 @@ Documentation template/theme:
 |-------|-------------|
 | `mkdocs-material` | MkDocs with Material theme (recommended) |
 | `mdbook` | Rust-style mdBook |
+| `starlight` | Astro Starlight, with or without starlight-aurora. See [Starlight Sites](../guide/starlight.md) |
 
 ## Rust Section
 

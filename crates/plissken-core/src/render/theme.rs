@@ -10,6 +10,8 @@
 //!
 //! - **MkDocs Material**: Uses `var(--md-*)` CSS variables
 //! - **mdBook**: Uses `var(--*)` CSS variables
+//! - **Starlight**: Uses `var(--sl-color-*)` CSS variables (Aurora tokens with
+//!   `starlight-aurora`)
 //! - **Minimal**: Hardcoded fallback colors for unstyled contexts
 //!
 //! # Example
@@ -121,6 +123,41 @@ pub trait ThemeAdapter: Send + Sync {
     fn badge_python(&self) -> &str {
         "#306998" // Python blue
     }
+
+    // =========================================================================
+    // Badge rendering (fill, text and shape of a badge)
+    // =========================================================================
+
+    /// Fill of a badge of the given color type.
+    ///
+    /// Color types: "blue", "green", "yellow", "red", "purple", "orange",
+    /// and "gray" (any other value).
+    fn badge_fill(&self, color_type: &str) -> String {
+        match color_type {
+            "blue" => self.primary(),
+            "green" => self.success(),
+            "yellow" => self.warning(),
+            "red" => self.error(),
+            "purple" => self.badge_binding(),
+            "orange" => self.badge_pub_crate(),
+            _ => self.muted(),
+        }
+        .to_string()
+    }
+
+    /// Text color of a badge of the given color type (on its fill).
+    fn badge_text(&self, color_type: &str) -> String {
+        match color_type {
+            "yellow" => "black",
+            _ => "white",
+        }
+        .to_string()
+    }
+
+    /// CSS for the shape of a badge (everything but its colors).
+    fn badge_base_style(&self) -> &str {
+        "display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle;"
+    }
 }
 
 /// MkDocs Material theme adapter
@@ -210,6 +247,114 @@ impl ThemeAdapter for MdBook {
     }
 }
 
+/// Astro Starlight theme adapter
+///
+/// Uses Starlight's `--sl-color-*` CSS custom properties. Each value follows
+/// the site's light and dark themes. With the `starlight-aurora` theme, these
+/// variables are set from Aurora's tokens (for example `--sl-color-green-low`
+/// is `--ok-bg`), so badges take Aurora's status colors, hyper included.
+///
+/// A badge is a fill (`-low`) with text in the same hue (`-high`), the pair
+/// that Starlight and Aurora make for text on a tint.
+///
+/// Reference: <https://starlight.astro.build/guides/css-and-tailwind/#theming>
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Starlight;
+
+impl Starlight {
+    /// The Starlight hue of a badge color type.
+    fn hue(color_type: &str) -> Option<&'static str> {
+        match color_type {
+            "blue" => Some("blue"),
+            "green" => Some("green"),
+            "yellow" | "orange" => Some("orange"),
+            "red" => Some("red"),
+            "purple" => Some("purple"),
+            _ => None,
+        }
+    }
+}
+
+impl ThemeAdapter for Starlight {
+    fn code_bg(&self) -> &str {
+        "var(--sl-color-bg-inline-code)"
+    }
+
+    fn code_fg(&self) -> &str {
+        "var(--sl-color-white)"
+    }
+
+    fn primary(&self) -> &str {
+        "var(--sl-color-text-accent)"
+    }
+
+    fn accent(&self) -> &str {
+        "var(--sl-color-accent)"
+    }
+
+    fn muted(&self) -> &str {
+        "var(--sl-color-gray-3)"
+    }
+
+    fn border(&self) -> &str {
+        "var(--sl-color-hairline)"
+    }
+
+    fn name(&self) -> &str {
+        "starlight"
+    }
+
+    fn success(&self) -> &str {
+        "var(--sl-color-green)"
+    }
+
+    fn warning(&self) -> &str {
+        "var(--sl-color-orange)"
+    }
+
+    fn error(&self) -> &str {
+        "var(--sl-color-red)"
+    }
+
+    fn info(&self) -> &str {
+        "var(--sl-color-blue)"
+    }
+
+    fn badge_binding(&self) -> &str {
+        "var(--sl-color-purple)"
+    }
+
+    fn badge_pub_crate(&self) -> &str {
+        "var(--sl-color-orange)"
+    }
+
+    fn badge_rust(&self) -> &str {
+        "var(--sl-color-orange)"
+    }
+
+    fn badge_python(&self) -> &str {
+        "var(--sl-color-blue)"
+    }
+
+    fn badge_fill(&self, color_type: &str) -> String {
+        match Self::hue(color_type) {
+            Some(hue) => format!("var(--sl-color-{}-low)", hue),
+            None => "var(--sl-color-gray-6)".to_string(),
+        }
+    }
+
+    fn badge_text(&self, color_type: &str) -> String {
+        match Self::hue(color_type) {
+            Some(hue) => format!("var(--sl-color-{}-high)", hue),
+            None => "var(--sl-color-gray-2)".to_string(),
+        }
+    }
+
+    fn badge_base_style(&self) -> &str {
+        "display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle;"
+    }
+}
+
 /// Minimal theme adapter with hardcoded fallback colors
 ///
 /// Provides reasonable default colors for contexts where CSS variables
@@ -282,6 +427,7 @@ pub fn get_theme_adapter(template: Option<&str>) -> Box<dyn ThemeAdapter> {
         Some(t) => match t.to_lowercase().as_str() {
             "mkdocs-material" | "mkdocs_material" | "material" => Box::new(MkDocsMaterial),
             "mdbook" | "md-book" | "md_book" => Box::new(MdBook),
+            "starlight" | "astro-starlight" => Box::new(Starlight),
             _ => Box::new(Minimal),
         },
         None => Box::new(Minimal),
@@ -362,6 +508,69 @@ mod tests {
 
         let adapter4 = get_theme_adapter(Some("MDBOOK"));
         assert_eq!(adapter4.name(), "mdbook");
+    }
+
+    #[test]
+    fn test_starlight_adapter() {
+        let adapter = Starlight;
+
+        assert_eq!(adapter.name(), "starlight");
+        assert_eq!(adapter.primary(), "var(--sl-color-text-accent)");
+        assert_eq!(adapter.border(), "var(--sl-color-hairline)");
+        assert_eq!(adapter.badge_fill("green"), "var(--sl-color-green-low)");
+        assert_eq!(adapter.badge_text("green"), "var(--sl-color-green-high)");
+        assert_eq!(adapter.badge_fill("purple"), "var(--sl-color-purple-low)");
+        assert_eq!(adapter.badge_fill("yellow"), "var(--sl-color-orange-low)");
+        assert_eq!(adapter.badge_fill("gray"), "var(--sl-color-gray-6)");
+        assert_eq!(adapter.badge_text("gray"), "var(--sl-color-gray-2)");
+    }
+
+    #[test]
+    fn test_starlight_has_no_fixed_colors() {
+        let adapter = Starlight;
+        let mut values = vec![
+            adapter.code_bg().to_string(),
+            adapter.code_fg().to_string(),
+            adapter.primary().to_string(),
+            adapter.accent().to_string(),
+            adapter.muted().to_string(),
+            adapter.border().to_string(),
+            adapter.success().to_string(),
+            adapter.warning().to_string(),
+            adapter.error().to_string(),
+            adapter.info().to_string(),
+            adapter.badge_async().to_string(),
+            adapter.badge_unsafe().to_string(),
+            adapter.badge_deprecated().to_string(),
+            adapter.badge_binding().to_string(),
+            adapter.badge_pub().to_string(),
+            adapter.badge_pub_crate().to_string(),
+            adapter.badge_rust().to_string(),
+            adapter.badge_python().to_string(),
+        ];
+        for color in ["blue", "green", "yellow", "red", "purple", "orange", "gray"] {
+            values.push(adapter.badge_fill(color));
+            values.push(adapter.badge_text(color));
+        }
+        for value in values {
+            assert!(value.starts_with("var(--sl-"), "fixed color: {}", value);
+        }
+        assert!(!adapter.badge_base_style().contains('#'));
+    }
+
+    #[test]
+    fn test_get_theme_adapter_starlight() {
+        assert_eq!(get_theme_adapter(Some("starlight")).name(), "starlight");
+        assert_eq!(get_theme_adapter(Some("Starlight")).name(), "starlight");
+    }
+
+    #[test]
+    fn test_default_badge_colors_unchanged() {
+        let adapter = Minimal;
+        assert_eq!(adapter.badge_fill("blue"), adapter.primary());
+        assert_eq!(adapter.badge_fill("gray"), adapter.muted());
+        assert_eq!(adapter.badge_text("yellow"), "black");
+        assert_eq!(adapter.badge_text("red"), "white");
     }
 
     #[test]

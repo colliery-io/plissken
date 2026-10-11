@@ -10,8 +10,11 @@ use crate::model::{
     Visibility,
 };
 use crate::render::docstring_renderer::render_docstring;
-use crate::render::module::{CrossRefLinker, PageLayout};
-use crate::render::ssg::{python_nav_entries, rust_nav_entries};
+use crate::render::module::{CrossRefLinker, LinkStyle, PageLayout};
+use crate::render::ssg::{
+    anchor_span, front_matter, normalize_rustdoc_fences, python_nav_entries, rust_nav_entries,
+    starlight_file_path,
+};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -47,6 +50,17 @@ impl ModulePageBuilder {
     fn add_header(&mut self, module_name: &str, badge: &str) {
         self.content
             .push_str(&format!("# {} {}\n\n", module_name, badge));
+    }
+
+    /// Add Starlight front matter, then the badge as the first line.
+    ///
+    /// Starlight shows the `title` as the page heading, so the page has no
+    /// `#` heading of its own.
+    fn add_front_matter(&mut self, title: &str, description: &str, order: usize, badge: &str) {
+        self.content
+            .push_str(&front_matter(title, description, order));
+        self.content.push_str(badge);
+        self.content.push_str("\n\n");
     }
 
     /// Add a parsed docstring section
@@ -95,6 +109,10 @@ impl ModulePageBuilder {
 pub struct ModuleRenderer<'a> {
     renderer: &'a Renderer,
     linker: CrossRefLinker,
+    /// Write pages for an Astro Starlight site
+    starlight: bool,
+    /// Sidebar order of each module page (Starlight front matter)
+    module_order: HashMap<String, usize>,
 }
 
 // Allow dead code for page-per-item rendering methods (reserved for future use)
@@ -102,18 +120,124 @@ pub struct ModuleRenderer<'a> {
 impl<'a> ModuleRenderer<'a> {
     /// Create a new module renderer
     pub fn new(renderer: &'a Renderer) -> Self {
-        Self {
-            renderer,
-            linker: CrossRefLinker::empty(),
-        }
+        Self::with_cross_refs(renderer, Vec::new())
     }
 
     /// Create a module renderer with cross-references for bi-directional linking
     pub fn with_cross_refs(renderer: &'a Renderer, cross_refs: Vec<CrossRef>) -> Self {
+        let starlight = renderer.is_starlight();
+        let style = if starlight {
+            LinkStyle::Route
+        } else {
+            LinkStyle::MarkdownFile
+        };
         Self {
             renderer,
-            linker: CrossRefLinker::new(cross_refs),
+            linker: CrossRefLinker::new(cross_refs).with_style(style),
+            starlight,
+            module_order: HashMap::new(),
         }
+    }
+
+    /// Set the sidebar order of the module pages from all modules of the
+    /// project: Python modules first, then Rust modules, each sorted by
+    /// path (the order of the navigation). Used in Starlight front matter.
+    pub fn with_module_order(
+        mut self,
+        python_modules: &[PythonModule],
+        rust_modules: &[RustModule],
+    ) -> Self {
+        let python = python_nav_entries(python_modules)
+            .into_iter()
+            .map(|e| format!("py:{}", e.path));
+        let rust = rust_nav_entries(rust_modules)
+            .into_iter()
+            .map(|e| format!("rs:{}", e.path));
+        self.module_order = python
+            .chain(rust)
+            .enumerate()
+            .map(|(i, key)| (key, i + 1))
+            .collect();
+        self
+    }
+
+    /// Sidebar order of a module page (0 if unknown).
+    fn order_of(&self, key: &str) -> usize {
+        self.module_order.get(key).copied().unwrap_or(0)
+    }
+
+    /// File path of a page; Starlight skips files whose name starts with `_`.
+    fn page_path(&self, path: PathBuf) -> PathBuf {
+        if self.starlight {
+            starlight_file_path(&path)
+        } else {
+            path
+        }
+    }
+
+    /// Last pass over a page. For Starlight, rustdoc code fences get the
+    /// language `rust`.
+    fn finish_page(&self, content: String) -> String {
+        if self.starlight {
+            normalize_rustdoc_fences(&content)
+        } else {
+            content
+        }
+    }
+
+    /// An item heading. For Starlight, it starts with an explicit anchor id,
+    /// which the cross-reference links use.
+    fn item_heading(&self, level: usize, id: &str, text: &str) -> String {
+        let hashes = "#".repeat(level);
+        if self.starlight {
+            format!("{} {}{}", hashes, anchor_span(id), text)
+        } else {
+            format!("{} {}", hashes, text)
+        }
+    }
+
+    /// A Python signature as a Markdown code fence (for Starlight).
+    ///
+    /// Long signatures get one parameter per line.
+    fn python_signature_fence(&self, func: &PythonFunction) -> String {
+        let prefix = if func.is_async { "async def" } else { "def" };
+        let params: Vec<String> = func
+            .signature
+            .params
+            .iter()
+            .map(|p| self.format_python_params(std::slice::from_ref(p)))
+            .collect();
+        let ret = func
+            .signature
+            .return_type
+            .as_deref()
+            .map(|r| format!(" -> {}", r))
+            .unwrap_or_default();
+        let one_line = format!("{} {}({}){}", prefix, func.name, params.join(", "), ret);
+        let sig = if one_line.len() <= 88 || params.is_empty() {
+            one_line
+        } else {
+            format!(
+                "{} {}(\n{}\n){}",
+                prefix,
+                func.name,
+                params
+                    .iter()
+                    .map(|p| format!("    {},", p))
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+                ret
+            )
+        };
+        format!("```python\n{}\n```", sig)
+    }
+
+    /// The description of a module page: the summary of its docstring.
+    fn page_description(summary: Option<String>, fallback: String) -> String {
+        summary
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or(fallback)
     }
 
     // =========================================================================
@@ -161,7 +285,19 @@ impl<'a> ModuleRenderer<'a> {
         // Module header with source badge
         let source_badge = self.source_badge(&module.source_type)?;
         let module_name = module.path.split('.').next_back().unwrap_or(&module.path);
-        builder.add_header(module_name, &source_badge);
+        if self.starlight {
+            let description = Self::page_description(
+                module
+                    .docstring
+                    .as_ref()
+                    .and_then(|d| parse_docstring(d).summary),
+                format!("API reference of the Python module {}.", module.path),
+            );
+            let order = self.order_of(&format!("py:{}", module.path));
+            builder.add_front_matter(&module.path, &description, order, &source_badge);
+        } else {
+            builder.add_header(module_name, &source_badge);
+        }
 
         // Module docstring
         if let Some(ref docstring) = module.docstring {
@@ -193,10 +329,10 @@ impl<'a> ModuleRenderer<'a> {
             }
         }
 
-        let path = layout.python_module_page(&module.path);
+        let path = self.page_path(layout.python_module_page(&module.path));
         Ok(RenderedPage {
             path,
-            content: builder.build(),
+            content: self.finish_page(builder.build()),
         })
     }
 
@@ -210,7 +346,12 @@ impl<'a> ModuleRenderer<'a> {
         let is_binding = class.rust_impl.is_some();
 
         // Class header (h3 since Classes is h2)
-        content.push_str(&format!("### `class {}`\n\n", class.name));
+        content.push_str(&self.item_heading(
+            3,
+            &format!("class.{}", class.name),
+            &format!("`class {}`", class.name),
+        ));
+        content.push_str("\n\n");
 
         // Base classes
         if !class.bases.is_empty() {
@@ -284,6 +425,7 @@ impl<'a> ModuleRenderer<'a> {
                     5,
                     module_path,
                     parent_class,
+                    Some(class.name.as_str()),
                 )?);
                 content.push_str("\n\n");
             }
@@ -301,24 +443,40 @@ impl<'a> ModuleRenderer<'a> {
         let mut content = String::new();
         let is_binding = func.rust_impl.is_some();
 
-        // Function header (h3 since Functions is h2)
-        content.push_str(&format!("### `{}`", func.name));
+        if self.starlight {
+            // Heading, then badges on their own line (not in the heading slug)
+            content.push_str(&self.item_heading(
+                3,
+                &format!("fn.{}", func.name),
+                &format!("`{}`", func.name),
+            ));
+            content.push_str("\n\n");
+            if func.is_async {
+                content.push_str(&self.renderer.badge_async()?);
+                content.push_str("\n\n");
+            }
+            content.push_str(&self.python_signature_fence(func));
+            content.push_str("\n\n");
+        } else {
+            // Function header (h3 since Functions is h2)
+            content.push_str(&format!("### `{}`", func.name));
 
-        // Additional badges
-        if func.is_async {
-            content.push(' ');
-            content.push_str(&self.renderer.badge_async()?);
+            // Additional badges
+            if func.is_async {
+                content.push(' ');
+                content.push_str(&self.renderer.badge_async()?);
+            }
+            content.push_str("\n\n");
+
+            // Signature
+            content.push_str(&self.renderer.render_signature(
+                &func.name,
+                &self.format_python_params(&func.signature.params),
+                func.signature.return_type.as_deref(),
+                func.is_async,
+            )?);
+            content.push_str("\n\n");
         }
-        content.push_str("\n\n");
-
-        // Signature
-        content.push_str(&self.renderer.render_signature(
-            &func.name,
-            &self.format_python_params(&func.signature.params),
-            func.signature.return_type.as_deref(),
-            func.is_async,
-        )?);
-        content.push_str("\n\n");
 
         // For bindings, add link to Rust implementation
         if is_binding
@@ -616,7 +774,7 @@ impl<'a> ModuleRenderer<'a> {
         _class_name: &str,
         parent_class: Option<&str>,
     ) -> Result<String, tera::Error> {
-        self.render_python_function_with_context(func, 4, module_path, parent_class)
+        self.render_python_function_with_context(func, 4, module_path, parent_class, None)
     }
 
     /// Render a Python function/method with class context
@@ -629,51 +787,67 @@ impl<'a> ModuleRenderer<'a> {
         heading_level: usize,
         module_path: &str,
         parent_class: Option<&str>,
+        owner_class: Option<&str>,
     ) -> Result<String, tera::Error> {
         let mut content = String::new();
         let is_binding = func.rust_impl.is_some();
 
-        // Function heading with badges
-        let heading_prefix = "#".repeat(heading_level);
-        content.push_str(&format!("{} `{}`", heading_prefix, func.name));
-
         // Badges
+        let mut badges = Vec::new();
         if func.is_async {
-            content.push(' ');
-            content.push_str(&self.renderer.badge_async()?);
+            badges.push(self.renderer.badge_async()?);
         }
         if func.is_property {
-            content.push(' ');
-            content.push_str(&self.renderer.render_badge("property", "gray", "property")?);
+            badges.push(self.renderer.render_badge("property", "gray", "property")?);
         }
         if func.is_staticmethod {
-            content.push(' ');
-            content.push_str(&self.renderer.render_badge(
-                "staticmethod",
-                "gray",
-                "staticmethod",
-            )?);
+            badges.push(
+                self.renderer
+                    .render_badge("staticmethod", "gray", "staticmethod")?,
+            );
         }
         if func.is_classmethod {
-            content.push(' ');
-            content.push_str(
-                &self
-                    .renderer
+            badges.push(
+                self.renderer
                     .render_badge("classmethod", "gray", "classmethod")?,
             );
         }
         // Note: Binding badge intentionally omitted at method level
         // The binding nature is evident from the Rust cross-ref link
-        content.push_str("\n\n");
 
-        // Signature
-        content.push_str(&self.renderer.render_signature(
-            &func.name,
-            &self.format_python_params(&func.signature.params),
-            func.signature.return_type.as_deref(),
-            func.is_async,
-        )?);
-        content.push_str("\n\n");
+        if self.starlight {
+            // Heading with an explicit id, then badges on their own line
+            let id = match owner_class {
+                Some(owner) => format!("{}.{}", owner, func.name),
+                None => format!("fn.{}", func.name),
+            };
+            content.push_str(&self.item_heading(heading_level, &id, &format!("`{}`", func.name)));
+            content.push_str("\n\n");
+            if !badges.is_empty() {
+                content.push_str(&badges.join(" "));
+                content.push_str("\n\n");
+            }
+            content.push_str(&self.python_signature_fence(func));
+            content.push_str("\n\n");
+        } else {
+            // Function heading with badges
+            let heading_prefix = "#".repeat(heading_level);
+            content.push_str(&format!("{} `{}`", heading_prefix, func.name));
+            for badge in &badges {
+                content.push(' ');
+                content.push_str(badge);
+            }
+            content.push_str("\n\n");
+
+            // Signature
+            content.push_str(&self.renderer.render_signature(
+                &func.name,
+                &self.format_python_params(&func.signature.params),
+                func.signature.return_type.as_deref(),
+                func.is_async,
+            )?);
+            content.push_str("\n\n");
+        }
 
         // For bindings, add link to Rust implementation (method-level if parent_class is set)
         if is_binding
@@ -850,7 +1024,19 @@ impl<'a> ModuleRenderer<'a> {
         // Module header with source badge
         let rust_badge = self.renderer.badge_source("rust")?;
         let module_name = module.path.split("::").last().unwrap_or(&module.path);
-        builder.add_header(module_name, &rust_badge);
+        if self.starlight {
+            let description = Self::page_description(
+                module
+                    .doc_comment
+                    .as_ref()
+                    .and_then(|d| parse_rust_doc(d).summary),
+                format!("API reference of the Rust module {}.", module.path),
+            );
+            let order = self.order_of(&format!("rs:{}", module.path));
+            builder.add_front_matter(&module.path, &description, order, &rust_badge);
+        } else {
+            builder.add_header(module_name, &rust_badge);
+        }
 
         // Module doc comment
         if let Some(ref doc) = module.doc_comment {
@@ -882,10 +1068,10 @@ impl<'a> ModuleRenderer<'a> {
             }
         }
 
-        let path = layout.rust_module_page(&module.path);
+        let path = self.page_path(layout.rust_module_page(&module.path));
         Ok(RenderedPage {
             path,
-            content: builder.build(),
+            content: self.finish_page(builder.build()),
         })
     }
 
@@ -911,9 +1097,23 @@ impl<'a> ModuleRenderer<'a> {
 
         // Struct/class header (h3 since Structs is h2)
         // Badge on new line after heading to not affect anchor generation
-        content.push_str(&format!("### `{} {}`", type_name, display_name));
-        if !is_pyclass && let Some(ref generics) = s.generics {
-            content.push_str(generics);
+        if self.starlight {
+            // Generics inside the code span: a bare `<T>` is an HTML tag
+            let generics = if is_pyclass {
+                ""
+            } else {
+                s.generics.as_deref().unwrap_or("")
+            };
+            content.push_str(&self.item_heading(
+                3,
+                &format!("struct.{}", s.name),
+                &format!("`{} {}{}`", type_name, display_name, generics),
+            ));
+        } else {
+            content.push_str(&format!("### `{} {}`", type_name, display_name));
+            if !is_pyclass && let Some(ref generics) = s.generics {
+                content.push_str(generics);
+            }
         }
         content.push_str("\n\n");
 
@@ -990,6 +1190,7 @@ impl<'a> ModuleRenderer<'a> {
                     is_pymethod,
                     module_path,
                     parent_struct,
+                    Some(s.name.as_str()),
                 )?);
                 content.push_str("\n\n");
             }
@@ -1007,13 +1208,25 @@ impl<'a> ModuleRenderer<'a> {
         let mut content = String::new();
 
         // Enum header (h3 since Enums is h2)
-        content.push_str(&format!("### `enum {}`", e.name));
-        if let Some(ref generics) = e.generics {
-            content.push_str(generics);
+        if self.starlight {
+            let generics = e.generics.as_deref().unwrap_or("");
+            content.push_str(&self.item_heading(
+                3,
+                &format!("enum.{}", e.name),
+                &format!("`enum {}{}`", e.name, generics),
+            ));
+            content.push_str("\n\n");
+            content.push_str(&self.visibility_badge(&e.visibility)?);
+            content.push_str("\n\n");
+        } else {
+            content.push_str(&format!("### `enum {}`", e.name));
+            if let Some(ref generics) = e.generics {
+                content.push_str(generics);
+            }
+            content.push(' ');
+            content.push_str(&self.visibility_badge(&e.visibility)?);
+            content.push_str("\n\n");
         }
-        content.push(' ');
-        content.push_str(&self.visibility_badge(&e.visibility)?);
-        content.push_str("\n\n");
 
         // Doc comment - parse and render properly
         if let Some(ref doc) = e.doc_comment {
@@ -1048,7 +1261,12 @@ impl<'a> ModuleRenderer<'a> {
         let is_binding = func.pyfunction.is_some();
 
         // Function header with badge on separate line for proper anchor generation
-        content.push_str(&format!("### `fn {}`\n\n", func.name));
+        content.push_str(&self.item_heading(
+            3,
+            &format!("fn.{}", func.name),
+            &format!("`fn {}`", func.name),
+        ));
+        content.push_str("\n\n");
         if is_binding {
             content.push_str(&self.renderer.badge_source("binding")?);
         } else {
@@ -1292,6 +1510,7 @@ impl<'a> ModuleRenderer<'a> {
                     is_pymethod,
                     module_path,
                     parent_struct,
+                    Some(s.name.as_str()),
                 )?);
                 content.push_str("\n\n");
             }
@@ -1411,34 +1630,50 @@ impl<'a> ModuleRenderer<'a> {
         is_pymethod: bool,
         module_path: &str,
         parent_struct: Option<&str>,
+        owner_struct: Option<&str>,
     ) -> Result<String, tera::Error> {
         let mut content = String::new();
         // A function is a binding if it has #[pyfunction] or is in a #[pymethods] block
         let is_binding = f.pyfunction.is_some() || is_pymethod;
 
-        // Function heading with badges
-        let heading_prefix = "#".repeat(heading_level);
-        content.push_str(&format!("{} `{}`", heading_prefix, f.name));
-
         // For bindings, no badge at method level (evident from cross-ref link)
         // For pure Rust methods, show visibility
+        let mut badges = Vec::new();
         if !is_binding {
-            content.push(' ');
-            content.push_str(&self.visibility_badge(&f.visibility)?);
+            badges.push(self.visibility_badge(&f.visibility)?);
         }
         if f.is_async {
-            content.push(' ');
-            content.push_str(&self.renderer.badge_async()?);
+            badges.push(self.renderer.badge_async()?);
         }
         if f.is_unsafe {
-            content.push(' ');
-            content.push_str(&self.renderer.badge_unsafe()?);
+            badges.push(self.renderer.badge_unsafe()?);
         }
         if f.is_const {
-            content.push(' ');
-            content.push_str(&self.renderer.render_badge("const", "blue", "const")?);
+            badges.push(self.renderer.render_badge("const", "blue", "const")?);
         }
-        content.push_str("\n\n");
+
+        if self.starlight {
+            // Heading with an explicit id, then badges on their own line
+            let id = match owner_struct {
+                Some(owner) => format!("{}.{}", owner, f.name),
+                None => format!("fn.{}", f.name),
+            };
+            content.push_str(&self.item_heading(heading_level, &id, &format!("`{}`", f.name)));
+            content.push_str("\n\n");
+            if !badges.is_empty() {
+                content.push_str(&badges.join(" "));
+                content.push_str("\n\n");
+            }
+        } else {
+            // Function heading with badges
+            let heading_prefix = "#".repeat(heading_level);
+            content.push_str(&format!("{} `{}`", heading_prefix, f.name));
+            for badge in &badges {
+                content.push(' ');
+                content.push_str(badge);
+            }
+            content.push_str("\n\n");
+        }
 
         // Signature - always show Rust-style for Rust docs
         content.push_str("```rust\n");
@@ -2613,5 +2848,195 @@ mod snapshot_tests {
 
         let pages = module_renderer.render_rust_module(&module).unwrap();
         assert_snapshot!("complex_rust_module", &pages[0].content);
+    }
+}
+
+/// Snapshot tests for pages of the Starlight template.
+#[cfg(test)]
+mod starlight_snapshot_tests {
+    use super::*;
+    use crate::model::*;
+    use insta::assert_snapshot;
+
+    fn starlight_renderer() -> Renderer {
+        Renderer::new(Some("starlight"), None).unwrap()
+    }
+
+    fn binding_cross_refs() -> Vec<CrossRef> {
+        vec![
+            CrossRef {
+                python_path: "native.Buffer".to_string(),
+                rust_path: "crate::buffer::RustBuffer".to_string(),
+                relationship: CrossRefKind::Binding,
+            },
+            CrossRef {
+                python_path: "native.checksum".to_string(),
+                rust_path: "crate::buffer::checksum".to_string(),
+                relationship: CrossRefKind::Binding,
+            },
+        ]
+    }
+
+    fn python_binding_module() -> PythonModule {
+        PythonModule::test("native")
+            .pyo3_binding()
+            .with_docstring("Native buffers.\n\nWritten in Rust.")
+            .with_item(PythonItem::Class(
+                PythonClass::test("Buffer")
+                    .with_docstring("A byte buffer.")
+                    .with_rust_impl(RustItemRef::new("crate::buffer", "RustBuffer"))
+                    .with_method(
+                        PythonFunction::test("len")
+                            .with_docstring("Get buffer length")
+                            .with_param(PythonParam::test("self"))
+                            .with_return_type("int")
+                            .with_rust_impl(RustItemRef::new("crate::buffer::RustBuffer", "len")),
+                    ),
+            ))
+            .with_item(PythonItem::Function(
+                PythonFunction::test("checksum")
+                    .with_docstring("Checksum of a buffer.")
+                    .with_param(PythonParam::test("buffer").with_type("Buffer"))
+                    .with_return_type("int")
+                    .with_rust_impl(RustItemRef::new("crate::buffer", "checksum")),
+            ))
+    }
+
+    fn rust_binding_module() -> RustModule {
+        RustModule::test("crate::buffer")
+            .with_doc("Buffers for Python.")
+            .with_item(RustItem::Struct(
+                RustStruct::test("RustBuffer")
+                    .with_doc("A byte buffer.\n\n```ignore\nlet b = RustBuffer::new();\n```")
+                    .with_pyclass(PyClassMeta::new().with_name("Buffer").with_module("native"))
+                    .with_field(RustField::test("data", "Vec<u8>").with_doc("The bytes")),
+            ))
+            .with_item(RustItem::Impl(RustImpl {
+                generics: None,
+                target: "RustBuffer".to_string(),
+                trait_: None,
+                where_clause: None,
+                methods: vec![
+                    RustFunction::test("len")
+                        .with_doc("Get buffer length")
+                        .with_signature("pub fn len(&self) -> usize"),
+                ],
+                pymethods: true,
+                source: SourceSpan::test("test.rs", 1, 20),
+            }))
+            .with_item(RustItem::Function(
+                RustFunction::test("checksum")
+                    .with_doc("Checksum of a buffer.")
+                    .with_signature("#[pyfunction]\npub fn checksum(buffer: &RustBuffer) -> u64")
+                    .with_pyfunction(PyFunctionMeta::new()),
+            ))
+    }
+
+    #[test]
+    fn snapshot_starlight_python_binding() {
+        let renderer = starlight_renderer();
+        let python = vec![python_binding_module()];
+        let rust = vec![rust_binding_module()];
+        let module_renderer = ModuleRenderer::with_cross_refs(&renderer, binding_cross_refs())
+            .with_module_order(&python, &rust);
+
+        let pages = module_renderer.render_python_module(&python[0]).unwrap();
+        assert_eq!(pages[0].path, PathBuf::from("native.md"));
+        assert_snapshot!("starlight_python_binding", &pages[0].content);
+    }
+
+    #[test]
+    fn snapshot_starlight_rust_binding() {
+        let renderer = starlight_renderer();
+        let python = vec![python_binding_module()];
+        let rust = vec![rust_binding_module()];
+        let module_renderer = ModuleRenderer::with_cross_refs(&renderer, binding_cross_refs())
+            .with_module_order(&python, &rust);
+
+        let pages = module_renderer.render_rust_module(&rust[0]).unwrap();
+        assert_eq!(pages[0].path, PathBuf::from("rust/crate/buffer.md"));
+        assert_snapshot!("starlight_rust_binding", &pages[0].content);
+    }
+
+    #[test]
+    fn snapshot_starlight_python_async_private_module() {
+        let renderer = starlight_renderer();
+        let module_renderer = ModuleRenderer::new(&renderer);
+
+        let module = PythonModule::test("pkg._internal").with_item(PythonItem::Function(
+            PythonFunction::test("fetch")
+                .async_()
+                .with_docstring("Fetch data from URL.\n\nArgs:\n    url: The URL to fetch")
+                .with_param(PythonParam::test("url").with_type("str"))
+                .with_param(
+                    PythonParam::test("timeout_in_seconds_for_the_whole_request")
+                        .with_type("float")
+                        .with_default("30.0"),
+                )
+                .with_return_type("bytes"),
+        ));
+
+        let pages = module_renderer.render_python_module(&module).unwrap();
+        // Starlight skips files that start with `_`
+        assert_eq!(pages[0].path, PathBuf::from("pkg/_internal/index.md"));
+        assert_snapshot!("starlight_python_async_private_module", &pages[0].content);
+    }
+
+    #[test]
+    fn snapshot_starlight_rust_generics() {
+        let renderer = starlight_renderer();
+        let module_renderer = ModuleRenderer::new(&renderer);
+
+        let module = RustModule::test("crate::types")
+            .with_item(RustItem::Enum(RustEnum {
+                name: "Outcome".to_string(),
+                visibility: Visibility::Public,
+                doc_comment: Some("Operation result type.".to_string()),
+                parsed_doc: None,
+                generics: Some("<T, E>".to_string()),
+                variants: vec![RustVariant {
+                    name: "Done".to_string(),
+                    doc_comment: Some("Finished".to_string()),
+                    fields: vec![RustField::test("0", "T")],
+                }],
+                source: SourceSpan::test("test.rs", 1, 15),
+            }))
+            .with_item(RustItem::Function(
+                RustFunction::test("dangerous_read")
+                    .async_()
+                    .unsafe_()
+                    .with_doc("Read from a raw pointer.")
+                    .with_signature("pub async unsafe fn dangerous_read(ptr: *const u8) -> u8"),
+            ));
+
+        let pages = module_renderer.render_rust_module(&module).unwrap();
+        let content = &pages[0].content;
+        // Generics stay in the code span: a bare `<T, E>` would be an HTML tag
+        assert!(content.contains("`enum Outcome<T, E>`"));
+        assert_snapshot!("starlight_rust_generics", content);
+    }
+
+    #[test]
+    fn starlight_pages_have_no_fixed_colors_or_md_links() {
+        let renderer = starlight_renderer();
+        let module_renderer = ModuleRenderer::with_cross_refs(&renderer, binding_cross_refs());
+        let mut pages = module_renderer
+            .render_python_module(&python_binding_module())
+            .unwrap();
+        pages.extend(
+            module_renderer
+                .render_rust_module(&rust_binding_module())
+                .unwrap(),
+        );
+        for page in pages {
+            assert!(page.content.starts_with("---\ntitle: "));
+            assert!(!page.content.contains(".md#"), "{}", page.content);
+            assert!(!page.content.contains(".md)"), "{}", page.content);
+            assert!(!page.content.contains("white"));
+            assert!(!page.content.contains("color: #"));
+            assert!(!page.content.contains("background: #"));
+            // No `#` page heading: Starlight shows the title
+            assert!(!page.content.contains("\n# "));
+        }
     }
 }

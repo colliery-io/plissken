@@ -38,6 +38,9 @@ Available variables:
 | `text` | Badge text |
 | `badge_type` | Type: async, unsafe, deprecated, etc. |
 | `color_type` | Color hint: blue, green, red, etc. |
+| `badge_fill` | Fill color for `color_type` from the theme |
+| `badge_text` | Text color on `badge_fill` |
+| `badge_base_style` | CSS for the shape of the badge |
 | `theme.*` | Theme colors |
 
 ### Signature Template
@@ -79,6 +82,20 @@ Uses mdBook's theme variables:
 | Primary | `var(--links)` |
 | Code BG | `var(--code-bg)` |
 | Code FG | `var(--inline-code-color)` |
+
+### Starlight
+
+Uses Starlight's `--sl-color-*` variables. starlight-aurora sets them from Aurora's
+tokens.
+
+| Color | CSS Variable |
+|-------|-------------|
+| Primary | `var(--sl-color-text-accent)` |
+| Accent | `var(--sl-color-accent)` |
+| Code BG | `var(--sl-color-bg-inline-code)` |
+| Muted | `var(--sl-color-gray-3)` |
+| Border | `var(--sl-color-hairline)` |
+| Badge fill / text | `var(--sl-color-<hue>-low)` / `var(--sl-color-<hue>-high)` |
 
 ### Badge Colors
 

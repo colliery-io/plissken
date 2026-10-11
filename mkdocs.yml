@@ -75,6 +75,7 @@ nav:
     - Rust Projects: guide/rust.md
     - Hybrid Projects: guide/hybrid.md
     - Customization: guide/customization.md
+    - Starlight Sites: guide/starlight.md
   - API Reference:
     - Rust:
       - plissken: api/rust/plissken.md
