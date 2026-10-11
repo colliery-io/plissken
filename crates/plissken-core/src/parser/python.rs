@@ -836,10 +836,10 @@ async def fetch(url: str) -> bytes:
 
         // Find Scheduler class
         let scheduler = result.items.iter().find_map(|i| {
-            if let PythonItem::Class(c) = i {
-                if c.name == "Scheduler" {
-                    return Some(c);
-                }
+            if let PythonItem::Class(c) = i
+                && c.name == "Scheduler"
+            {
+                return Some(c);
             }
             None
         });
@@ -869,10 +869,10 @@ async def fetch(url: str) -> bytes:
 
         // Find TaskStatus enum
         let task_status = result.items.iter().find_map(|i| {
-            if let PythonItem::Class(c) = i {
-                if c.name == "TaskStatus" {
-                    return Some(c);
-                }
+            if let PythonItem::Class(c) = i
+                && c.name == "TaskStatus"
+            {
+                return Some(c);
             }
             None
         });

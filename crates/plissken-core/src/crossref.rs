@@ -781,10 +781,10 @@ mod tests {
 
         // Check the class
         let task_class = python_module.items.iter().find_map(|i| {
-            if let PythonItem::Class(c) = i {
-                if c.name == "Task" {
-                    return Some(c);
-                }
+            if let PythonItem::Class(c) = i
+                && c.name == "Task"
+            {
+                return Some(c);
             }
             None
         });
@@ -796,10 +796,10 @@ mod tests {
 
         // Check the function
         let create_fn = python_module.items.iter().find_map(|i| {
-            if let PythonItem::Function(f) = i {
-                if f.name == "create" {
-                    return Some(f);
-                }
+            if let PythonItem::Function(f) = i
+                && f.name == "create"
+            {
+                return Some(f);
             }
             None
         });
