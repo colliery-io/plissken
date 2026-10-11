@@ -42,6 +42,13 @@ pub const TEMPLATE_MKDOCS_MATERIAL: &str = "mkdocs-material";
 /// mdBook template name
 pub const TEMPLATE_MDBOOK: &str = "mdbook";
 
+/// Astro Starlight template name
+pub const TEMPLATE_STARLIGHT: &str = "starlight";
+
+/// Default output path for the Starlight template: a folder of the
+/// Starlight content collection
+pub const DEFAULT_STARLIGHT_OUTPUT_PATH: &str = "docs/src/content/docs/reference/api";
+
 /// Default crates configuration value
 pub const DEFAULT_CRATES: &str = ".";
 

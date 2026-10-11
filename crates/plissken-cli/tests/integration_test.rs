@@ -229,3 +229,103 @@ fn test_render_creates_directory_structure() {
     // Python modules are at top level (helpers.md) in inline format
     // (no python/ directory needed for simple modules)
 }
+
+#[test]
+fn test_render_starlight_template() {
+    let bin = plissken_bin();
+    let hybrid_binary = fixtures_path().join("hybrid_binary");
+
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let output_dir = temp_dir.path().join("docs/src/content/docs/reference/api");
+
+    let output = Command::new(&bin)
+        .args([
+            "render",
+            &hybrid_binary.to_string_lossy(),
+            "-o",
+            &output_dir.to_string_lossy(),
+            "-t",
+            "starlight",
+        ])
+        .output()
+        .expect("Failed to execute plissken render");
+    assert!(
+        output.status.success(),
+        "Render command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    // Pages: same layout as MkDocs, with front matter
+    let helpers = fs::read_to_string(output_dir.join("helpers.md")).unwrap();
+    assert!(helpers.starts_with("---\ntitle: "));
+    assert!(helpers.contains("sidebar:\n  order: "));
+    assert!(helpers.contains("hidden: true"));
+    let crate_root = fs::read_to_string(output_dir.join("rust/hybrid_binary.md")).unwrap();
+    assert!(crate_root.starts_with("---\ntitle: \"hybrid_binary\""));
+
+    // Links are route links, never .md files
+    for entry in walkdir(&output_dir) {
+        let content = fs::read_to_string(&entry).unwrap();
+        assert!(!content.contains(".md#"), "{}", entry.display());
+        assert!(!content.contains(".md)"), "{}", entry.display());
+        assert!(!content.contains("color: white"), "{}", entry.display());
+    }
+
+    // Sidebar group for astro.config.mjs, with slugs under reference/api
+    let sidebar = fs::read_to_string(output_dir.join("_sidebar.mjs")).unwrap();
+    assert!(sidebar.contains("export default {"));
+    assert!(sidebar.contains("label: \"Python\""));
+    assert!(sidebar.contains("label: \"Rust\""));
+    assert!(sidebar.contains("slug: \"reference/api/rust/hybrid_binary\""));
+    assert!(!sidebar.contains(".md"));
+}
+
+#[test]
+fn test_init_starlight_template() {
+    let bin = plissken_bin();
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    fs::write(
+        temp_dir.path().join("Cargo.toml"),
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    )
+    .unwrap();
+    fs::create_dir_all(temp_dir.path().join("src")).unwrap();
+    fs::write(temp_dir.path().join("src/lib.rs"), "//! Demo\n").unwrap();
+
+    let output = Command::new(&bin)
+        .args(["init", "--template", "starlight"])
+        .current_dir(temp_dir.path())
+        .output()
+        .expect("Failed to execute plissken init");
+    assert!(
+        output.status.success(),
+        "Init command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let config = fs::read_to_string(temp_dir.path().join("plissken.toml")).unwrap();
+    assert!(config.contains("template = \"starlight\""));
+    assert!(config.contains("path = \"docs/src/content/docs/reference/api\""));
+
+    // An unknown template is an error
+    let output = Command::new(&bin)
+        .args(["init", "--force", "--template", "docusaurus"])
+        .current_dir(temp_dir.path())
+        .output()
+        .expect("Failed to execute plissken init");
+    assert!(!output.status.success());
+}
+
+/// All files under a directory.
+fn walkdir(dir: &std::path::Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    for entry in fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            files.extend(walkdir(&path));
+        } else {
+            files.push(path);
+        }
+    }
+    files
+}

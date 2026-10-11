@@ -96,6 +96,14 @@ impl Renderer {
         self.theme.name()
     }
 
+    /// Whether pages are written for an Astro Starlight site.
+    ///
+    /// Starlight pages get front matter, route links between pages, explicit
+    /// anchor ids, and signatures as Markdown code fences.
+    pub fn is_starlight(&self) -> bool {
+        self.theme.name() == "starlight"
+    }
+
     /// Create a base Tera context with theme values injected.
     ///
     /// This context includes the `theme` object with all CSS variable mappings,
@@ -152,6 +160,9 @@ impl Renderer {
         ctx.insert("text", text);
         ctx.insert("color_type", color_type);
         ctx.insert("badge_type", badge_type);
+        ctx.insert("badge_fill", &self.theme.badge_fill(color_type));
+        ctx.insert("badge_text", &self.theme.badge_text(color_type));
+        ctx.insert("badge_base_style", self.theme.badge_base_style());
         self.tera.render("partials/badge.html", &ctx)
     }
 
@@ -393,6 +404,20 @@ mod tests {
 
         let gray = renderer.render_badge("note", "gray", "note").unwrap();
         assert!(gray.contains("#757575")); // minimal theme muted
+    }
+
+    #[test]
+    fn test_render_badge_starlight() {
+        let renderer = Renderer::new(Some("starlight"), None).unwrap();
+        assert!(renderer.is_starlight());
+
+        let badge = renderer.badge_source("binding").unwrap();
+        assert!(badge.contains("Binding"));
+        assert!(badge.contains("background: var(--sl-color-purple-low);"));
+        assert!(badge.contains("color: var(--sl-color-purple-high);"));
+        assert!(badge.contains("var(--sl-font-mono)"));
+        assert!(!badge.contains("white"));
+        assert!(!badge.contains('#'));
     }
 
     #[test]

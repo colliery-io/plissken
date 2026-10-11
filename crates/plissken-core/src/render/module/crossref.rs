@@ -5,6 +5,7 @@
 //! between binding implementations and their Python APIs.
 
 use crate::model::CrossRef;
+use crate::render::ssg::route_href;
 
 // =============================================================================
 // Path Computation Helpers
@@ -80,12 +81,51 @@ fn compute_python_relative_prefix(python_path: &str) -> String {
 #[derive(Debug, Clone, Default)]
 pub struct CrossRefLinker {
     cross_refs: Vec<CrossRef>,
+    style: LinkStyle,
+}
+
+/// How cross-reference links are written.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum LinkStyle {
+    /// Relative links to `.md` files, with anchors from heading text
+    /// (MkDocs, mdBook).
+    #[default]
+    MarkdownFile,
+    /// Relative route links (`../foo/`), with explicit anchor ids
+    /// (Astro Starlight). They work under any site `base`.
+    Route,
 }
 
 impl CrossRefLinker {
     /// Create a new CrossRefLinker with the given cross-references.
     pub fn new(cross_refs: Vec<CrossRef>) -> Self {
-        Self { cross_refs }
+        Self {
+            cross_refs,
+            style: LinkStyle::default(),
+        }
+    }
+
+    /// Set how links are written.
+    pub fn with_style(mut self, style: LinkStyle) -> Self {
+        self.style = style;
+        self
+    }
+
+    /// The link to `to_page` from `from_page` (page paths relative to the
+    /// output folder). `prefix` and `md_anchor` make a Markdown file link;
+    /// `id` is the explicit anchor id of a route link.
+    fn href(
+        &self,
+        from_page: &str,
+        to_page: &str,
+        prefix: &str,
+        md_anchor: &str,
+        id: &str,
+    ) -> String {
+        match self.style {
+            LinkStyle::MarkdownFile => format!("{}{}#{}", prefix, to_page, md_anchor),
+            LinkStyle::Route => route_href(from_page, to_page, Some(id)),
+        }
     }
 
     /// Create an empty CrossRefLinker (no cross-references).
@@ -121,7 +161,7 @@ impl CrossRefLinker {
                         || xref.rust_path.ends_with(&format!("::{}", struct_name))
                     {
                         // Get Python module and class name
-                        let (python_module, _python_class) =
+                        let (python_module, python_class) =
                             if let Some(pos) = xref.python_path.rfind('.') {
                                 (&xref.python_path[..pos], &xref.python_path[pos + 1..])
                             } else {
@@ -133,9 +173,16 @@ impl CrossRefLinker {
                         let python_page = compute_python_page_path(python_module);
                         let anchor = method_name.to_lowercase();
                         let python_method_path = format!("{}.{}", xref.python_path, method_name);
+                        let href = self.href(
+                            &compute_rust_page_path(rust_path),
+                            &python_page,
+                            &prefix,
+                            &anchor,
+                            &format!("{}.{}", python_class, method_name),
+                        );
                         return Some(format!(
-                            "> **Python API**: [{}]({}{}#{})\n\n",
-                            python_method_path, prefix, python_page, anchor
+                            "> **Python API**: [{}]({})\n\n",
+                            python_method_path, href
                         ));
                     }
                 }
@@ -162,21 +209,28 @@ impl CrossRefLinker {
             if xref.rust_path == full_rust_path
                 || xref.rust_path.ends_with(&format!("::{}", func_name))
             {
-                // Get Python module path
-                let python_module = if let Some(pos) = xref.python_path.rfind('.') {
-                    &xref.python_path[..pos]
+                // Get Python module path and function name
+                let (python_module, python_func) = if let Some(pos) = xref.python_path.rfind('.') {
+                    (&xref.python_path[..pos], &xref.python_path[pos + 1..])
                 } else {
-                    xref.python_path.as_str()
+                    (xref.python_path.as_str(), xref.python_path.as_str())
                 };
 
                 // Compute path to Python module page
                 let prefix = compute_rust_relative_prefix(rust_path);
                 let python_page = compute_python_page_path(python_module);
                 let anchor = func_name.to_lowercase();
+                let href = self.href(
+                    &compute_rust_page_path(rust_path),
+                    &python_page,
+                    &prefix,
+                    &anchor,
+                    &format!("fn.{}", python_func),
+                );
 
                 return Some(format!(
-                    "> **Python API**: [{}]({}{}#{})\n\n",
-                    xref.python_path, prefix, python_page, anchor
+                    "> **Python API**: [{}]({})\n\n",
+                    xref.python_path, href
                 ));
             }
         }
@@ -212,10 +266,17 @@ impl CrossRefLinker {
                 let prefix = compute_rust_relative_prefix(rust_path);
                 let python_page = compute_python_page_path(python_module);
                 // Use Python class name for anchor (matches the rendered heading)
-                let anchor = python_class.to_lowercase();
+                let anchor = format!("class-{}", python_class.to_lowercase());
+                let href = self.href(
+                    &compute_rust_page_path(rust_path),
+                    &python_page,
+                    &prefix,
+                    &anchor,
+                    &format!("class.{}", python_class),
+                );
                 return Some(format!(
-                    "> **Python API**: [{}]({}{}#class-{})\n\n",
-                    xref.python_path, prefix, python_page, anchor
+                    "> **Python API**: [{}]({})\n\n",
+                    xref.python_path, href
                 ));
             }
         }
@@ -254,10 +315,17 @@ impl CrossRefLinker {
                 let rust_page = compute_rust_page_path(rust_module);
                 // Rust function anchor includes "fn-" prefix (from heading `### \`fn funcname\``)
                 let anchor = format!("fn-{}", rust_func.to_lowercase());
+                let href = self.href(
+                    &compute_python_page_path(python_path),
+                    &rust_page,
+                    &prefix,
+                    &anchor,
+                    &format!("fn.{}", rust_func),
+                );
 
                 return Some(format!(
-                    "> **Rust Implementation**: [{}]({}{}#{})\n\n",
-                    xref.rust_path, prefix, rust_page, anchor
+                    "> **Rust Implementation**: [{}]({})\n\n",
+                    xref.rust_path, href
                 ));
             }
         }
@@ -282,22 +350,29 @@ impl CrossRefLinker {
             if xref.python_path == full_python_path
                 || xref.python_path.ends_with(&format!(".{}", class_name))
             {
-                // Get the Rust module
-                let rust_module = if let Some(pos) = xref.rust_path.rfind("::") {
-                    &xref.rust_path[..pos]
+                // Get the Rust module and struct name
+                let (rust_module, rust_struct) = if let Some(pos) = xref.rust_path.rfind("::") {
+                    (&xref.rust_path[..pos], &xref.rust_path[pos + 2..])
                 } else {
-                    xref.rust_path.as_str()
+                    (xref.rust_path.as_str(), xref.rust_path.as_str())
                 };
 
                 // Compute path from Python module page to Rust module page
                 let prefix = compute_python_relative_prefix(python_path);
                 let rust_page = compute_rust_page_path(rust_module);
                 // Use Python class name for anchor (Rust docs show binding name in heading)
-                let anchor = class_name.to_lowercase();
+                let anchor = format!("class-{}", class_name.to_lowercase());
+                let href = self.href(
+                    &compute_python_page_path(python_path),
+                    &rust_page,
+                    &prefix,
+                    &anchor,
+                    &format!("struct.{}", rust_struct),
+                );
 
                 return Some(format!(
-                    "> **Rust Implementation**: [{}]({}{}#class-{})\n\n",
-                    xref.rust_path, prefix, rust_page, anchor
+                    "> **Rust Implementation**: [{}]({})\n\n",
+                    xref.rust_path, href
                 ));
             }
         }
@@ -326,22 +401,30 @@ impl CrossRefLinker {
                     if xref.python_path == full_python_path
                         || xref.python_path.ends_with(&format!(".{}", class_name))
                     {
-                        // Get the Rust module
-                        let rust_module = if let Some(pos) = xref.rust_path.rfind("::") {
-                            &xref.rust_path[..pos]
-                        } else {
-                            xref.rust_path.as_str()
-                        };
+                        // Get the Rust module and struct name
+                        let (rust_module, rust_struct) =
+                            if let Some(pos) = xref.rust_path.rfind("::") {
+                                (&xref.rust_path[..pos], &xref.rust_path[pos + 2..])
+                            } else {
+                                (xref.rust_path.as_str(), xref.rust_path.as_str())
+                            };
 
                         // Compute path from Python module page to Rust module page
                         let prefix = compute_python_relative_prefix(python_path);
                         let rust_page = compute_rust_page_path(rust_module);
                         let anchor = method_name.to_lowercase();
                         let rust_method_path = format!("{}::{}", xref.rust_path, method_name);
+                        let href = self.href(
+                            &compute_python_page_path(python_path),
+                            &rust_page,
+                            &prefix,
+                            &anchor,
+                            &format!("{}.{}", rust_struct, method_name),
+                        );
 
                         return Some(format!(
-                            "> **Rust Implementation**: [{}]({}{}#{})\n\n",
-                            rust_method_path, prefix, rust_page, anchor
+                            "> **Rust Implementation**: [{}]({})\n\n",
+                            rust_method_path, href
                         ));
                     }
                 }
@@ -574,6 +657,62 @@ mod tests {
             .unwrap();
         assert!(link.contains("mypackage.sub.NestedClass"));
         assert!(link.contains("mypackage/sub.md#class-nestedclass"));
+    }
+
+    #[test]
+    fn test_route_style_links() {
+        let linker = CrossRefLinker::new(test_cross_refs()).with_style(LinkStyle::Route);
+
+        // Python page mypackage.md is served at mypackage/
+        let link = linker
+            .rust_link_for_python_class("mypackage", "MyClass")
+            .unwrap();
+        assert!(link.contains("(../rust/mycrate/#struct.MyStruct)"));
+
+        let link = linker
+            .rust_link_for_python_function("mypackage", "my_func")
+            .unwrap();
+        assert!(link.contains("(../rust/mycrate/#fn.my_func)"));
+
+        let link = linker
+            .rust_link_for_python_method("mypackage", "do_something", Some("MyClass"))
+            .unwrap();
+        assert!(link.contains("(../rust/mycrate/#MyStruct.do_something)"));
+
+        // Rust page rust/mycrate.md is served at rust/mycrate/
+        let link = linker
+            .python_link_for_rust_struct("mycrate", "MyStruct")
+            .unwrap();
+        assert!(link.contains("(../../mypackage/#class.MyClass)"));
+
+        let link = linker
+            .python_link_for_rust_function("mycrate", "my_func")
+            .unwrap();
+        assert!(link.contains("(../../mypackage/#fn.my_func)"));
+
+        let link = linker
+            .python_link_for_rust_method("mycrate", "do_something", Some("MyStruct"))
+            .unwrap();
+        assert!(link.contains("(../../mypackage/#MyClass.do_something)"));
+
+        // Nested modules
+        let link = linker
+            .python_link_for_rust_struct("mycrate::sub", "NestedStruct")
+            .unwrap();
+        assert!(link.contains("(../../../mypackage/sub/#class.NestedClass)"));
+        let link = linker
+            .rust_link_for_python_class("mypackage.sub", "NestedClass")
+            .unwrap();
+        assert!(link.contains("(../../rust/mycrate/sub/#struct.NestedStruct)"));
+    }
+
+    #[test]
+    fn test_markdown_style_is_default() {
+        let linker = CrossRefLinker::new(test_cross_refs());
+        let link = linker
+            .rust_link_for_python_class("mypackage", "MyClass")
+            .unwrap();
+        assert!(link.contains("(rust/mycrate.md#class-myclass)"));
     }
 
     #[test]

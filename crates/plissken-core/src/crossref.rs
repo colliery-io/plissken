@@ -73,21 +73,17 @@ impl<'a> CrossRefBuilder<'a> {
                                 .insert(py_name, (f.name.clone(), module.path.clone()));
                         }
                     }
-                    RustItem::Impl(impl_block) => {
-                        if impl_block.pymethods {
-                            // Index methods from #[pymethods] blocks
-                            for method in &impl_block.methods {
-                                let py_name = method
-                                    .pyfunction
-                                    .as_ref()
-                                    .and_then(|pf| pf.name.clone())
-                                    .unwrap_or_else(|| method.name.clone());
+                    RustItem::Impl(impl_block) if impl_block.pymethods => {
+                        // Index methods from #[pymethods] blocks
+                        for method in &impl_block.methods {
+                            let py_name = method
+                                .pyfunction
+                                .as_ref()
+                                .and_then(|pf| pf.name.clone())
+                                .unwrap_or_else(|| method.name.clone());
 
-                                self.pymethod_map.insert(
-                                    (impl_block.target.clone(), py_name),
-                                    method.name.clone(),
-                                );
-                            }
+                            self.pymethod_map
+                                .insert((impl_block.target.clone(), py_name), method.name.clone());
                         }
                     }
                     _ => {}
@@ -781,10 +777,10 @@ mod tests {
 
         // Check the class
         let task_class = python_module.items.iter().find_map(|i| {
-            if let PythonItem::Class(c) = i {
-                if c.name == "Task" {
-                    return Some(c);
-                }
+            if let PythonItem::Class(c) = i
+                && c.name == "Task"
+            {
+                return Some(c);
             }
             None
         });
@@ -796,10 +792,10 @@ mod tests {
 
         // Check the function
         let create_fn = python_module.items.iter().find_map(|i| {
-            if let PythonItem::Function(f) = i {
-                if f.name == "create" {
-                    return Some(f);
-                }
+            if let PythonItem::Function(f) = i
+                && f.name == "create"
+            {
+                return Some(f);
             }
             None
         });

@@ -859,10 +859,10 @@ pub struct Foo;
 
         // Check PyTask struct has pyclass
         let py_task = result.items.iter().find_map(|i| {
-            if let RustItem::Struct(s) = i {
-                if s.name == "PyTask" {
-                    return Some(s);
-                }
+            if let RustItem::Struct(s) = i
+                && s.name == "PyTask"
+            {
+                return Some(s);
             }
             None
         });
@@ -876,10 +876,11 @@ pub struct Foo;
 
         // Check pymethods impl
         let pymethods_impl = result.items.iter().find_map(|i| {
-            if let RustItem::Impl(imp) = i {
-                if imp.pymethods && imp.target == "PyTask" {
-                    return Some(imp);
-                }
+            if let RustItem::Impl(imp) = i
+                && imp.pymethods
+                && imp.target == "PyTask"
+            {
+                return Some(imp);
             }
             None
         });

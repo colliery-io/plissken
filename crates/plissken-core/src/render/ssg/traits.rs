@@ -85,6 +85,7 @@ pub fn rust_nav_entries(modules: &[RustModule]) -> Vec<NavEntry> {
 ///
 /// - [`MkDocsAdapter`](super::MkDocsAdapter) - For MkDocs with Material theme
 /// - [`MdBookAdapter`](super::MdBookAdapter) - For mdBook
+/// - [`StarlightAdapter`](super::StarlightAdapter) - For Astro Starlight
 pub trait SSGAdapter: Send + Sync {
     /// Human-readable name for the SSG.
     fn name(&self) -> &'static str;

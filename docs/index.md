@@ -12,7 +12,7 @@ plissken generates beautiful, unified documentation for projects that combine Ru
 
 - **Unified Documentation** - Single documentation site for both Python and Rust APIs
 - **Cross-Reference Links** - Automatic bidirectional links between Python classes and their Rust implementations
-- **Multiple SSG Support** - Generate docs for MkDocs Material or mdBook
+- **Multiple SSG Support** - Generate docs for MkDocs Material, mdBook or Astro Starlight
 - **Smart Discovery** - Auto-detect Python packages and Rust crates
 - **Customizable Themes** - Full theme support with CSS variables for dark mode
 - **Template Overrides** - Customize any template without forking
