@@ -73,21 +73,17 @@ impl<'a> CrossRefBuilder<'a> {
                                 .insert(py_name, (f.name.clone(), module.path.clone()));
                         }
                     }
-                    RustItem::Impl(impl_block) => {
-                        if impl_block.pymethods {
-                            // Index methods from #[pymethods] blocks
-                            for method in &impl_block.methods {
-                                let py_name = method
-                                    .pyfunction
-                                    .as_ref()
-                                    .and_then(|pf| pf.name.clone())
-                                    .unwrap_or_else(|| method.name.clone());
+                    RustItem::Impl(impl_block) if impl_block.pymethods => {
+                        // Index methods from #[pymethods] blocks
+                        for method in &impl_block.methods {
+                            let py_name = method
+                                .pyfunction
+                                .as_ref()
+                                .and_then(|pf| pf.name.clone())
+                                .unwrap_or_else(|| method.name.clone());
 
-                                self.pymethod_map.insert(
-                                    (impl_block.target.clone(), py_name),
-                                    method.name.clone(),
-                                );
-                            }
+                            self.pymethod_map
+                                .insert((impl_block.target.clone(), py_name), method.name.clone());
                         }
                     }
                     _ => {}
