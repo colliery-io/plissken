@@ -135,6 +135,11 @@ impl CrossRefLinker {
         self
     }
 
+    /// How links are written.
+    pub fn style(&self) -> LinkStyle {
+        self.style
+    }
+
     /// The link to `to_page` from `from_page` (page paths relative to the
     /// output folder). `prefix` and `md_anchor` make a Markdown file link;
     /// `id` is the explicit anchor id of a route link.

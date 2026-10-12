@@ -9,14 +9,14 @@ use crate::model::{
     PythonVariable, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustParam, RustStruct,
     SourceType, Visibility,
 };
-use crate::render::doc_links::rewrite_intra_doc_links;
+use crate::render::doc_links::{RustDocIndex, relative_file_href, rewrite_intra_doc_links};
 use crate::render::docstring_renderer::{
     escape_table_content, render_docstring, render_rust_docstring,
 };
 use crate::render::module::{CrossRefLinker, LinkStyle, PageLayout};
 use crate::render::ssg::{
-    anchor_span, front_matter, normalize_rustdoc_fences, python_nav_entries, rust_nav_entries,
-    starlight_file_path,
+    anchor_span, front_matter, normalize_rustdoc_fences, python_nav_entries, route_href,
+    rust_nav_entries, starlight_file_path,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -116,6 +116,8 @@ pub struct ModuleRenderer<'a> {
     starlight: bool,
     /// Sidebar order of each module page (Starlight front matter)
     module_order: HashMap<String, usize>,
+    /// The Rust items, to resolve intra-doc links
+    rust_index: RustDocIndex,
 }
 
 // Allow dead code for page-per-item rendering methods (reserved for future use)
@@ -139,6 +141,7 @@ impl<'a> ModuleRenderer<'a> {
             linker: CrossRefLinker::new(cross_refs).with_style(style),
             starlight,
             module_order: HashMap::new(),
+            rust_index: RustDocIndex::default(),
         }
     }
 
@@ -162,6 +165,21 @@ impl<'a> ModuleRenderer<'a> {
             .map(|(i, key)| (key, i + 1))
             .collect();
         self
+    }
+
+    /// Index the Rust items of the project, so that the intra-doc links of
+    /// Rust doc comments (``[`Config`]``, `[x](crate::config::Config)`)
+    /// point to their pages. Without it, such a link shows as its text.
+    pub fn with_rust_index(mut self, rust_modules: &[RustModule]) -> Self {
+        let layout = PageLayout::new();
+        let index = RustDocIndex::new(rust_modules, |m| self.page_file(layout.rust_module_page(m)));
+        self.rust_index = index;
+        self
+    }
+
+    /// A page path as a `/`-separated string.
+    fn page_file(&self, path: PathBuf) -> String {
+        self.page_path(path).to_string_lossy().replace('\\', "/")
     }
 
     /// Sidebar order of a module page (0 if unknown).
@@ -249,18 +267,47 @@ impl<'a> ModuleRenderer<'a> {
     fn rust_doc(&self, doc: &str, module_path: &str, sig_params: &[RustParam]) -> String {
         let mut parsed = parse_rust_doc(doc);
         fill_rust_param_types(&mut parsed.params, sig_params);
-        self.rust_doc_links(&render_rust_docstring(&parsed), module_path)
+        let page = self.page_file(PageLayout::new().rust_module_page(module_path));
+        self.rust_doc_links(&render_rust_docstring(&parsed), &page, module_path)
     }
 
-    /// The intra-doc links of Rust doc Markdown, rewritten for a page of
-    /// `module_path`.
-    fn rust_doc_links(&self, markdown: &str, _module_path: &str) -> String {
-        rewrite_intra_doc_links(markdown, &|_path| None)
+    /// The intra-doc links of Rust doc Markdown on the page `from_page`,
+    /// resolved from the Rust module `scope`.
+    fn rust_doc_links(&self, markdown: &str, from_page: &str, scope: &str) -> String {
+        rewrite_intra_doc_links(markdown, &|path| {
+            let target = self.rust_index.resolve(scope, path)?;
+            Some(match self.linker.style() {
+                LinkStyle::Route => route_href(from_page, &target.page, target.id.as_deref()),
+                LinkStyle::MarkdownFile => {
+                    let mut href = relative_file_href(from_page, &target.page);
+                    if let Some(anchor) = &target.md_anchor {
+                        href.push('#');
+                        href.push_str(anchor);
+                    }
+                    href
+                }
+            })
+        })
     }
 
     /// A short Rust doc comment (a field, a variant) as Markdown.
     fn rust_short_doc(&self, doc: &str, module_path: &str) -> String {
-        self.rust_doc_links(&normalize_rust_doc(doc), module_path)
+        let page = self.page_file(PageLayout::new().rust_module_page(module_path));
+        self.rust_doc_links(&normalize_rust_doc(doc), &page, module_path)
+    }
+
+    /// A Rust doc comment shown on a Python page (a binding).
+    fn binding_doc(
+        &self,
+        parsed: &crate::model::ParsedDocstring,
+        python_module: &str,
+        rust_path: Option<&str>,
+    ) -> String {
+        let page = self.page_file(PageLayout::new().python_module_page(python_module));
+        let scope = rust_path
+            .map(|p| self.rust_index.module_of(p))
+            .unwrap_or_default();
+        self.rust_doc_links(&render_rust_docstring(parsed), &page, &scope)
     }
 
     // =========================================================================
@@ -396,10 +443,14 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str(&link);
         }
 
-        // Docstring - parse and render properly
+        // Docstring - parse and render properly (a binding has a Rust doc comment)
         if let Some(ref docstring) = class.docstring {
-            let parsed = parse_docstring(docstring);
-            content.push_str(&render_docstring(&parsed));
+            if let Some(ref rust_impl) = class.rust_impl {
+                let parsed = parse_rust_doc(docstring);
+                content.push_str(&self.binding_doc(&parsed, module_path, Some(&rust_impl.path)));
+            } else {
+                content.push_str(&render_docstring(&parse_docstring(docstring)));
+            }
             content.push_str("\n\n");
         }
 
@@ -519,10 +570,10 @@ impl<'a> ModuleRenderer<'a> {
 
         // Docstring - parse and render with merged signature params for types
         if let Some(ref docstring) = func.docstring {
-            content.push_str(&Self::render_docstring_with_merged_params(
-                &func.signature.params,
+            content.push_str(&self.render_docstring_with_merged_params(
+                func,
                 docstring,
-                is_binding,
+                module_path,
             ));
             content.push_str("\n\n");
         }
@@ -776,10 +827,10 @@ impl<'a> ModuleRenderer<'a> {
 
         // Docstring - parse and render with merged signature params for types
         if let Some(ref docstring) = func.docstring {
-            content.push_str(&Self::render_docstring_with_merged_params(
-                &func.signature.params,
+            content.push_str(&self.render_docstring_with_merged_params(
+                func,
                 docstring,
-                is_binding,
+                module_path,
             ));
             content.push_str("\n\n");
         }
@@ -890,10 +941,10 @@ impl<'a> ModuleRenderer<'a> {
 
         // Docstring - parse and render with merged signature params for types
         if let Some(ref docstring) = func.docstring {
-            content.push_str(&Self::render_docstring_with_merged_params(
-                &func.signature.params,
+            content.push_str(&self.render_docstring_with_merged_params(
+                func,
                 docstring,
-                is_binding,
+                module_path,
             ));
             content.push_str("\n\n");
         }
@@ -964,10 +1015,13 @@ impl<'a> ModuleRenderer<'a> {
     /// Detects whether the docstring is Rust-style (from a binding) or Python-style
     /// and uses the appropriate parser.
     fn render_docstring_with_merged_params(
-        sig_params: &[PythonParam],
+        &self,
+        func: &PythonFunction,
         docstring: &str,
-        is_binding: bool,
+        module_path: &str,
     ) -> String {
+        let sig_params = &func.signature.params;
+        let is_binding = func.rust_impl.is_some();
         // Use appropriate parser based on docstring style
         // Rust-style uses `# Arguments`, Python uses `Args:` or NumPy style
         let is_rust = is_binding || Self::is_rust_style_docstring(docstring);
@@ -981,7 +1035,8 @@ impl<'a> ModuleRenderer<'a> {
         parsed.params = Self::merge_params_with_docstring(sig_params, &parsed.params);
 
         if is_rust {
-            render_rust_docstring(&parsed)
+            let rust_path = func.rust_impl.as_ref().map(|r| r.path.as_str());
+            self.binding_doc(&parsed, module_path, rust_path)
         } else {
             render_docstring(&parsed)
         }

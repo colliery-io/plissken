@@ -781,12 +781,12 @@ impl<T: Into<String>, const N: usize> Holder<T, N> {
             panic!("Expected struct");
         };
         assert_eq!(s.derives, vec!["Debug", "serde::Serialize"]);
-        assert_eq!(s.generics.as_deref(), Some("<T: Into<String>, const N: usize>"));
-        assert_eq!(s.fields[0].ty, "Option<String>");
         assert_eq!(
-            s.fields[1].ty,
-            "std::collections::HashMap<String, Vec<u8>>"
+            s.generics.as_deref(),
+            Some("<T: Into<String>, const N: usize>")
         );
+        assert_eq!(s.fields[0].ty, "Option<String>");
+        assert_eq!(s.fields[1].ty, "std::collections::HashMap<String, Vec<u8>>");
         let RustItem::Impl(i) = &module.items[1] else {
             panic!("Expected impl");
         };

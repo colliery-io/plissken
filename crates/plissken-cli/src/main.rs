@@ -283,7 +283,8 @@ fn render(
     // Create renderer with theme and cross-references
     let renderer = create_renderer(template.as_deref(), &project_root)?;
     let module_renderer = ModuleRenderer::with_cross_refs(&renderer, cross_refs)
-        .with_module_order(&python_modules, &rust_modules);
+        .with_module_order(&python_modules, &rust_modules)
+        .with_rust_index(&rust_modules);
 
     // Prepare output directory
     create_output_directory(&output_dir)?;

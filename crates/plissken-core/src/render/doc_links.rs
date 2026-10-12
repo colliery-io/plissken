@@ -9,7 +9,8 @@
 //! its text.
 
 use crate::docstring::code_block_lines;
-use std::collections::HashMap;
+use crate::model::{RustItem, RustModule};
+use std::collections::{HashMap, HashSet};
 
 /// Disambiguator prefixes of rustdoc (`struct@Foo`).
 const DISAMBIGUATORS: &[&str] = &[
@@ -311,6 +312,223 @@ fn paren_end(chars: &[char], start: usize) -> Option<usize> {
     None
 }
 
+/// Where a Rust item is documented: its page (relative to the output
+/// folder) and its anchor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DocTarget {
+    /// Page file path (`rust/my_crate/config.md`)
+    pub page: String,
+    /// Explicit anchor id of the item (`struct.Config`); `None` for a module
+    pub id: Option<String>,
+    /// Anchor of the item heading in MkDocs and mdBook (`struct-config`)
+    pub md_anchor: Option<String>,
+}
+
+/// The Rust items of the documentation, by path, to resolve intra-doc links.
+#[derive(Debug, Clone, Default)]
+pub struct RustDocIndex {
+    items: HashMap<String, DocTarget>,
+    modules: HashSet<String>,
+}
+
+/// A Rust path for comparison: a crate name has `_` where Cargo allows `-`.
+fn key(path: &str) -> String {
+    match path.split_once("::") {
+        Some((krate, rest)) => format!("{}::{}", krate.replace('-', "_"), rest),
+        None => path.replace('-', "_"),
+    }
+}
+
+impl RustDocIndex {
+    /// Index the items of the modules that are rendered. `page_of` gives
+    /// the page file of a module path.
+    pub fn new(modules: &[RustModule], page_of: impl Fn(&str) -> String) -> Self {
+        let mut index = Self::default();
+        for module in modules {
+            let page = page_of(&module.path);
+            let module_key = key(&module.path);
+            index.modules.insert(module_key.clone());
+            index.items.insert(
+                module_key.clone(),
+                DocTarget {
+                    page: page.clone(),
+                    id: None,
+                    md_anchor: None,
+                },
+            );
+            let mut add = |name: &str, id: String, md: String| {
+                index
+                    .items
+                    .entry(format!("{}::{}", module_key, name))
+                    .or_insert(DocTarget {
+                        page: page.clone(),
+                        id: Some(id),
+                        md_anchor: Some(md),
+                    });
+            };
+            for item in &module.items {
+                match item {
+                    RustItem::Struct(s) => {
+                        let lower = s.name.to_lowercase();
+                        add(
+                            &s.name,
+                            format!("struct.{}", s.name),
+                            format!("struct-{}", lower),
+                        );
+                    }
+                    RustItem::Enum(e) => {
+                        let lower = e.name.to_lowercase();
+                        add(
+                            &e.name,
+                            format!("enum.{}", e.name),
+                            format!("enum-{}", lower),
+                        );
+                        for v in &e.variants {
+                            add(
+                                &format!("{}::{}", e.name, v.name),
+                                format!("enum.{}", e.name),
+                                format!("enum-{}", lower),
+                            );
+                        }
+                    }
+                    RustItem::Function(f) => {
+                        add(
+                            &f.name,
+                            format!("fn.{}", f.name),
+                            format!("fn-{}", f.name.to_lowercase()),
+                        );
+                    }
+                    RustItem::Const(c) => {
+                        add(&c.name, format!("const.{}", c.name), c.name.to_lowercase());
+                    }
+                    RustItem::Impl(i) if i.trait_.is_none() => {
+                        let target = i.target.split('<').next().unwrap_or(&i.target).trim();
+                        for m in &i.methods {
+                            add(
+                                &format!("{}::{}", target, m.name),
+                                format!("{}.{}", target, m.name),
+                                m.name.to_lowercase(),
+                            );
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        index
+    }
+
+    /// The module of an item path: the longest prefix that is a module.
+    pub fn module_of(&self, item_path: &str) -> String {
+        let mut path = item_path.to_string();
+        while let Some((parent, _)) = path.rsplit_once("::") {
+            path = parent.to_string();
+            if self.modules.contains(&key(&path)) {
+                return path;
+            }
+        }
+        path
+    }
+
+    /// Resolve an intra-doc link path written in the module `scope`.
+    ///
+    /// `crate`, `self` and `super` are taken from the scope. A path is tried
+    /// in the scope, as written, and from the root of the crate; then, by its
+    /// last segments, as the only item of that name in the crate, then in
+    /// all crates (for re-exports and `use` imports, which plissken does not
+    /// follow).
+    pub fn resolve(&self, scope: &str, path: &str) -> Option<&DocTarget> {
+        let scope = key(scope);
+        let scope_parts: Vec<&str> = if scope.is_empty() {
+            Vec::new()
+        } else {
+            scope.split("::").collect()
+        };
+        let krate = scope_parts.first().copied().unwrap_or("");
+
+        let mut parts: Vec<&str> = path.split("::").collect();
+        let absolute = parts.first() == Some(&"");
+        if absolute {
+            parts.remove(0);
+        }
+        let mut base: Option<Vec<&str>> = None;
+        match parts.first().copied() {
+            Some("crate") => {
+                base = Some(vec![krate]);
+                parts.remove(0);
+            }
+            Some("self") => {
+                base = Some(scope_parts.clone());
+                parts.remove(0);
+            }
+            Some("super") => {
+                let mut b = scope_parts.clone();
+                while parts.first() == Some(&"super") {
+                    parts.remove(0);
+                    b.pop();
+                }
+                base = Some(b);
+            }
+            Some("Self") => return None,
+            _ => {}
+        }
+        if parts.is_empty() && base.is_none() {
+            return None;
+        }
+        let rest = parts.join("::");
+        let join = |b: &[&str]| -> String {
+            let mut all: Vec<&str> = b.to_vec();
+            if !rest.is_empty() {
+                all.push(&rest);
+            }
+            key(&all.join("::"))
+        };
+
+        let candidates: Vec<String> = match base {
+            Some(b) => vec![join(&b)],
+            None if absolute => vec![key(&rest)],
+            None => vec![join(&scope_parts), key(&rest), join(&[krate])],
+        };
+        for candidate in &candidates {
+            if let Some(target) = self.items.get(candidate) {
+                return Some(target);
+            }
+        }
+
+        // By name: the only item whose path ends with the last segments
+        for n in (1..=parts.len().min(2)).rev() {
+            let suffix = format!("::{}", parts[parts.len() - n..].join("::"));
+            let in_crate = format!("{}::", krate);
+            for restrict in [true, false] {
+                let mut found = self.items.iter().filter(|(k, _)| {
+                    k.ends_with(&suffix)
+                        && !self.modules.contains(k.as_str())
+                        && (!restrict || k.starts_with(&in_crate))
+                });
+                if let (Some((_, target)), None) = (found.next(), found.next()) {
+                    return Some(target);
+                }
+            }
+        }
+        None
+    }
+}
+
+/// A relative link between two page files (`.md` links: MkDocs, mdBook).
+pub fn relative_file_href(from_file: &str, to_file: &str) -> String {
+    let from: Vec<&str> = from_file.split('/').collect();
+    let to: Vec<&str> = to_file.split('/').collect();
+    let from_dirs = &from[..from.len() - 1];
+    let common = from_dirs
+        .iter()
+        .zip(to.iter())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let mut parts: Vec<&str> = vec![".."; from_dirs.len() - common];
+    parts.extend(&to[common..]);
+    parts.join("/")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -393,6 +611,61 @@ mod tests {
         // A definition to a URL stays
         let text = "See [docs].\n\n[docs]: https://example.com";
         assert_eq!(rewrite_intra_doc_links(text, &known), text);
+    }
+
+    fn test_index() -> RustDocIndex {
+        let mut config = RustModule::test("my-crate::config");
+        config.items = vec![RustItem::Struct(crate::model::RustStruct::test("Config"))];
+        let mut handler = RustModule::test("my-crate::server::handler");
+        handler.items = vec![RustItem::Function(crate::model::RustFunction::test(
+            "handle",
+        ))];
+        let server = RustModule::test("my-crate::server");
+        let root = RustModule::test("my-crate");
+        RustDocIndex::new(&[root, config, server, handler], |m| {
+            format!("rust/{}.md", m.replace("::", "/"))
+        })
+    }
+
+    #[test]
+    fn test_resolve_paths() {
+        let index = test_index();
+        let config = Some("rust/my-crate/config.md");
+        fn page(t: Option<&DocTarget>) -> Option<&str> {
+            t.map(|t| t.page.as_str())
+        }
+        assert_eq!(
+            page(index.resolve("my-crate::server", "crate::config::Config")),
+            config
+        );
+        assert_eq!(
+            page(index.resolve("my-crate::server", "my_crate::config::Config")),
+            config
+        );
+        assert_eq!(
+            page(index.resolve("my-crate::server::handler", "super::super::config::Config")),
+            config
+        );
+        assert_eq!(
+            page(index.resolve("my-crate::server::handler", "super::handler")),
+            Some("rust/my-crate/server/handler.md")
+        );
+        assert_eq!(
+            page(index.resolve("my-crate::server", "handler::handle")),
+            Some("rust/my-crate/server/handler.md")
+        );
+        // By name only: the one `Config` of the crate
+        let target = index.resolve("my-crate::server", "Config").unwrap();
+        assert_eq!(target.id.as_deref(), Some("struct.Config"));
+        assert!(index.resolve("my-crate::server", "Missing").is_none());
+        assert!(index.resolve("my-crate::server", "Self").is_none());
+    }
+
+    #[test]
+    fn test_relative_file_href() {
+        assert_eq!(relative_file_href("rust/a/b.md", "rust/a/c.md"), "c.md");
+        assert_eq!(relative_file_href("rust/a/b.md", "rust/x.md"), "../x.md");
+        assert_eq!(relative_file_href("pkg.md", "rust/a.md"), "rust/a.md");
     }
 
     #[test]
