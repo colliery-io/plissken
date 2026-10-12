@@ -15,7 +15,7 @@ categories = ["development-tools", "command-line-utilities"]
 
 [workspace.dependencies]
 # Parsing
-syn = { version = "2", features = ["full", "parsing", "extra-traits"] }
+syn = { version = "2", features = ["full", "parsing", "extra-traits", "visit"] }
 quote = "1"
 proc-macro2 = { version = "1", features = ["span-locations"] }
 prettyplease = "0.2"

@@ -4,6 +4,7 @@
 //! The [`Parser`] trait provides a language-agnostic interface, while
 //! [`RustParser`] and [`PythonParser`] provide concrete implementations.
 
+mod pymodule;
 pub mod python;
 pub mod rust;
 mod traits;

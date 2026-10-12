@@ -138,7 +138,8 @@ pub mod detail {
 
     // Cross-reference building
     pub use crate::crossref::{
-        build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust,
+        build_cross_refs, synthesize_python_api, synthesize_python_from_rust,
+        synthesize_python_modules_from_rust,
     };
 
     // Docstring parsing
@@ -172,7 +173,8 @@ pub use manifest::{CargoManifest, InferredConfig, PyProjectManifest};
 
 // Cross-reference utilities
 pub use crossref::{
-    build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust,
+    build_cross_refs, synthesize_python_api, synthesize_python_from_rust,
+    synthesize_python_modules_from_rust,
 };
 
 // Docstring utilities

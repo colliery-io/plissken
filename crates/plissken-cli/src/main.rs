@@ -8,7 +8,7 @@ use plissken_core::{
     DEFAULT_STARLIGHT_OUTPUT_PATH, DocModel, ModuleRenderer, PLISSKEN_CONFIG, PYPROJECT_MANIFEST,
     ProjectMetadata, PythonModule, Renderer, RustModule, TEMPLATE_MDBOOK, TEMPLATE_MKDOCS_MATERIAL,
     TEMPLATE_STARLIGHT, VERSION_SOURCE_CARGO, VERSION_SOURCE_PYPROJECT, build_cross_refs,
-    get_theme_adapter, synthesize_python_from_rust, synthesize_python_modules_from_rust,
+    get_theme_adapter, synthesize_python_api, synthesize_python_from_rust,
 };
 use std::path::{Path, PathBuf};
 
@@ -289,6 +289,8 @@ fn render(
         python_modules,
         config.python.as_ref().is_some_and(|p| p.include_private),
     );
+    let cross_refs =
+        plissken_core::filter::documented_cross_refs(cross_refs, &python_modules, &rust_modules);
 
     // Create renderer with theme and cross-references
     let renderer = create_renderer(template.as_deref(), &project_root)?;
@@ -462,13 +464,9 @@ fn merge_synthesized_python_modules(
         .as_ref()
         .map(|p| p.package.clone())
         .unwrap_or_else(|| config.project.name.clone());
-    let rust_entry_point = config
-        .rust
-        .as_ref()
-        .and_then(|r| r.entry_point.clone())
-        .unwrap_or_else(|| config.project.name.clone());
-    let synth_results =
-        synthesize_python_modules_from_rust(rust_modules, &python_package, &rust_entry_point);
+    // Without an entry point, the bindings of every crate are in the package
+    let rust_entry_point = config.rust.as_ref().and_then(|r| r.entry_point.as_deref());
+    let synth_results = synthesize_python_api(rust_modules, &python_package, rust_entry_point);
     let mut all_cross_refs: Vec<CrossRef> = Vec::new();
 
     // Add synthesized Python modules (merging with existing ones)
@@ -1804,10 +1802,25 @@ fn normalize_python_module_path(file_path: &str, config: &Config, project_root: 
     let module_path = relative.strip_prefix(python_source).unwrap_or(relative);
 
     // Convert to dotted module path and remove .py extension
-    let path_str = module_path
+    let mut path_str = module_path
         .with_extension("")
         .to_string_lossy()
         .replace(['/', '\\'], ".");
+
+    // A source folder that is the package itself (it holds `__init__.py`):
+    // its modules are named from the package, `brokkr.client`, not `client`
+    if config.python.as_ref().is_some_and(|p| p.source.is_some())
+        && project_root
+            .join(python_source)
+            .join("__init__.py")
+            .is_file()
+    {
+        path_str = if path_str == "__init__" {
+            package_name.to_string()
+        } else {
+            format!("{}.{}", package_name, path_str)
+        };
+    }
 
     // Handle __init__.py -> package name
     if path_str.ends_with(".__init__") {
@@ -1822,3 +1835,47 @@ fn normalize_python_module_path(file_path: &str, config: &Config, project_root: 
 // Note: normalize_rust_module_path was removed.
 // Rust module paths are now computed in parse_rust_sources using file_to_module_path
 // which reads crate names directly from Cargo.toml.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(python: &str) -> Config {
+        toml::from_str(&format!(
+            "[project]\nname = \"brokkr\"\n\n[output]\n\n[python]\n{}",
+            python
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn test_module_names_from_a_package_source() {
+        // Item 20 of PLSKN-T-0057: `source` is the package folder itself
+        let dir = tempfile::tempdir().unwrap();
+        let pkg = dir.path().join("sdks/python/brokkr/brokkr");
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(pkg.join("__init__.py"), "").unwrap();
+        let config = config("package = \"brokkr\"\nsource = \"sdks/python/brokkr/brokkr\"\n");
+        let name = |file: &str| {
+            normalize_python_module_path(&pkg.join(file).to_string_lossy(), &config, dir.path())
+        };
+        assert_eq!(name("client.py"), "brokkr.client");
+        assert_eq!(name("__init__.py"), "brokkr");
+        assert_eq!(name("sub/x.py"), "brokkr.sub.x");
+    }
+
+    #[test]
+    fn test_module_names_from_a_source_folder() {
+        // `source` holds the package: names come from the folders
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("python");
+        std::fs::create_dir_all(src.join("mypkg")).unwrap();
+        std::fs::write(src.join("mypkg/__init__.py"), "").unwrap();
+        let config = config("package = \"mypkg\"\nsource = \"python\"\n");
+        let name = |file: &str| {
+            normalize_python_module_path(&src.join(file).to_string_lossy(), &config, dir.path())
+        };
+        assert_eq!(name("mypkg/client.py"), "mypkg.client");
+        assert_eq!(name("mypkg/__init__.py"), "mypkg");
+    }
+}

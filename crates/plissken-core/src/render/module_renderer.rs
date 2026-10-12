@@ -580,12 +580,7 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Source code (collapsible)
-        if !func.source.source.is_empty() {
-            content.push_str("<details>\n<summary>Source</summary>\n\n");
-            content.push_str("```python\n");
-            content.push_str(&func.source.source);
-            content.push_str("\n```\n\n</details>\n\n");
-        }
+        content.push_str(&source_details(&func.source));
 
         Ok(content)
     }
@@ -837,12 +832,7 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Source code (collapsible)
-        if !func.source.source.is_empty() {
-            content.push_str("<details>\n<summary>Source</summary>\n\n");
-            content.push_str("```python\n");
-            content.push_str(&func.source.source);
-            content.push_str("\n```\n\n</details>\n\n");
-        }
+        content.push_str(&source_details(&func.source));
 
         let path = PathBuf::from(format!("{}/{}.md", module_dir, func.name));
         Ok(RenderedPage { path, content })
@@ -951,12 +941,7 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Source code (collapsible) - only for pure Python functions
-        if !func.source.source.is_empty() {
-            content.push_str("<details>\n<summary>Source</summary>\n\n");
-            content.push_str("```python\n");
-            content.push_str(&func.source.source);
-            content.push_str("\n```\n\n</details>\n\n");
-        }
+        content.push_str(&source_details(&func.source));
 
         Ok(content)
     }
@@ -1480,9 +1465,8 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Signature
-        content.push_str("```rust\n");
-        content.push_str(&func.signature_str);
-        content.push_str("\n```\n\n");
+        content.push_str(&code_fence("rust", &func.signature_str));
+        content.push_str("\n\n");
 
         // Docstring - parse and render properly
         if let Some(ref doc) = func.doc_comment {
@@ -1491,12 +1475,7 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Source code (collapsible)
-        if !func.source.source.is_empty() {
-            content.push_str("<details>\n<summary>Source</summary>\n\n");
-            content.push_str("```rust\n");
-            content.push_str(&func.source.source);
-            content.push_str("\n```\n\n</details>\n\n");
-        }
+        content.push_str(&source_details(&func.source));
 
         Ok(content)
     }
@@ -1791,9 +1770,8 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Signature
-        content.push_str("```rust\n");
-        content.push_str(&func.signature_str);
-        content.push_str("\n```\n\n");
+        content.push_str(&code_fence("rust", &func.signature_str));
+        content.push_str("\n\n");
 
         // Docstring - parse and render properly
         if let Some(ref doc) = func.doc_comment {
@@ -1803,12 +1781,7 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Source code (collapsible)
-        if !func.source.source.is_empty() {
-            content.push_str("<details>\n<summary>Source</summary>\n\n");
-            content.push_str("```rust\n");
-            content.push_str(&func.source.source);
-            content.push_str("\n```\n\n</details>\n\n");
-        }
+        content.push_str(&source_details(&func.source));
 
         let path = PathBuf::from(format!("{}/{}.md", module_dir, func.name));
         Ok(RenderedPage { path, content })
@@ -1871,9 +1844,8 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Signature - always show Rust-style for Rust docs
-        content.push_str("```rust\n");
-        content.push_str(&f.signature_str);
-        content.push_str("\n```\n\n");
+        content.push_str(&code_fence("rust", &f.signature_str));
+        content.push_str("\n\n");
 
         // For bindings, add link to Python API (method-level if parent_struct is set)
         if is_binding
@@ -1892,12 +1864,7 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         // Show source code in collapsible for all methods (bindings and pure Rust)
-        if !f.source.source.is_empty() {
-            content.push_str("<details>\n<summary>Source</summary>\n\n");
-            content.push_str("```rust\n");
-            content.push_str(&f.source.source);
-            content.push_str("\n```\n\n</details>\n\n");
-        }
+        content.push_str(&source_details(&f.source));
 
         Ok(content)
     }
@@ -2172,6 +2139,28 @@ struct RustModuleItems<'a> {
     functions: &'a [&'a RustFunction],
     consts: &'a [&'a RustConst],
     impls: &'a HashMap<String, Vec<&'a RustImpl>>,
+}
+
+/// A code fence around `code`: longer than any run of backticks in it, so
+/// that a line of the code cannot close it.
+fn code_fence(lang: &str, code: &str) -> String {
+    let longest = code.split(|c| c != '`').map(str::len).max().unwrap_or(0);
+    let fence = "`".repeat(longest.max(2) + 1);
+    format!("{fence}{lang}\n{code}\n{fence}")
+}
+
+/// The source of an item, collapsed under "Source". Its language is that of
+/// its file: a binding on a Python page shows Rust.
+fn source_details(source: &crate::model::SourceSpan) -> String {
+    if source.source.is_empty() {
+        return String::new();
+    }
+    let is_rust = source.location.file.extension().is_some_and(|e| e == "rs");
+    let lang = if is_rust { "rust" } else { "python" };
+    format!(
+        "<details>\n<summary>Source</summary>\n\n{}\n\n</details>\n\n",
+        code_fence(lang, &source.source)
+    )
 }
 
 /// The type of a Python variable: its annotation, else the type of its
@@ -2556,6 +2545,18 @@ mod tests {
         // For Rust, crate root = crate_name.md, submodule = crate/submod.md
         assert!(find_page(&rs_pages, "crate/a.md").is_some());
         assert!(find_page(&rs_pages, "crate/b.md").is_some());
+    }
+
+    #[test]
+    fn test_source_details_language_and_fence() {
+        // Item 26 of PLSKN-T-0057: a binding's Rust source was labelled python
+        let rust = crate::model::SourceSpan::new("src/lib.rs", 1, 1, "fn f() {}");
+        assert!(source_details(&rust).contains("```rust\nfn f() {}\n```"));
+        let python = crate::model::SourceSpan::new("pkg/mod.py", 1, 1, "def f(): pass");
+        assert!(source_details(&python).contains("```python\n"));
+        // Code with a fence in it gets a longer fence
+        let code = "let s = r#\"\n```rust\nx\n```\n\"#;";
+        assert!(code_fence("rust", code).starts_with("````rust\n"));
     }
 
     #[test]

@@ -5,7 +5,9 @@
 //! private items unless the configuration asks for them. PyO3 bindings are
 //! part of the Python API, so they stay whatever their Rust visibility.
 
-use crate::model::{PythonClass, PythonItem, PythonModule, RustItem, RustModule, Visibility};
+use crate::model::{
+    CrossRef, PythonClass, PythonItem, PythonModule, RustItem, RustModule, Visibility,
+};
 use std::collections::HashSet;
 
 /// The Rust modules to document.
@@ -135,6 +137,58 @@ pub fn documented_python_modules(
         .filter(|m| {
             m.docstring.as_deref().is_some_and(|d| !d.trim().is_empty()) || !m.items.is_empty()
         })
+        .collect()
+}
+
+/// The cross-references whose Python item and Rust item are both
+/// documented, so that no link points to an item that was left out.
+pub fn documented_cross_refs(
+    cross_refs: Vec<CrossRef>,
+    python_modules: &[PythonModule],
+    rust_modules: &[RustModule],
+) -> Vec<CrossRef> {
+    let mut python: HashSet<String> = HashSet::new();
+    for m in python_modules {
+        for item in &m.items {
+            match item {
+                PythonItem::Class(c) => {
+                    python.insert(format!("{}.{}", m.path, c.name));
+                    for f in &c.methods {
+                        python.insert(format!("{}.{}.{}", m.path, c.name, f.name));
+                    }
+                }
+                PythonItem::Function(f) => {
+                    python.insert(format!("{}.{}", m.path, f.name));
+                }
+                PythonItem::Variable(v) => {
+                    python.insert(format!("{}.{}", m.path, v.name));
+                }
+            }
+        }
+    }
+    let mut rust: HashSet<String> = HashSet::new();
+    for m in rust_modules {
+        for item in &m.items {
+            match item {
+                RustItem::Struct(s) => {
+                    rust.insert(format!("{}::{}", m.path, s.name));
+                }
+                RustItem::Function(f) => {
+                    rust.insert(format!("{}::{}", m.path, f.name));
+                }
+                RustItem::Impl(i) => {
+                    let target = i.target.split('<').next().unwrap_or(&i.target).trim();
+                    for f in &i.methods {
+                        rust.insert(format!("{}::{}::{}", m.path, target, f.name));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    cross_refs
+        .into_iter()
+        .filter(|x| python.contains(&x.python_path) && rust.contains(&x.rust_path))
         .collect()
 }
 

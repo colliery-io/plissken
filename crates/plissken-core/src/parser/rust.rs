@@ -61,8 +61,14 @@ impl RustParser {
 
         let mut reexports = Vec::new();
         let mut test_modules = Vec::new();
+        let mut py_registrars = Vec::new();
         for item in &syntax.items {
             match item {
+                Item::Fn(f) if !is_test_only(&f.attrs) => {
+                    if let Some(registrar) = super::pymodule::registrar(f) {
+                        py_registrars.push(registrar);
+                    }
+                }
                 Item::Use(u) if !matches!(u.vis, SynVisibility::Inherited) => {
                     if is_test_only(&u.attrs) {
                         continue;
@@ -92,6 +98,7 @@ impl RustParser {
             items,
             reexports,
             test_modules,
+            py_registrars,
             source: SourceSpan::new(
                 path.to_path_buf(),
                 1,
@@ -454,7 +461,7 @@ fn convert_visibility(vis: &SynVisibility) -> Visibility {
     }
 }
 
-fn extract_doc_comments(attrs: &[Attribute]) -> Option<String> {
+pub(crate) fn extract_doc_comments(attrs: &[Attribute]) -> Option<String> {
     let docs: Vec<String> = attrs
         .iter()
         .filter_map(|attr| {
@@ -761,11 +768,20 @@ fn path_str(path: &syn::Path) -> String {
 
 /// A bound as Rust source: `Into<String>`, `'a`.
 fn bound_str(bound: &syn::TypeParamBound) -> String {
-    let printed = type_str(&syn::parse_quote!(impl #bound));
-    printed
-        .strip_prefix("impl ")
-        .map(str::to_string)
-        .unwrap_or(printed)
+    if let syn::TypeParamBound::Lifetime(l) = bound {
+        return l.to_string();
+    }
+    // `impl Bound` is a type; a bound that is not one is printed as tokens
+    match syn::parse2::<syn::Type>(quote::quote!(impl #bound)) {
+        Ok(ty) => {
+            let printed = type_str(&ty);
+            printed
+                .strip_prefix("impl ")
+                .map(str::to_string)
+                .unwrap_or(printed)
+        }
+        Err(_) => one_line(&bound.to_token_stream().to_string()),
+    }
 }
 
 /// A where clause as Rust source, on one line: `where T: Clone`.
@@ -910,6 +926,21 @@ impl<T: Into<String>, const N: usize> Holder<T, N> {
             f.signature_str,
             "fn new(\n    field: impl Into<String>,\n    items: &[Option<String>],\n) -> Result<Self, Box<dyn std::error::Error>>"
         );
+    }
+
+    #[test]
+    fn test_lifetime_bounds() {
+        let parser = RustParser::new();
+        let code = "pub trait Plugin: Send + 'static {}\npub struct Ref<'a, T: 'a + Clone> { pub v: &'a T }";
+        let module = parser.parse_str(code, Path::new("test.rs")).unwrap();
+        let RustItem::Trait(t) = &module.items[0] else {
+            panic!("Expected trait");
+        };
+        assert_eq!(t.bounds.as_deref(), Some("Send + 'static"));
+        let RustItem::Struct(s) = &module.items[1] else {
+            panic!("Expected struct");
+        };
+        assert_eq!(s.generics.as_deref(), Some("<'a, T: 'a + Clone>"));
     }
 
     #[test]
