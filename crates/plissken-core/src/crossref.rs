@@ -5,7 +5,7 @@
 
 use crate::config::{Config, ModuleSourceType};
 use crate::model::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// Builds cross-references between Python and Rust items
 pub struct CrossRefBuilder<'a> {
@@ -383,9 +383,7 @@ fn synthesize_python_method(
 
 /// Synthesize Python modules from Rust modules with PyO3 bindings.
 ///
-/// Unlike `synthesize_python_from_rust` which flattens into one module,
-/// this preserves the module structure - each Rust module with bindings
-/// becomes a separate Python module under the configured Python package namespace.
+/// As [`synthesize_python_api`], with the given crate as the entry point.
 ///
 /// # Arguments
 /// * `rust_modules` - The Rust modules to synthesize from
@@ -398,124 +396,433 @@ pub fn synthesize_python_modules_from_rust(
     python_package: &str,
     rust_entry_point: &str,
 ) -> Vec<(PythonModule, Vec<CrossRef>)> {
-    let mut result = Vec::new();
+    synthesize_python_api(rust_modules, python_package, Some(rust_entry_point))
+}
+
+/// Synthesize the Python API of the PyO3 bindings of Rust modules.
+///
+/// A `#[pymodule]` function names a Python module: `fn cloaca(m)` is the
+/// module `cloaca`, or `{python_package}.{name}` when the package has
+/// another name. Its classes and functions are those that it adds, and
+/// those that its helpers add (`register(m)`); a submodule that it adds
+/// (`m.add_submodule(&sub)`) is a module below it.
+///
+/// A binding that no `#[pymodule]` adds goes to the Python module of its
+/// Rust module, the crate name replaced by the package
+/// (`rustscale::handlers` -> `pysnake.handlers`). With an entry point,
+/// only that crate is replaced; without one, every crate.
+///
+/// Returns a list of (PythonModule, Vec<CrossRef>) pairs.
+pub fn synthesize_python_api(
+    rust_modules: &[RustModule],
+    python_package: &str,
+    rust_entry_point: Option<&str>,
+) -> Vec<(PythonModule, Vec<CrossRef>)> {
+    let mut placed: HashSet<String> = HashSet::new();
+    let mut result = pymodule_api(rust_modules, python_package, &mut placed);
+
+    // In a crate with a #[pymodule], a binding that it does not add cannot
+    // be imported: it has no Python page
+    let crate_of = |path: &str| path.split("::").next().unwrap_or(path).to_string();
+    let pymodule_crates: HashSet<String> = rust_modules
+        .iter()
+        .filter(|m| m.py_registrars.iter().any(|r| r.pymodule.is_some()))
+        .map(|m| crate_of(&m.path))
+        .collect();
 
     for module in rust_modules {
-        // Check if this module has any bindings
-        let has_bindings = module.items.iter().any(|item| match item {
-            RustItem::Struct(s) => s.pyclass.is_some(),
-            RustItem::Function(f) => f.pyfunction.is_some(),
-            RustItem::Impl(i) => i.pymethods,
-            _ => false,
-        });
-
-        if !has_bindings {
+        if pymodule_crates.contains(&crate_of(&module.path)) {
             continue;
         }
-
-        let mut items = Vec::new();
-        let mut cross_refs = Vec::new();
-
-        // Convert Rust path to Python path, remapping the crate name to the Python package
-        // e.g., rustscale::handlers -> pysnake.handlers
-        let rust_path_dotted = module.path.replace("::", ".");
-        let py_module_path = if rust_path_dotted == rust_entry_point {
-            // Root module: rustscale -> pysnake
-            python_package.to_string()
-        } else if rust_path_dotted.starts_with(&format!("{}.", rust_entry_point)) {
-            // Submodule: rustscale.handlers -> pysnake.handlers
-            format!(
-                "{}{}",
-                python_package,
-                &rust_path_dotted[rust_entry_point.len()..]
-            )
-        } else {
-            // Fallback: use as-is (shouldn't happen with proper config)
-            rust_path_dotted
-        };
-
-        // Collect methods from pymethods impl blocks
-        let mut pyclass_methods: HashMap<String, Vec<PythonFunction>> = HashMap::new();
-        for item in &module.items {
-            if let RustItem::Impl(impl_block) = item
-                && impl_block.pymethods
-            {
-                let methods: Vec<_> = impl_block
-                    .methods
-                    .iter()
-                    .map(|m| synthesize_python_method(m, &impl_block.target, &module.path))
-                    .collect();
-                pyclass_methods
-                    .entry(impl_block.target.clone())
-                    .or_default()
-                    .extend(methods);
-            }
-        }
-
-        // Create Python classes and functions
+        let py_module_path = python_module_path(&module.path, python_package, rust_entry_point);
+        let mut synth = SynthModule::default();
         for item in &module.items {
             match item {
-                RustItem::Struct(s) => {
-                    if let Some(ref pyclass) = s.pyclass {
-                        let py_name = pyclass.name.clone().unwrap_or_else(|| s.name.clone());
-                        let rust_path = format!("{}::{}", module.path, s.name);
-
-                        let methods = pyclass_methods.remove(&s.name).unwrap_or_default();
-
-                        let class = PythonClass {
-                            name: py_name.clone(),
-                            docstring: s.doc_comment.clone(),
-                            parsed_doc: None,
-                            bases: Vec::new(),
-                            methods,
-                            attributes: Vec::new(),
-                            decorators: Vec::new(),
-                            rust_impl: Some(RustItemRef::new(&rust_path, &s.name)),
-                            source: s.source.clone(),
-                        };
-
-                        cross_refs.push(CrossRef::binding(
-                            format!("{}.{}", py_module_path, py_name),
-                            &rust_path,
-                        ));
-
-                        items.push(PythonItem::Class(class));
-                    }
+                RustItem::Struct(s)
+                    if s.pyclass.is_some()
+                        && !placed.contains(&rust_item_path(module, &s.name)) =>
+                {
+                    synth.classes.push((module, s));
                 }
-                RustItem::Function(f) => {
-                    if let Some(ref pyfunc) = f.pyfunction {
-                        let py_name = pyfunc.name.clone().unwrap_or_else(|| f.name.clone());
-                        let rust_path = format!("{}::{}", module.path, f.name);
-
-                        let func = synthesize_python_function(f, &rust_path);
-
-                        cross_refs.push(CrossRef::binding(
-                            format!("{}.{}", py_module_path, py_name),
-                            &rust_path,
-                        ));
-
-                        items.push(PythonItem::Function(func));
-                    }
+                RustItem::Function(f)
+                    if f.pyfunction.is_some()
+                        && !placed.contains(&rust_item_path(module, &f.name)) =>
+                {
+                    synth.functions.push((module, f));
                 }
                 _ => {}
             }
         }
-
-        if !items.is_empty() {
-            let python_module = PythonModule {
-                path: py_module_path,
-                docstring: module.doc_comment.clone(),
-                parsed_doc: None,
-                items,
-                source_type: SourceType::PyO3Binding,
-                source: module.source.clone(),
-            };
-
-            result.push((python_module, cross_refs));
+        if synth.classes.is_empty() && synth.functions.is_empty() {
+            continue;
+        }
+        synth.doc_comment = module.doc_comment.clone();
+        let (python_module, cross_refs) =
+            synth.build(&py_module_path, rust_modules, &module.source);
+        match result
+            .iter_mut()
+            .find(|(m, _)| m.path == python_module.path)
+        {
+            Some((existing, refs)) => {
+                existing.items.extend(python_module.items);
+                refs.extend(cross_refs);
+            }
+            None => result.push((python_module, cross_refs)),
         }
     }
 
     result
+}
+
+/// The Rust path of an item of a module.
+fn rust_item_path(module: &RustModule, name: &str) -> String {
+    format!("{}::{}", module.path, name)
+}
+
+/// The Python module of a Rust module: the crate name replaced by the
+/// package (only the entry point crate, if given).
+fn python_module_path(rust_path: &str, python_package: &str, entry_point: Option<&str>) -> String {
+    let dotted = rust_path.replace("::", ".");
+    let (krate, rest) = match dotted.split_once('.') {
+        Some((k, r)) => (k, Some(r)),
+        None => (dotted.as_str(), None),
+    };
+    let replace = match entry_point {
+        Some(entry) => krate == entry || krate.replace('-', "_") == entry.replace('-', "_"),
+        None => true,
+    };
+    if !replace {
+        // Not the entry point crate: use as-is
+        return dotted;
+    }
+    match rest {
+        Some(rest) => format!("{}.{}", python_package, rest),
+        None => python_package.to_string(),
+    }
+}
+
+/// The Python module of a `#[pymodule]` named `name`.
+fn pymodule_path(python_package: &str, name: &str) -> String {
+    let package_name = python_package.rsplit('.').next().unwrap_or(python_package);
+    if python_package.is_empty() || package_name == name {
+        if python_package.is_empty() {
+            name.to_string()
+        } else {
+            python_package.to_string()
+        }
+    } else {
+        format!("{}.{}", python_package, name)
+    }
+}
+
+/// The classes and functions of a synthesized Python module.
+#[derive(Default)]
+struct SynthModule<'a> {
+    doc_comment: Option<String>,
+    classes: Vec<(&'a RustModule, &'a RustStruct)>,
+    functions: Vec<(&'a RustModule, &'a RustFunction)>,
+}
+
+impl SynthModule<'_> {
+    /// The Python module, and the cross-references of its items.
+    fn build(
+        &self,
+        py_module_path: &str,
+        rust_modules: &[RustModule],
+        source: &SourceSpan,
+    ) -> (PythonModule, Vec<CrossRef>) {
+        let mut items = Vec::new();
+        let mut cross_refs = Vec::new();
+        for (module, s) in &self.classes {
+            let pyclass = s.pyclass.as_ref();
+            let py_name = pyclass
+                .and_then(|p| p.name.clone())
+                .unwrap_or_else(|| s.name.clone());
+            let rust_path = rust_item_path(module, &s.name);
+
+            // Methods of the #[pymethods] blocks of the struct
+            let methods: Vec<PythonFunction> = rust_modules
+                .iter()
+                .filter(|m| m.path == module.path)
+                .flat_map(|m| m.items.iter())
+                .filter_map(|item| match item {
+                    RustItem::Impl(i)
+                        if i.pymethods
+                            && i.target.split('<').next().unwrap_or(&i.target).trim() == s.name =>
+                    {
+                        Some(i)
+                    }
+                    _ => None,
+                })
+                .flat_map(|i| {
+                    i.methods
+                        .iter()
+                        .map(|m| synthesize_python_method(m, &i.target, &module.path))
+                })
+                .collect();
+
+            items.push(PythonItem::Class(PythonClass {
+                name: py_name.clone(),
+                docstring: s.doc_comment.clone(),
+                parsed_doc: None,
+                bases: Vec::new(),
+                methods,
+                attributes: Vec::new(),
+                decorators: Vec::new(),
+                rust_impl: Some(RustItemRef::new(&rust_path, &s.name)),
+                source: s.source.clone(),
+            }));
+            cross_refs.push(CrossRef::binding(
+                format!("{}.{}", py_module_path, py_name),
+                &rust_path,
+            ));
+        }
+        for (module, f) in &self.functions {
+            let py_name = f
+                .pyfunction
+                .as_ref()
+                .and_then(|p| p.name.clone())
+                .unwrap_or_else(|| f.name.clone());
+            let rust_path = rust_item_path(module, &f.name);
+            items.push(PythonItem::Function(synthesize_python_function(
+                f, &rust_path,
+            )));
+            cross_refs.push(CrossRef::binding(
+                format!("{}.{}", py_module_path, py_name),
+                &rust_path,
+            ));
+        }
+        (
+            PythonModule {
+                path: py_module_path.to_string(),
+                docstring: self.doc_comment.clone(),
+                parsed_doc: None,
+                items,
+                source_type: SourceType::PyO3Binding,
+                source: source.clone(),
+            },
+            cross_refs,
+        )
+    }
+}
+
+/// The Python modules that the `#[pymodule]` functions build. Each item that
+/// they place is added to `placed` (its Rust path).
+fn pymodule_api(
+    rust_modules: &[RustModule],
+    python_package: &str,
+    placed: &mut HashSet<String>,
+) -> Vec<(PythonModule, Vec<CrossRef>)> {
+    let crate_of = |path: &str| path.split("::").next().unwrap_or(path).to_string();
+
+    // The registrars of each crate, by function name
+    let mut registrars: HashMap<(String, String), (&RustModule, &PyModuleRegistrar)> =
+        HashMap::new();
+    for module in rust_modules {
+        for r in &module.py_registrars {
+            registrars
+                .entry((crate_of(&module.path), r.function.clone()))
+                .or_insert((module, r));
+        }
+    }
+
+    // A #[pymodule] that another one wraps is its submodule, not a root
+    let nested: HashSet<(String, String)> = rust_modules
+        .iter()
+        .flat_map(|m| {
+            m.py_registrars.iter().flat_map(move |r| {
+                r.adds
+                    .iter()
+                    .filter(|a| matches!(a.kind, PyModuleAddKind::Pymodule | PyModuleAddKind::Call))
+                    .map(move |a| (crate_of(&m.path), a.path.clone()))
+            })
+        })
+        .collect();
+
+    let mut modules: Vec<(String, SynthModule, &SourceSpan)> = Vec::new();
+    for module in rust_modules {
+        for r in module.py_registrars.iter() {
+            let Some(name) = &r.pymodule else {
+                continue;
+            };
+            if nested.contains(&(crate_of(&module.path), r.function.clone())) {
+                continue;
+            }
+            let root = pymodule_path(python_package, name);
+            let mut expansion = Expansion {
+                rust_modules,
+                registrars: &registrars,
+                krate: crate_of(&module.path),
+                modules: Vec::new(),
+                visited: HashSet::new(),
+                placed,
+            };
+            expansion.module(&root, r.doc_comment.clone());
+            expansion.expand(r, &root, 0);
+            for (path, synth) in expansion.modules {
+                modules.push((path, synth, &module.source));
+            }
+        }
+    }
+
+    modules
+        .into_iter()
+        .filter(|(_, synth, _)| {
+            !synth.classes.is_empty() || !synth.functions.is_empty() || synth.doc_comment.is_some()
+        })
+        .map(|(path, synth, source)| synth.build(&path, rust_modules, source))
+        .collect()
+}
+
+/// The walk from a `#[pymodule]` function through its helpers.
+struct Expansion<'a, 'p> {
+    rust_modules: &'a [RustModule],
+    registrars: &'a HashMap<(String, String), (&'a RustModule, &'a PyModuleRegistrar)>,
+    krate: String,
+    modules: Vec<(String, SynthModule<'a>)>,
+    visited: HashSet<(String, String)>,
+    placed: &'p mut HashSet<String>,
+}
+
+impl<'a> Expansion<'a, '_> {
+    /// The synthesized module of a Python path.
+    fn module(&mut self, path: &str, doc: Option<String>) -> &mut SynthModule<'a> {
+        let pos = match self.modules.iter().position(|(p, _)| p == path) {
+            Some(pos) => pos,
+            None => {
+                self.modules
+                    .push((path.to_string(), SynthModule::default()));
+                self.modules.len() - 1
+            }
+        };
+        let synth = &mut self.modules[pos].1;
+        if synth.doc_comment.is_none() {
+            synth.doc_comment = doc;
+        }
+        synth
+    }
+
+    /// Add what a registrar adds to the module `base`.
+    fn expand(&mut self, r: &'a PyModuleRegistrar, base: &str, depth: usize) {
+        if depth > 16 || !self.visited.insert((r.function.clone(), base.to_string())) {
+            return;
+        }
+        // Python paths of the submodules that the function makes
+        let mut paths: HashMap<&str, String> = HashMap::new();
+        paths.insert("", base.to_string());
+        for add in r
+            .adds
+            .iter()
+            .filter(|a| a.kind == PyModuleAddKind::Submodule)
+        {
+            let parent = paths
+                .get(add.module.as_str())
+                .cloned()
+                .unwrap_or_else(|| base.to_string());
+            paths.insert(&add.path, format!("{}.{}", parent, add.path));
+        }
+        for add in &r.adds {
+            let target = paths
+                .get(add.module.as_str())
+                .cloned()
+                .unwrap_or_else(|| format!("{}.{}", base, add.module));
+            match add.kind {
+                PyModuleAddKind::Class => {
+                    if let Some((m, s)) = self.find_class(&add.path)
+                        && self.placed.insert(rust_item_path(m, &s.name))
+                    {
+                        self.module(&target, None).classes.push((m, s));
+                    }
+                }
+                PyModuleAddKind::Function => {
+                    if let Some((m, f)) = self.find_function(&add.path)
+                        && self.placed.insert(rust_item_path(m, &f.name))
+                    {
+                        self.module(&target, None).functions.push((m, f));
+                    }
+                }
+                PyModuleAddKind::Submodule => {
+                    let path = paths.get(add.path.as_str()).cloned().unwrap_or(target);
+                    self.module(&path, None);
+                }
+                PyModuleAddKind::Call => {
+                    if let Some((_, callee)) =
+                        self.registrars.get(&(self.krate.clone(), add.path.clone()))
+                    {
+                        self.expand(callee, &target, depth + 1);
+                    }
+                }
+                PyModuleAddKind::Pymodule => {
+                    if let Some((_, child)) =
+                        self.registrars.get(&(self.krate.clone(), add.path.clone()))
+                    {
+                        let name = child.pymodule.clone().unwrap_or_else(|| add.path.clone());
+                        let path = format!("{}.{}", target, name);
+                        self.module(&path, child.doc_comment.clone());
+                        self.expand(child, &path, depth + 1);
+                    }
+                }
+            }
+        }
+    }
+
+    /// The items of the crate named by the last segment of `path`; with
+    /// more than one, those whose Rust path ends with `path`.
+    fn find<T>(
+        &self,
+        path: &str,
+        pick: impl Fn(&'a RustItem) -> Option<(&'a T, &'a str)>,
+    ) -> Option<(&'a RustModule, &'a T)> {
+        let wanted = path
+            .trim_start_matches("crate::")
+            .trim_start_matches("self::")
+            .trim_start_matches("super::");
+        let name = wanted.rsplit("::").next().unwrap_or(wanted);
+        let crate_prefix = format!("{}::", self.krate);
+        let candidates: Vec<(&'a RustModule, &'a T)> = self
+            .rust_modules
+            .iter()
+            .filter(|m| m.path == self.krate || m.path.starts_with(&crate_prefix))
+            .flat_map(|m| {
+                m.items
+                    .iter()
+                    .filter_map(&pick)
+                    .filter(|(_, n)| *n == name)
+                    .map(move |(t, _)| (m, t))
+            })
+            .collect();
+        match candidates.as_slice() {
+            [] => None,
+            [one] => Some(*one),
+            many => {
+                // The path from the crate root, else the one that ends with it
+                let exact = format!("{}::{}", self.krate, wanted);
+                let suffix = format!("::{}", wanted);
+                many.iter()
+                    .find(|(m, _)| format!("{}::{}", m.path, name) == exact)
+                    .or_else(|| {
+                        many.iter()
+                            .find(|(m, _)| format!("{}::{}", m.path, name).ends_with(&suffix))
+                    })
+                    .or(many.first())
+                    .copied()
+            }
+        }
+    }
+
+    fn find_class(&self, path: &str) -> Option<(&'a RustModule, &'a RustStruct)> {
+        self.find(path, |item| match item {
+            RustItem::Struct(s) if s.pyclass.is_some() => Some((s, s.name.as_str())),
+            _ => None,
+        })
+    }
+
+    fn find_function(&self, path: &str) -> Option<(&'a RustModule, &'a RustFunction)> {
+        self.find(path, |item| match item {
+            RustItem::Function(f) if f.pyfunction.is_some() => Some((f, f.name.as_str())),
+            _ => None,
+        })
+    }
 }
 
 /// Convert a Rust type to Python type hint (best effort)
@@ -556,6 +863,91 @@ mod tests {
     use super::*;
     use crate::config::*;
 
+    fn parse_rust(path: &str, code: &str) -> RustModule {
+        let mut m = crate::parser::RustParser::new()
+            .parse_str(code, std::path::Path::new("lib.rs"))
+            .unwrap();
+        m.path = path.to_string();
+        m
+    }
+
+    #[test]
+    fn test_python_api_from_pymodule() {
+        // Item 23 of PLSKN-T-0057: cloacina's bindings were named after the
+        // crate (`cloacina-python.*`), not the Python module `cloaca`
+        let root = parse_rust(
+            "cloacina-python",
+            r#"
+/// The cloaca module.
+#[pymodule]
+fn cloaca(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    register_authoring(m)?;
+    m.add_class::<bindings::runner::PyDefaultRunner>()?;
+    let events = PyModule::new(m.py(), "events")?;
+    events.add_function(wrap_pyfunction!(trigger::emit, &events)?)?;
+    m.add_submodule(&events)?;
+    Ok(())
+}
+pub(crate) fn register_authoring(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<trigger::TriggerDecorator>()?;
+    Ok(())
+}
+"#,
+        );
+        let runner = parse_rust(
+            "cloacina-python::bindings::runner",
+            "#[pyclass(name = \"DefaultRunner\")]\npub struct PyDefaultRunner;\n#[pymethods]\nimpl PyDefaultRunner { fn run(&self) {} }",
+        );
+        let trigger = parse_rust(
+            "cloacina-python::trigger",
+            "#[pyclass]\npub struct TriggerDecorator;\n#[pyfunction]\npub fn emit() {}",
+        );
+        // Same name, not registered: no Python page
+        let other = parse_rust(
+            "cloacina-python::bindings::trigger",
+            "#[pyclass]\npub struct TriggerDecorator;",
+        );
+        let api = synthesize_python_api(&[root, runner, trigger, other], "cloaca", None);
+        let paths: Vec<&str> = api.iter().map(|(m, _)| m.path.as_str()).collect();
+        assert_eq!(paths, vec!["cloaca", "cloaca.events"]);
+
+        let (cloaca, refs) = &api[0];
+        assert_eq!(cloaca.docstring.as_deref(), Some("The cloaca module."));
+        let names: Vec<String> = cloaca
+            .items
+            .iter()
+            .map(|i| match i {
+                PythonItem::Class(c) => format!("class {} {}", c.name, c.methods.len()),
+                PythonItem::Function(f) => format!("fn {}", f.name),
+                PythonItem::Variable(v) => v.name.clone(),
+            })
+            .collect();
+        assert_eq!(
+            names,
+            vec!["class TriggerDecorator 0", "class DefaultRunner 1"]
+        );
+        assert!(
+            refs.iter()
+                .any(|x| x.python_path == "cloaca.TriggerDecorator"
+                    && x.rust_path == "cloacina-python::trigger::TriggerDecorator")
+        );
+        assert_eq!(api[1].0.items.len(), 1);
+    }
+
+    #[test]
+    fn test_python_api_without_pymodule() {
+        // No #[pymodule]: each crate is the package (no entry point given)
+        let m = parse_rust(
+            "cloacina-python::bindings",
+            "#[pyclass]\npub struct Context;",
+        );
+        let api = synthesize_python_api(std::slice::from_ref(&m), "cloaca", None);
+        assert_eq!(api[0].0.path, "cloaca.bindings");
+        // With an entry point, another crate keeps its name
+        let api = synthesize_python_api(&[m], "cloaca", Some("cloacina"));
+        assert_eq!(api[0].0.path, "cloacina-python.bindings");
+    }
+
     fn test_config() -> Config {
         Config {
             project: ProjectConfig {
@@ -570,6 +962,7 @@ mod tests {
             rust: Some(RustConfig {
                 crates: vec![".".into()],
                 entry_point: Some("test".to_string()),
+                include_private: false,
             }),
             python: Some(PythonConfig {
                 package: "test".to_string(),
@@ -581,6 +974,7 @@ mod tests {
                     m.insert("test.helpers".to_string(), ModuleSourceType::Python);
                     m
                 },
+                include_private: false,
             }),
             links: LinksConfig::default(),
             quality: QualityConfig::default(),

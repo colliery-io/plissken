@@ -74,6 +74,32 @@ pub fn process(data: Vec<String>) -> PyResult<Vec<String>> {
 }
 ```
 
+### `#[pymodule]`
+
+The `#[pymodule]` function names the Python module, and says what is in it:
+
+```rust
+#[pymodule]
+fn mypackage(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<Container>()?;
+    m.add_function(wrap_pyfunction!(process, m)?)?;
+    events::register(m)?;                    // a helper adds more
+    let io = PyModule::new(m.py(), "io")?;   // the submodule mypackage.io
+    io.add_class::<Reader>()?;
+    m.add_submodule(&io)?;
+    Ok(())
+}
+```
+
+plissken follows it: the helpers that get the module, the submodules that it
+makes, and the `#[pymodule]` functions that it wraps (`wrap_pymodule!`). The
+Python module is the package when they have the same name, else a module of the
+package (`mypackage._native`).
+
+A binding that no `#[pymodule]` adds cannot be imported, so it has no Python
+page. In a crate with no `#[pymodule]`, a binding goes to the module of its Rust
+module: `mycrate::handlers` is `mypackage.handlers`.
+
 ## Python Side
 
 The Python bindings appear in docs with links back to Rust:

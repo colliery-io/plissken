@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::crossref"
 description: "Cross-reference builder for linking Python and Rust items"
+editUrl: false
 sidebar:
   order: 4
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Cross-reference builder for linking Python and Rust items
 
@@ -16,33 +16,91 @@ implementations by matching PyO3 metadata.
 
 ## Structs
 
-### <span id="struct.CrossRefBuilder"></span>`struct CrossRefBuilder<'a>`
+### <span id="struct.CrossRefBuilder"></span><code style="font-size: 0.85em">struct CrossRefBuilder&lt;&#39;a&gt;</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Builds cross-references between Python and Rust items
 
-#### Fields
+#### Methods
 
-| Name | Type | Description |
-|------|------|-------------|
-| `config` | `& 'a Config` |  |
-| `pyclass_map` | `HashMap < String , (String , String) >` | Map of Python name → Rust item (struct name, module path) |
-| `pyfunction_map` | `HashMap < String , (String , String) >` | Map of Python name → Rust function (fn name, module path) |
-| `pymethod_map` | `HashMap < (String , String) , String >` | Map of (Rust struct name, method name) → method info |
-
-
-
-## Functions
-
-### <span id="fn.build_cross_refs"></span>`fn build_cross_refs`
+##### <span id="CrossRefBuilder.new"></span><code>new</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
+```rust
+fn new(config: &'a Config) -> Self
+```
+
+Create a new cross-reference builder
+
+<details>
+<summary>Source</summary>
 
 ```rust
-fn build_cross_refs (config : & Config , rust_modules : & [RustModule] , python_modules : Vec < PythonModule > ,) -> (Vec < PythonModule > , Vec < CrossRef >)
+    pub fn new(config: &'a Config) -> Self {
+        Self {
+            config,
+            pyclass_map: HashMap::new(),
+            pyfunction_map: HashMap::new(),
+            pymethod_map: HashMap::new(),
+        }
+    }
+```
+
+</details>
+
+##### <span id="CrossRefBuilder.build"></span><code>build</code>
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
+
+```rust
+fn build(
+    mut self,
+    rust_modules: &[RustModule],
+    python_modules: Vec<PythonModule>,
+) -> (Vec<PythonModule>, Vec<CrossRef>)
+```
+
+Build cross-references and return updated modules and refs
+
+<details>
+<summary>Source</summary>
+
+```rust
+    pub fn build(
+        mut self,
+        rust_modules: &[RustModule],
+        python_modules: Vec<PythonModule>,
+    ) -> (Vec<PythonModule>, Vec<CrossRef>) {
+        // Step 1: Index all PyO3 items from Rust
+        self.index_rust_modules(rust_modules);
+
+        // Step 2: Match Python items to Rust and collect cross-refs
+        let mut cross_refs = Vec::new();
+        let updated_modules = python_modules
+            .into_iter()
+            .map(|module| self.process_python_module(module, &mut cross_refs))
+            .collect();
+
+        (updated_modules, cross_refs)
+    }
+```
+
+</details>
+
+## Functions
+
+### <span id="fn.build_cross_refs"></span><code style="font-size: 0.85em">fn build_​cross_​refs</code>
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
+
+```rust
+fn build_cross_refs(
+    config: &Config,
+    rust_modules: &[RustModule],
+    python_modules: Vec<PythonModule>,
+) -> (Vec<PythonModule>, Vec<CrossRef>)
 ```
 
 Build cross-references for a doc model
@@ -63,15 +121,15 @@ pub fn build_cross_refs(
 
 </details>
 
-
-
-### <span id="fn.synthesize_python_from_rust"></span>`fn synthesize_python_from_rust`
+### <span id="fn.synthesize_python_from_rust"></span><code style="font-size: 0.85em">fn synthesize_​python_​from_​rust</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn synthesize_python_from_rust (rust_modules : & [RustModule] , module_name : & str ,) -> (PythonModule , Vec < CrossRef >)
+fn synthesize_python_from_rust(
+    rust_modules: &[RustModule],
+    module_name: &str,
+) -> (PythonModule, Vec<CrossRef>)
 ```
 
 Synthesize Python modules from Rust PyO3 bindings
@@ -181,134 +239,29 @@ pub fn synthesize_python_from_rust(
 
 </details>
 
-
-
-### <span id="fn.synthesize_python_function"></span>`fn synthesize_python_function`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn synthesize_python_function (rust_fn : & RustFunction , rust_path : & str) -> PythonFunction
-```
-
-Synthesize a Python function from a Rust function
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn synthesize_python_function(rust_fn: &RustFunction, rust_path: &str) -> PythonFunction {
-    let py_name = rust_fn
-        .pyfunction
-        .as_ref()
-        .and_then(|pf| pf.name.clone())
-        .unwrap_or_else(|| rust_fn.name.clone());
-
-    // Convert Rust params to Python params
-    let params: Vec<PythonParam> = rust_fn
-        .signature
-        .params
-        .iter()
-        .filter(|p| p.name != "self" && p.name != "&self" && p.name != "py")
-        .map(|p| PythonParam {
-            name: p.name.clone(),
-            ty: Some(rust_type_to_python(&p.ty)),
-            default: p.default.clone(),
-        })
-        .collect();
-
-    // Build signature string
-    let sig_str = if let Some(ref pyfunc) = rust_fn.pyfunction {
-        if let Some(ref sig) = pyfunc.signature {
-            format!("def {}{}:", py_name, sig)
-        } else {
-            format!("def {}(...):", py_name)
-        }
-    } else {
-        format!("def {}(...):", py_name)
-    };
-
-    PythonFunction {
-        name: py_name,
-        docstring: rust_fn.doc_comment.clone(),
-        signature_str: sig_str,
-        signature: PythonFunctionSig {
-            params,
-            return_type: rust_fn
-                .signature
-                .return_type
-                .as_ref()
-                .map(|t| rust_type_to_python(t)),
-        },
-        decorators: Vec::new(),
-        is_async: rust_fn.is_async,
-        is_staticmethod: false,
-        is_classmethod: false,
-        is_property: false,
-        parsed_doc: None,
-        rust_impl: Some(RustItemRef::new(rust_path, &rust_fn.name)),
-        source: rust_fn.source.clone(),
-    }
-}
-```
-
-</details>
-
-
-
-### <span id="fn.synthesize_python_method"></span>`fn synthesize_python_method`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn synthesize_python_method (rust_fn : & RustFunction , rust_struct : & str , rust_module : & str ,) -> PythonFunction
-```
-
-Synthesize a Python method from a Rust method in pymethods block
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn synthesize_python_method(
-    rust_fn: &RustFunction,
-    rust_struct: &str,
-    rust_module: &str,
-) -> PythonFunction {
-    let rust_path = format!("{}::{}::{}", rust_module, rust_struct, rust_fn.name);
-    synthesize_python_function(rust_fn, &rust_path)
-}
-```
-
-</details>
-
-
-
-### <span id="fn.synthesize_python_modules_from_rust"></span>`fn synthesize_python_modules_from_rust`
+### <span id="fn.synthesize_python_modules_from_rust"></span><code style="font-size: 0.85em">fn synthesize_​python_​modules_​from_​rust</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn synthesize_python_modules_from_rust (rust_modules : & [RustModule] , python_package : & str , rust_entry_point : & str ,) -> Vec < (PythonModule , Vec < CrossRef >) >
+fn synthesize_python_modules_from_rust(
+    rust_modules: &[RustModule],
+    python_package: &str,
+    rust_entry_point: &str,
+) -> Vec<(PythonModule, Vec<CrossRef>)>
 ```
 
 Synthesize Python modules from Rust modules with PyO3 bindings.
 
-Unlike `synthesize_python_from_rust` which flattens into one module,
-this preserves the module structure - each Rust module with bindings
-becomes a separate Python module under the configured Python package namespace.
+As [`synthesize_python_api`](../../../rust/plissken-core/crossref/#fn.synthesize_python_api), with the given crate as the entry point.
 
 **Parameters:**
 
 | Name | Type | Description |
 |------|------|-------------|
-| `rust_modules` | `-` | The Rust modules to synthesize from |
-| `python_package` | `-` | The Python package name (e.g., "pysnake") |
-| `rust_entry_point` | `-` | The Rust crate entry point (e.g., "rustscale") |
-
+| `rust_modules` | `&[RustModule]` | The Rust modules to synthesize from |
+| `python_package` | `&str` | The Python package name (e.g., "pysnake") |
+| `rust_entry_point` | `&str` | The Rust crate entry point (e.g., "rustscale") |
 
 <details>
 <summary>Source</summary>
@@ -319,120 +272,98 @@ pub fn synthesize_python_modules_from_rust(
     python_package: &str,
     rust_entry_point: &str,
 ) -> Vec<(PythonModule, Vec<CrossRef>)> {
-    let mut result = Vec::new();
+    synthesize_python_api(rust_modules, python_package, Some(rust_entry_point))
+}
+```
+
+</details>
+
+### <span id="fn.synthesize_python_api"></span><code style="font-size: 0.85em">fn synthesize_​python_​api</code>
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
+
+```rust
+fn synthesize_python_api(
+    rust_modules: &[RustModule],
+    python_package: &str,
+    rust_entry_point: Option<&str>,
+) -> Vec<(PythonModule, Vec<CrossRef>)>
+```
+
+Synthesize the Python API of the PyO3 bindings of Rust modules.
+
+A `#[pymodule]` function names a Python module: `fn cloaca(m)` is the
+module `cloaca`, or `{python_package}.{name}` when the package has
+another name. Its classes and functions are those that it adds, and
+those that its helpers add (`register(m)`); a submodule that it adds
+(`m.add_submodule(&sub)`) is a module below it.
+
+A binding that no `#[pymodule]` adds goes to the Python module of its
+Rust module, the crate name replaced by the package
+(`rustscale::handlers` -> `pysnake.handlers`). With an entry point,
+only that crate is replaced; without one, every crate.
+
+Returns a list of (PythonModule, Vec<CrossRef>) pairs.
+
+<details>
+<summary>Source</summary>
+
+```rust
+pub fn synthesize_python_api(
+    rust_modules: &[RustModule],
+    python_package: &str,
+    rust_entry_point: Option<&str>,
+) -> Vec<(PythonModule, Vec<CrossRef>)> {
+    let mut placed: HashSet<String> = HashSet::new();
+    let mut result = pymodule_api(rust_modules, python_package, &mut placed);
+
+    // In a crate with a #[pymodule], a binding that it does not add cannot
+    // be imported: it has no Python page
+    let crate_of = |path: &str| path.split("::").next().unwrap_or(path).to_string();
+    let pymodule_crates: HashSet<String> = rust_modules
+        .iter()
+        .filter(|m| m.py_registrars.iter().any(|r| r.pymodule.is_some()))
+        .map(|m| crate_of(&m.path))
+        .collect();
 
     for module in rust_modules {
-        // Check if this module has any bindings
-        let has_bindings = module.items.iter().any(|item| match item {
-            RustItem::Struct(s) => s.pyclass.is_some(),
-            RustItem::Function(f) => f.pyfunction.is_some(),
-            RustItem::Impl(i) => i.pymethods,
-            _ => false,
-        });
-
-        if !has_bindings {
+        if pymodule_crates.contains(&crate_of(&module.path)) {
             continue;
         }
-
-        let mut items = Vec::new();
-        let mut cross_refs = Vec::new();
-
-        // Convert Rust path to Python path, remapping the crate name to the Python package
-        // e.g., rustscale::handlers -> pysnake.handlers
-        let rust_path_dotted = module.path.replace("::", ".");
-        let py_module_path = if rust_path_dotted == rust_entry_point {
-            // Root module: rustscale -> pysnake
-            python_package.to_string()
-        } else if rust_path_dotted.starts_with(&format!("{}.", rust_entry_point)) {
-            // Submodule: rustscale.handlers -> pysnake.handlers
-            format!(
-                "{}{}",
-                python_package,
-                &rust_path_dotted[rust_entry_point.len()..]
-            )
-        } else {
-            // Fallback: use as-is (shouldn't happen with proper config)
-            rust_path_dotted
-        };
-
-        // Collect methods from pymethods impl blocks
-        let mut pyclass_methods: HashMap<String, Vec<PythonFunction>> = HashMap::new();
-        for item in &module.items {
-            if let RustItem::Impl(impl_block) = item
-                && impl_block.pymethods
-            {
-                let methods: Vec<_> = impl_block
-                    .methods
-                    .iter()
-                    .map(|m| synthesize_python_method(m, &impl_block.target, &module.path))
-                    .collect();
-                pyclass_methods
-                    .entry(impl_block.target.clone())
-                    .or_default()
-                    .extend(methods);
-            }
-        }
-
-        // Create Python classes and functions
+        let py_module_path = python_module_path(&module.path, python_package, rust_entry_point);
+        let mut synth = SynthModule::default();
         for item in &module.items {
             match item {
-                RustItem::Struct(s) => {
-                    if let Some(ref pyclass) = s.pyclass {
-                        let py_name = pyclass.name.clone().unwrap_or_else(|| s.name.clone());
-                        let rust_path = format!("{}::{}", module.path, s.name);
-
-                        let methods = pyclass_methods.remove(&s.name).unwrap_or_default();
-
-                        let class = PythonClass {
-                            name: py_name.clone(),
-                            docstring: s.doc_comment.clone(),
-                            parsed_doc: None,
-                            bases: Vec::new(),
-                            methods,
-                            attributes: Vec::new(),
-                            decorators: Vec::new(),
-                            rust_impl: Some(RustItemRef::new(&rust_path, &s.name)),
-                            source: s.source.clone(),
-                        };
-
-                        cross_refs.push(CrossRef::binding(
-                            format!("{}.{}", py_module_path, py_name),
-                            &rust_path,
-                        ));
-
-                        items.push(PythonItem::Class(class));
-                    }
+                RustItem::Struct(s)
+                    if s.pyclass.is_some()
+                        && !placed.contains(&rust_item_path(module, &s.name)) =>
+                {
+                    synth.classes.push((module, s));
                 }
-                RustItem::Function(f) => {
-                    if let Some(ref pyfunc) = f.pyfunction {
-                        let py_name = pyfunc.name.clone().unwrap_or_else(|| f.name.clone());
-                        let rust_path = format!("{}::{}", module.path, f.name);
-
-                        let func = synthesize_python_function(f, &rust_path);
-
-                        cross_refs.push(CrossRef::binding(
-                            format!("{}.{}", py_module_path, py_name),
-                            &rust_path,
-                        ));
-
-                        items.push(PythonItem::Function(func));
-                    }
+                RustItem::Function(f)
+                    if f.pyfunction.is_some()
+                        && !placed.contains(&rust_item_path(module, &f.name)) =>
+                {
+                    synth.functions.push((module, f));
                 }
                 _ => {}
             }
         }
-
-        if !items.is_empty() {
-            let python_module = PythonModule {
-                path: py_module_path,
-                docstring: module.doc_comment.clone(),
-                parsed_doc: None,
-                items,
-                source_type: SourceType::PyO3Binding,
-                source: module.source.clone(),
-            };
-
-            result.push((python_module, cross_refs));
+        if synth.classes.is_empty() && synth.functions.is_empty() {
+            continue;
+        }
+        synth.doc_comment = module.doc_comment.clone();
+        let (python_module, cross_refs) =
+            synth.build(&py_module_path, rust_modules, &module.source);
+        match result
+            .iter_mut()
+            .find(|(m, _)| m.path == python_module.path)
+        {
+            Some((existing, refs)) => {
+                existing.items.extend(python_module.items);
+                refs.extend(cross_refs);
+            }
+            None => result.push((python_module, cross_refs)),
         }
     }
 
@@ -441,58 +372,3 @@ pub fn synthesize_python_modules_from_rust(
 ```
 
 </details>
-
-
-
-### <span id="fn.rust_type_to_python"></span>`fn rust_type_to_python`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn rust_type_to_python (rust_type : & str) -> String
-```
-
-Convert a Rust type to Python type hint (best effort)
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn rust_type_to_python(rust_type: &str) -> String {
-    match rust_type {
-        "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32" | "u64" | "usize" => {
-            "int".to_string()
-        }
-        "f32" | "f64" => "float".to_string(),
-        "bool" => "bool".to_string(),
-        "String" | "&str" | "&String" => "str".to_string(),
-        "()" => "None".to_string(),
-        "Self" => "Self".to_string(),
-        s if s.starts_with("Vec<") => {
-            let inner = &s[4..s.len() - 1];
-            format!("List[{}]", rust_type_to_python(inner))
-        }
-        s if s.starts_with("Option<") => {
-            let inner = &s[7..s.len() - 1];
-            format!("Optional[{}]", rust_type_to_python(inner))
-        }
-        s if s.starts_with("HashMap<") || s.starts_with("BTreeMap<") => {
-            // Simplified - would need proper parsing for complex types
-            "Dict[str, Any]".to_string()
-        }
-        s if s.starts_with("PyResult<") => {
-            let inner = &s[9..s.len() - 1];
-            rust_type_to_python(inner)
-        }
-        s if s.starts_with("&") => rust_type_to_python(&s[1..]),
-        s if s.starts_with("&mut ") => rust_type_to_python(&s[5..]),
-        other => other.to_string(),
-    }
-}
-```
-
-</details>
-
-
-

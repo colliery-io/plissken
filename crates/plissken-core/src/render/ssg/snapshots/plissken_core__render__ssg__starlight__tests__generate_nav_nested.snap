@@ -12,6 +12,7 @@ expression: nav
 export default {
   label: "API reference",
   items: [
+    { label: "Overview", slug: "api" },
     {
       label: "Python",
       items: [

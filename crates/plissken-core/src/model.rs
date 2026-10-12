@@ -46,7 +46,71 @@ pub struct RustModule {
     pub doc_comment: Option<String>,
     pub parsed_doc: Option<ParsedDocstring>,
     pub items: Vec<RustItem>,
+    /// The `pub use` declarations of the module
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reexports: Vec<RustReexport>,
+    /// Names of the submodules declared `#[cfg(test)] mod name;`
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub test_modules: Vec<String>,
+    /// The functions that build PyO3 modules (`#[pymodule]`, and helpers
+    /// that get the module as a parameter)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub py_registrars: Vec<PyModuleRegistrar>,
     pub source: SourceSpan,
+}
+
+/// A function that adds items to a PyO3 module: a `#[pymodule]` function,
+/// or a helper that gets the module as a parameter (`register(m)`).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PyModuleRegistrar {
+    /// The Rust name of the function
+    pub function: String,
+    /// The Python name of the module, if the function is a `#[pymodule]`
+    pub pymodule: Option<String>,
+    pub doc_comment: Option<String>,
+    /// What the function adds, in order
+    pub adds: Vec<PyModuleAdd>,
+}
+
+/// One thing that a [`PyModuleRegistrar`] adds to a module.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PyModuleAdd {
+    /// The module it adds to: empty for the module of the parameter, else
+    /// the Python name of a submodule made in the function
+    pub module: String,
+    pub kind: PyModuleAddKind,
+    /// The Rust path of the class or function; the Python name of the
+    /// submodule; the name of the function called
+    pub path: String,
+}
+
+/// What a [`PyModuleAdd`] adds.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PyModuleAddKind {
+    /// `m.add_class::<Type>()`
+    Class,
+    /// `m.add_function(wrap_pyfunction!(f, m)?)`
+    Function,
+    /// `m.add_submodule(&sub)`
+    Submodule,
+    /// `helper(m)`: the helper adds to the module
+    Call,
+    /// `m.add_submodule(wrap_pymodule!(f))`: the `#[pymodule]` function
+    /// `f` (the path) is a submodule
+    Pymodule,
+}
+
+/// A name that a module re-exports: `pub use crate::context::Context;`
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RustReexport {
+    /// The name in the module (`Context`, or `*` for a glob)
+    pub name: String,
+    /// The path that is re-exported (`crate::context::Context`, or
+    /// `crate::context` for a glob)
+    pub path: String,
+    pub visibility: Visibility,
+    pub doc_comment: Option<String>,
 }
 
 /// A Rust item (struct, enum, function, etc.)
@@ -443,6 +507,9 @@ impl RustModule {
             doc_comment: None,
             parsed_doc: None,
             items: Vec::new(),
+            reexports: Vec::new(),
+            test_modules: Vec::new(),
+            py_registrars: Vec::new(),
             source: SourceSpan::test("test.rs", 1, 1),
         }
     }

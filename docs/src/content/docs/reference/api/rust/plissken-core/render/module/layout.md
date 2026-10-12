@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::render::module::layout"
 description: "Page layout and path computation for documentation output."
+editUrl: false
 sidebar:
-  order: 19
+  order: 22
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Page layout and path computation for documentation output.
 
@@ -17,10 +17,9 @@ filesystem organization.
 
 ## Structs
 
-### <span id="struct.PageLayout"></span>`struct PageLayout`
+### <span id="struct.PageLayout"></span><code style="font-size: 0.85em">struct PageLayout</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 **Derives:** `Debug`, `Clone`, `Default`
 
@@ -28,6 +27,15 @@ Computes file paths and directory structure for documentation pages.
 
 `PageLayout` encapsulates the rules for translating Python and Rust
 module paths into filesystem paths for the generated documentation.
+
+**Path Rules**
+
+- **Python modules**: `python/{module.path.replace('.', '/')}/`
+  - Example: `mypackage.submodule` → `python/mypackage/submodule/`
+- **Rust modules**: `rust/{module.path.replace('::', '/')}/`
+  - Example: `mycrate::submod` → `rust/mycrate/submod/`
+- **Index pages**: `{module_dir}/index.md`
+- **Item pages**: `{module_dir}/{item_name}.md`
 
 **Examples:**
 
@@ -60,13 +68,12 @@ assert_eq!(
 
 #### Methods
 
-##### <span id="PageLayout.new"></span>`new`
+##### <span id="PageLayout.new"></span><code>new</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn new () -> Self
+fn new() -> Self
 ```
 
 Create a new PageLayout.
@@ -82,15 +89,12 @@ Create a new PageLayout.
 
 </details>
 
-
-
-##### <span id="PageLayout.python_module_dir"></span>`python_module_dir`
+##### <span id="PageLayout.python_module_dir"></span><code>python_​module_​dir</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn python_module_dir (& self , module_path : & str) -> String
+fn python_module_dir(&self, module_path: &str) -> String
 ```
 
 Compute the directory path for a Python module.
@@ -118,15 +122,12 @@ assert_eq!(layout.python_module_dir("mypackage.sub"), "python/mypackage/sub");
 
 </details>
 
-
-
-##### <span id="PageLayout.python_index_path"></span>`python_index_path`
+##### <span id="PageLayout.python_index_path"></span><code>python_​index_​path</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn python_index_path (& self , module_path : & str) -> PathBuf
+fn python_index_path(&self, module_path: &str) -> PathBuf
 ```
 
 Compute the path for a Python module's index page.
@@ -142,15 +143,12 @@ Compute the path for a Python module's index page.
 
 </details>
 
-
-
-##### <span id="PageLayout.python_module_page"></span>`python_module_page`
+##### <span id="PageLayout.python_module_page"></span><code>python_​module_​page</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn python_module_page (& self , module_path : & str) -> PathBuf
+fn python_module_page(&self, module_path: &str) -> PathBuf
 ```
 
 Compute the path for a Python module as a single page (inline format).
@@ -178,15 +176,16 @@ For nested modules, returns `{parent}/{module}.md`.
 
 </details>
 
-
-
-##### <span id="PageLayout.python_item_path"></span>`python_item_path`
+##### <span id="PageLayout.python_item_path"></span><code>python_​item_​path</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn python_item_path (& self , module_path : & str , item_name : & str) -> PathBuf
+fn python_item_path(
+    &self,
+    module_path: &str,
+    item_name: &str,
+) -> PathBuf
 ```
 
 Compute the path for a Python item (class, function) page.
@@ -206,15 +205,12 @@ Compute the path for a Python item (class, function) page.
 
 </details>
 
-
-
-##### <span id="PageLayout.python_module_depth"></span>`python_module_depth`
+##### <span id="PageLayout.python_module_depth"></span><code>python_​module_​depth</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn python_module_depth (& self , module_path : & str) -> usize
+fn python_module_depth(&self, module_path: &str) -> usize
 ```
 
 Compute the depth of a Python module (number of dots).
@@ -232,15 +228,12 @@ Used for indentation in navigation.
 
 </details>
 
-
-
-##### <span id="PageLayout.rust_module_dir"></span>`rust_module_dir`
+##### <span id="PageLayout.rust_module_dir"></span><code>rust_​module_​dir</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn rust_module_dir (& self , module_path : & str) -> String
+fn rust_module_dir(&self, module_path: &str) -> String
 ```
 
 Compute the directory path for a Rust module.
@@ -268,15 +261,12 @@ assert_eq!(layout.rust_module_dir("mycrate::submod"), "rust/mycrate/submod");
 
 </details>
 
-
-
-##### <span id="PageLayout.rust_index_path"></span>`rust_index_path`
+##### <span id="PageLayout.rust_index_path"></span><code>rust_​index_​path</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn rust_index_path (& self , module_path : & str) -> PathBuf
+fn rust_index_path(&self, module_path: &str) -> PathBuf
 ```
 
 Compute the path for a Rust module's index page.
@@ -292,15 +282,12 @@ Compute the path for a Rust module's index page.
 
 </details>
 
-
-
-##### <span id="PageLayout.rust_module_page"></span>`rust_module_page`
+##### <span id="PageLayout.rust_module_page"></span><code>rust_​module_​page</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn rust_module_page (& self , module_path : & str) -> PathBuf
+fn rust_module_page(&self, module_path: &str) -> PathBuf
 ```
 
 Compute the path for a Rust module as a single page (inline format).
@@ -310,11 +297,9 @@ For submodules, returns `rust/{crate_name}/{submodule}.md`.
 
 **Examples:**
 
-```python
 - `plissken_core` → `rust/plissken_core.md` (crate root)
 - `plissken_core::config` → `rust/plissken_core/config.md` (submodule)
 - `plissken_core::render::ssg` → `rust/plissken_core/render/ssg.md` (nested)
-```
 
 <details>
 <summary>Source</summary>
@@ -334,15 +319,12 @@ For submodules, returns `rust/{crate_name}/{submodule}.md`.
 
 </details>
 
-
-
-##### <span id="PageLayout.rust_item_path"></span>`rust_item_path`
+##### <span id="PageLayout.rust_item_path"></span><code>rust_​item_​path</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn rust_item_path (& self , module_path : & str , item_name : & str) -> PathBuf
+fn rust_item_path(&self, module_path: &str, item_name: &str) -> PathBuf
 ```
 
 Compute the path for a Rust item (struct, enum, function) page.
@@ -362,15 +344,12 @@ Compute the path for a Rust item (struct, enum, function) page.
 
 </details>
 
-
-
-##### <span id="PageLayout.rust_module_depth"></span>`rust_module_depth`
+##### <span id="PageLayout.rust_module_depth"></span><code>rust_​module_​depth</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn rust_module_depth (& self , module_path : & str) -> usize
+fn rust_module_depth(&self, module_path: &str) -> usize
 ```
 
 Compute the depth of a Rust module (number of `::` separators).
@@ -388,15 +367,17 @@ Used for indentation in navigation.
 
 </details>
 
-
-
-##### <span id="PageLayout.python_link_from_rust"></span>`python_link_from_rust`
+##### <span id="PageLayout.python_link_from_rust"></span><code>python_​link_​from_​rust</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn python_link_from_rust (& self , python_module : & str , item_name : & str , anchor : Option < & str > ,) -> String
+fn python_link_from_rust(
+    &self,
+    python_module: &str,
+    item_name: &str,
+    anchor: Option<&str>,
+) -> String
 ```
 
 Compute a relative path from a Rust module to a Python item.
@@ -407,10 +388,9 @@ Used for cross-reference links between Rust and Python documentation.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `python_module` | `-` | The Python module path (e.g., "mypackage.submodule") |
-| `item_name` | `-` | The item name (e.g., "MyClass") |
-| `anchor` | `-` | Optional anchor within the page (e.g., "my_method") |
-
+| `python_module` | `&str` | The Python module path (e.g., "mypackage.submodule") |
+| `item_name` | `&str` | The item name (e.g., "MyClass") |
+| `anchor` | `Option<&str>` | Optional anchor within the page (e.g., "my_method") |
 
 <details>
 <summary>Source</summary>
@@ -433,15 +413,17 @@ Used for cross-reference links between Rust and Python documentation.
 
 </details>
 
-
-
-##### <span id="PageLayout.rust_link_from_python"></span>`rust_link_from_python`
+##### <span id="PageLayout.rust_link_from_python"></span><code>rust_​link_​from_​python</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn rust_link_from_python (& self , rust_module : & str , item_name : & str , anchor : Option < & str > ,) -> String
+fn rust_link_from_python(
+    &self,
+    rust_module: &str,
+    item_name: &str,
+    anchor: Option<&str>,
+) -> String
 ```
 
 Compute a relative path from a Python module to a Rust item.
@@ -452,10 +434,9 @@ Used for cross-reference links between Python and Rust documentation.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `rust_module` | `-` | The Rust module path (e.g., "mycrate::submod") |
-| `item_name` | `-` | The item name (e.g., "MyStruct") |
-| `anchor` | `-` | Optional anchor within the page (e.g., "my_method") |
-
+| `rust_module` | `&str` | The Rust module path (e.g., "mycrate::submod") |
+| `item_name` | `&str` | The item name (e.g., "MyStruct") |
+| `anchor` | `Option<&str>` | Optional anchor within the page (e.g., "my_method") |
 
 <details>
 <summary>Source</summary>
@@ -477,8 +458,3 @@ Used for cross-reference links between Python and Rust documentation.
 ```
 
 </details>
-
-
-
-
-

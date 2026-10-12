@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::render::renderer"
 description: "Tera-based documentation renderer"
+editUrl: false
 sidebar:
-  order: 21
+  order: 24
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Tera-based documentation renderer
 
@@ -16,16 +16,20 @@ with theme adapters to generate styled documentation output.
 
 ## Structs
 
-### <span id="struct.Renderer"></span>`struct Renderer`
+### <span id="struct.Renderer"></span><code style="font-size: 0.85em">struct Renderer</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Documentation renderer using Tera templates with SSG-native theming.
 
 The `Renderer` holds a Tera instance with pre-loaded templates and a
 theme adapter for CSS variable injection. Templates access theme values
 through the `theme` context variable.
+
+**Template Customization**
+
+Templates can be customized by placing override files in `.plissken/templates/`
+within your project root. User templates take precedence over bundled defaults.
 
 **Examples:**
 
@@ -42,23 +46,17 @@ use std::path::Path;
 let renderer = Renderer::new(Some("mkdocs-material"), Some(Path::new("."))).unwrap();
 ```
 
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `tera` | `Tera` |  |
-| `theme` | `Box < dyn ThemeAdapter >` |  |
-| `template_loader` | `TemplateLoader` |  |
-
 #### Methods
 
-##### <span id="Renderer.new"></span>`new`
+##### <span id="Renderer.new"></span><code>new</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn new (template : Option < & str > , project_root : Option < & Path >) -> crate :: error :: Result < Self >
+fn new(
+    template: Option<&str>,
+    project_root: Option<&Path>,
+) -> crate::error::Result<Self>
 ```
 
 Create a new renderer with the specified template theme.
@@ -67,16 +65,12 @@ Create a new renderer with the specified template theme.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `template` | `-` | Optional template name (e.g., "mkdocs-material", "mdbook") |
-| `project_root` | `-` | Optional project root for user template overrides. If provided, templates in `.plissken/templates/` will override defaults. |
+| `template` | `Option<&str>` | Optional template name (e.g., "mkdocs-material", "mdbook") |
+| `project_root` | `Option<&Path>` | Optional project root for user template overrides. If provided, templates in `.plissken/templates/` will override defaults. |
 
+**Errors:**
 
-**Raises:**
-
-| Exception | Description |
-|-----------|-------------|
-| `Error` | Returns `PlisskenError::Template` if template initialization fails. |
-
+Returns `PlisskenError::Template` if template initialization fails.
 
 <details>
 <summary>Source</summary>
@@ -115,15 +109,12 @@ Create a new renderer with the specified template theme.
 
 </details>
 
-
-
-##### <span id="Renderer.has_user_override"></span>`has_user_override`
+##### <span id="Renderer.has_user_override"></span><code>has_​user_​override</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn has_user_override (& self , template_name : & str) -> bool
+fn has_user_override(&self, template_name: &str) -> bool
 ```
 
 Check if a user override exists for the given template.
@@ -139,15 +130,12 @@ Check if a user override exists for the given template.
 
 </details>
 
-
-
-##### <span id="Renderer.template_loader"></span>`template_loader`
+##### <span id="Renderer.template_loader"></span><code>template_​loader</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn template_loader (& self) -> & TemplateLoader
+fn template_loader(&self) -> &TemplateLoader
 ```
 
 Get the template loader for direct access to templates.
@@ -163,15 +151,12 @@ Get the template loader for direct access to templates.
 
 </details>
 
-
-
-##### <span id="Renderer.theme_name"></span>`theme_name`
+##### <span id="Renderer.theme_name"></span><code>theme_​name</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn theme_name (& self) -> & str
+fn theme_name(&self) -> &str
 ```
 
 Get the theme adapter name.
@@ -187,15 +172,12 @@ Get the theme adapter name.
 
 </details>
 
-
-
-##### <span id="Renderer.is_starlight"></span>`is_starlight`
+##### <span id="Renderer.is_starlight"></span><code>is_​starlight</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn is_starlight (& self) -> bool
+fn is_starlight(&self) -> bool
 ```
 
 Whether pages are written for an Astro Starlight site.
@@ -214,15 +196,12 @@ anchor ids, and signatures as Markdown code fences.
 
 </details>
 
-
-
-##### <span id="Renderer.base_context"></span>`base_context`
+##### <span id="Renderer.base_context"></span><code>base_​context</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn base_context (& self) -> Context
+fn base_context(&self) -> Context
 ```
 
 Create a base Tera context with theme values injected.
@@ -272,15 +251,17 @@ ready for use in templates.
 
 </details>
 
-
-
-##### <span id="Renderer.render_badge"></span>`render_badge`
+##### <span id="Renderer.render_badge"></span><code>render_​badge</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_badge (& self , text : & str , color_type : & str , badge_type : & str ,) -> Result < String , tera :: Error >
+fn render_badge(
+    &self,
+    text: &str,
+    color_type: &str,
+    badge_type: &str,
+) -> Result<String, tera::Error>
 ```
 
 Render a badge with the given text, color type, and semantic type.
@@ -289,10 +270,9 @@ Render a badge with the given text, color type, and semantic type.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `text` | `-` | The badge text (e.g., "async", "deprecated") |
-| `color_type` | `-` | Color type: "blue", "green", "yellow", "red", "purple", "orange", "gray" |
-| `badge_type` | `-` | Semantic type for CSS class (e.g., "async", "visibility", "source") |
-
+| `text` | `&str` | The badge text (e.g., "async", "deprecated") |
+| `color_type` | `&str` | Color type: "blue", "green", "yellow", "red", "purple", "orange", "gray" |
+| `badge_type` | `&str` | Semantic type for CSS class (e.g., "async", "visibility", "source") |
 
 <details>
 <summary>Source</summary>
@@ -317,15 +297,12 @@ Render a badge with the given text, color type, and semantic type.
 
 </details>
 
-
-
-##### <span id="Renderer.badge_async"></span>`badge_async`
+##### <span id="Renderer.badge_async"></span><code>badge_​async</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn badge_async (& self) -> Result < String , tera :: Error >
+fn badge_async(&self) -> Result<String, tera::Error>
 ```
 
 Render an "async" badge (blue).
@@ -341,15 +318,12 @@ Render an "async" badge (blue).
 
 </details>
 
-
-
-##### <span id="Renderer.badge_unsafe"></span>`badge_unsafe`
+##### <span id="Renderer.badge_unsafe"></span><code>badge_​unsafe</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn badge_unsafe (& self) -> Result < String , tera :: Error >
+fn badge_unsafe(&self) -> Result<String, tera::Error>
 ```
 
 Render an "unsafe" badge (red).
@@ -365,15 +339,12 @@ Render an "unsafe" badge (red).
 
 </details>
 
-
-
-##### <span id="Renderer.badge_deprecated"></span>`badge_deprecated`
+##### <span id="Renderer.badge_deprecated"></span><code>badge_​deprecated</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn badge_deprecated (& self) -> Result < String , tera :: Error >
+fn badge_deprecated(&self) -> Result<String, tera::Error>
 ```
 
 Render a "deprecated" badge (yellow).
@@ -389,15 +360,15 @@ Render a "deprecated" badge (yellow).
 
 </details>
 
-
-
-##### <span id="Renderer.badge_visibility"></span>`badge_visibility`
+##### <span id="Renderer.badge_visibility"></span><code>badge_​visibility</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn badge_visibility (& self , visibility : & str) -> Result < String , tera :: Error >
+fn badge_visibility(
+    &self,
+    visibility: &str,
+) -> Result<String, tera::Error>
 ```
 
 Render a visibility badge.
@@ -406,8 +377,7 @@ Render a visibility badge.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `visibility` | `-` | One of: "pub", "pub(crate)", "private" |
-
+| `visibility` | `&str` | One of: "pub", "pub(crate)", "private" |
 
 <details>
 <summary>Source</summary>
@@ -425,15 +395,12 @@ Render a visibility badge.
 
 </details>
 
-
-
-##### <span id="Renderer.badge_source"></span>`badge_source`
+##### <span id="Renderer.badge_source"></span><code>badge_​source</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn badge_source (& self , source_type : & str) -> Result < String , tera :: Error >
+fn badge_source(&self, source_type: &str) -> Result<String, tera::Error>
 ```
 
 Render a source type badge with emoji.
@@ -442,8 +409,7 @@ Render a source type badge with emoji.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `source_type` | `-` | One of: "python", "rust", "binding" |
-
+| `source_type` | `&str` | One of: "python", "rust", "binding" |
 
 <details>
 <summary>Source</summary>
@@ -462,15 +428,17 @@ Render a source type badge with emoji.
 
 </details>
 
-
-
-##### <span id="Renderer.render_code_block"></span>`render_code_block`
+##### <span id="Renderer.render_code_block"></span><code>render_​code_​block</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_code_block (& self , code : & str , language : Option < & str > , caption : Option < & str > ,) -> Result < String , tera :: Error >
+fn render_code_block(
+    &self,
+    code: &str,
+    language: Option<&str>,
+    caption: Option<&str>,
+) -> Result<String, tera::Error>
 ```
 
 Render a code block with optional language and caption.
@@ -479,10 +447,9 @@ Render a code block with optional language and caption.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `code` | `-` | The code content |
-| `language` | `-` | Optional language for syntax highlighting |
-| `caption` | `-` | Optional caption/title for the code block |
-
+| `code` | `&str` | The code content |
+| `language` | `Option<&str>` | Optional language for syntax highlighting |
+| `caption` | `Option<&str>` | Optional caption/title for the code block |
 
 <details>
 <summary>Source</summary>
@@ -504,15 +471,18 @@ Render a code block with optional language and caption.
 
 </details>
 
-
-
-##### <span id="Renderer.render_signature"></span>`render_signature`
+##### <span id="Renderer.render_signature"></span><code>render_​signature</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_signature (& self , name : & str , params : & str , return_type : Option < & str > , is_async : bool ,) -> Result < String , tera :: Error >
+fn render_signature(
+    &self,
+    name: &str,
+    params: &str,
+    return_type: Option<&str>,
+    is_async: bool,
+) -> Result<String, tera::Error>
 ```
 
 Render a function/method signature.
@@ -521,11 +491,10 @@ Render a function/method signature.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `name` | `-` | Function name |
-| `params` | `-` | Parameter list as a string |
-| `return_type` | `-` | Optional return type |
-| `is_async` | `-` | Whether the function is async |
-
+| `name` | `&str` | Function name |
+| `params` | `&str` | Parameter list as a string |
+| `return_type` | `Option<&str>` | Optional return type |
+| `is_async` | `bool` | Whether the function is async |
 
 <details>
 <summary>Source</summary>
@@ -549,15 +518,18 @@ Render a function/method signature.
 
 </details>
 
-
-
-##### <span id="Renderer.render_module"></span>`render_module`
+##### <span id="Renderer.render_module"></span><code>render_​module</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_module (& self , module_name : & str , description : & str , functions : & [String] , classes : & [String] ,) -> Result < String , tera :: Error >
+fn render_module(
+    &self,
+    module_name: &str,
+    description: &str,
+    functions: &[String],
+    classes: &[String],
+) -> Result<String, tera::Error>
 ```
 
 Render a module documentation page.
@@ -566,11 +538,10 @@ Render a module documentation page.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `module_name` | `-` | Name of the module |
-| `description` | `-` | Module description/docstring |
-| `functions` | `-` | List of function documentation sections |
-| `classes` | `-` | List of class documentation sections |
-
+| `module_name` | `&str` | Name of the module |
+| `description` | `&str` | Module description/docstring |
+| `functions` | `&[String]` | List of function documentation sections |
+| `classes` | `&[String]` | List of class documentation sections |
 
 <details>
 <summary>Source</summary>
@@ -594,15 +565,16 @@ Render a module documentation page.
 
 </details>
 
-
-
-##### <span id="Renderer.render_template"></span>`render_template`
+##### <span id="Renderer.render_template"></span><code>render_​template</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_template (& self , template_name : & str , extra_context : & Context ,) -> Result < String , tera :: Error >
+fn render_template(
+    &self,
+    template_name: &str,
+    extra_context: &Context,
+) -> Result<String, tera::Error>
 ```
 
 Render an arbitrary template with the given context.
@@ -632,46 +604,3 @@ The theme values are automatically injected into the context.
 ```
 
 </details>
-
-
-
-
-
-### <span id="struct.ThemeContext"></span>`struct ThemeContext`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `serde :: Serialize`
-
-Theme context for Tera templates.
-
-This struct is serialized into the Tera context as the `theme` variable,
-allowing templates to access theme values like `{{ theme.code_bg }}`.
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `code_bg` | `String` |  |
-| `code_fg` | `String` |  |
-| `primary` | `String` |  |
-| `accent` | `String` |  |
-| `muted` | `String` |  |
-| `border` | `String` |  |
-| `name` | `String` |  |
-| `success` | `String` |  |
-| `warning` | `String` |  |
-| `error` | `String` |  |
-| `info` | `String` |  |
-| `badge_async` | `String` |  |
-| `badge_unsafe` | `String` |  |
-| `badge_deprecated` | `String` |  |
-| `badge_binding` | `String` |  |
-| `badge_pub` | `String` |  |
-| `badge_pub_crate` | `String` |  |
-| `badge_rust` | `String` |  |
-| `badge_python` | `String` |  |
-
-
-

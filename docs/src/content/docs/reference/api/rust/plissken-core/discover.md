@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::discover"
 description: "Python module auto-discovery"
+editUrl: false
 sidebar:
   order: 5
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Python module auto-discovery
 
@@ -16,10 +16,9 @@ to dotted module names.
 
 ## Structs
 
-### <span id="struct.DiscoveredModule"></span>`struct DiscoveredModule`
+### <span id="struct.DiscoveredModule"></span><code style="font-size: 0.85em">struct DiscoveredModule</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 **Derives:** `Debug`, `Clone`
 
@@ -33,17 +32,17 @@ A discovered Python module
 | `path` | `PathBuf` | Path to the Python file |
 | `module_type` | `ModuleSourceType` | Detected module type (Python or PyO3) |
 
-
-
 ## Functions
 
-### <span id="fn.discover_python_modules"></span>`fn discover_python_modules`
+### <span id="fn.discover_python_modules"></span><code style="font-size: 0.85em">fn discover_​python_​modules</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn discover_python_modules (source_dir : & Path , package_name : & str ,) -> Result < Vec < DiscoveredModule > , std :: io :: Error >
+fn discover_python_modules(
+    source_dir: &Path,
+    package_name: &str,
+) -> Result<Vec<DiscoveredModule>, std::io::Error>
 ```
 
 Discover Python modules by walking the filesystem.
@@ -52,9 +51,8 @@ Discover Python modules by walking the filesystem.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `source_dir` | `-` | The directory to search for Python files |
-| `package_name` | `-` | The root package name for module path generation |
-
+| `source_dir` | `&Path` | The directory to search for Python files |
+| `package_name` | `&str` | The root package name for module path generation |
 
 **Returns:**
 
@@ -99,225 +97,15 @@ pub fn discover_python_modules(
 
 </details>
 
-
-
-### <span id="fn.should_skip_entry"></span>`fn should_skip_entry`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn should_skip_entry (entry : & walkdir :: DirEntry) -> bool
-```
-
-Check if an entry should be skipped during directory traversal.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn should_skip_entry(entry: &walkdir::DirEntry) -> bool {
-    let file_name = entry.file_name().to_string_lossy();
-
-    // Skip hidden files/directories (except the source dir itself)
-    if file_name.starts_with('.') && entry.depth() > 0 {
-        return true;
-    }
-
-    // Skip known non-module directories
-    if entry.file_type().is_dir() {
-        if SKIP_DIRS.iter().any(|&skip| file_name == skip) {
-            return true;
-        }
-        // Skip directories ending in .egg-info
-        if file_name.ends_with(".egg-info") {
-            return true;
-        }
-    }
-
-    false
-}
-```
-
-</details>
-
-
-
-### <span id="fn.path_to_module"></span>`fn path_to_module`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn path_to_module (file_path : & Path , source_dir : & Path , package_name : & str ,) -> Option < DiscoveredModule >
-```
-
-Convert a file path to a Python module.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn path_to_module(
-    file_path: &Path,
-    source_dir: &Path,
-    package_name: &str,
-) -> Option<DiscoveredModule> {
-    // Get relative path from source directory
-    let relative = file_path.strip_prefix(source_dir).ok()?;
-
-    // Convert path to module name
-    let module_name = path_to_module_name(relative, package_name)?;
-
-    // Detect module type by scanning file content
-    let module_type = detect_module_type(file_path);
-
-    Some(DiscoveredModule {
-        name: module_name,
-        path: file_path.to_owned(),
-        module_type,
-    })
-}
-```
-
-</details>
-
-
-
-### <span id="fn.path_to_module_name"></span>`fn path_to_module_name`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn path_to_module_name (relative_path : & Path , package_name : & str) -> Option < String >
-```
-
-Convert a relative file path to a dotted module name.
-
-Examples:
-- `mypackage/__init__.py` → `mypackage`
-- `mypackage/utils.py` → `mypackage.utils`
-- `mypackage/sub/helpers.py` → `mypackage.sub.helpers`
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn path_to_module_name(relative_path: &Path, package_name: &str) -> Option<String> {
-    let mut components: Vec<&str> = Vec::new();
-
-    for component in relative_path.components() {
-        if let std::path::Component::Normal(name) = component {
-            let name_str = name.to_str()?;
-            components.push(name_str);
-        }
-    }
-
-    if components.is_empty() {
-        return None;
-    }
-
-    // Remove .py extension from the last component
-    let last_idx = components.len() - 1;
-    let last = components[last_idx];
-    let last_without_ext = last.strip_suffix(".py")?;
-
-    // Handle __init__.py - represents the package itself
-    if last_without_ext == "__init__" {
-        if components.len() == 1 {
-            // Root __init__.py
-            return Some(package_name.to_string());
-        }
-        // Sub-package __init__.py - remove the __init__ part
-        components.pop();
-    } else {
-        components[last_idx] = last_without_ext;
-    }
-
-    if components.is_empty() {
-        return Some(package_name.to_string());
-    }
-
-    // Check if the first component matches the package name
-    // If source dir already contains the package, don't duplicate
-    if components[0] == package_name {
-        Some(components.join("."))
-    } else {
-        // Prepend package name
-        Some(format!("{}.{}", package_name, components.join(".")))
-    }
-}
-```
-
-</details>
-
-
-
-### <span id="fn.detect_module_type"></span>`fn detect_module_type`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn detect_module_type (file_path : & Path) -> ModuleSourceType
-```
-
-Detect if a Python file is a PyO3 stub module.
-
-Looks for markers that indicate the module imports from a native extension:
-- Import from a module with underscore prefix (e.g., `from ._native import`)
-- Comment marker `# pyo3` or `# pyo3-stub`
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn detect_module_type(file_path: &Path) -> ModuleSourceType {
-    // Read the first part of the file to check for markers
-    if let Ok(content) = std::fs::read_to_string(file_path) {
-        // Only check the first ~2KB for performance
-        let preview = if content.len() > 2048 {
-            &content[..2048]
-        } else {
-            &content
-        };
-
-        // Check for PyO3 markers
-        if preview.contains("# pyo3")
-            || preview.contains("#pyo3")
-            || preview.contains("# type: ignore[import]")
-        // Common in PyO3 stubs
-        {
-            return ModuleSourceType::Pyo3;
-        }
-
-        // Check for imports from native modules (underscore prefix convention)
-        for line in preview.lines() {
-            let line = line.trim();
-            if (line.starts_with("from ._") || line.starts_with("from _"))
-                && line.contains(" import ")
-            {
-                return ModuleSourceType::Pyo3;
-            }
-        }
-    }
-
-    ModuleSourceType::Python
-}
-```
-
-</details>
-
-
-
-### <span id="fn.merge_modules"></span>`fn merge_modules`
+### <span id="fn.merge_modules"></span><code style="font-size: 0.85em">fn merge_​modules</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn merge_modules (discovered : Vec < DiscoveredModule > , explicit : & HashMap < String , ModuleSourceType > ,) -> HashMap < String , ModuleSourceType >
+fn merge_modules(
+    discovered: Vec<DiscoveredModule>,
+    explicit: &HashMap<String, ModuleSourceType>,
+) -> HashMap<String, ModuleSourceType>
 ```
 
 Merge discovered modules with explicitly configured modules.
@@ -347,6 +135,3 @@ pub fn merge_modules(
 ```
 
 </details>
-
-
-

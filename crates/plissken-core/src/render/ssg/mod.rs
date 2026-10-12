@@ -30,9 +30,9 @@ mod traits;
 pub use mdbook::MdBookAdapter;
 pub use mkdocs::MkDocsAdapter;
 pub use starlight::{
-    STARLIGHT_DEFAULT_ROUTE_BASE, STARLIGHT_SIDEBAR_FILE, StarlightAdapter, anchor_span,
-    content_route_base, front_matter, github_slug, normalize_rustdoc_fences, page_route,
-    route_href, starlight_file_path,
+    STARLIGHT_DEFAULT_ROUTE_BASE, STARLIGHT_INDEX_FILE, STARLIGHT_SIDEBAR_FILE, StarlightAdapter,
+    anchor_span, breakable_name, content_route_base, front_matter, github_slug,
+    normalize_rustdoc_fences, page_route, route_href, starlight_file_path,
 };
 pub use traits::{NavEntry, SSGAdapter, python_nav_entries, rust_nav_entries};
 

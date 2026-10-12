@@ -5,6 +5,7 @@ expression: content
 ---
 title: "crate::types"
 description: "API reference of the Rust module crate::types."
+editUrl: false
 sidebar:
   order: 0
   hidden: true
@@ -12,13 +13,11 @@ sidebar:
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
 
-
 ## Enums
 
-### <span id="enum.Outcome"></span>`enum Outcome<T, E>`
+### <span id="enum.Outcome"></span><code style="font-size: 0.85em">enum Outcome&lt;T, E&gt;</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Operation result type.
 
@@ -26,14 +25,11 @@ Operation result type.
 
 - **`Done`** - Finished
 
-
-
 ## Functions
 
-### <span id="fn.dangerous_read"></span>`fn dangerous_read`
+### <span id="fn.dangerous_read"></span><code style="font-size: 0.85em">fn dangerous_​read</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 ```rust
 pub async unsafe fn dangerous_read(ptr: *const u8) -> u8

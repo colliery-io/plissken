@@ -4,7 +4,6 @@ expression: "&pages[0].content"
 ---
 # engine <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #ff5722; color: white;">Rust</span>
 
-
 Core processing engine.
 
 Provides the main computation pipeline.
@@ -14,7 +13,6 @@ Provides the main computation pipeline.
 ### `struct Engine`<T: Process>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
-
 
 **Derives:** `Debug`
 
@@ -31,18 +29,14 @@ Main processing engine
 
 ##### `new` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
 
-
 ```rust
 pub fn new(processor: T) -> Self
 ```
 
 Create new engine
 
-
-
 ##### `run` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
  <span class="plissken-badge plissken-badge-async" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">async</span>
-
 
 ```rust
 pub async fn run(&mut self) -> Result<(), Error>
@@ -50,14 +44,9 @@ pub async fn run(&mut self) -> Result<(), Error>
 
 Run the engine
 
-
-
-
-
 ## Enums
 
 ### `enum State` <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
-
 
 Engine state
 
@@ -67,14 +56,11 @@ Engine state
 - **`Running`** - Engine is running
 - **`Error`** - Engine encountered an error
 
-
-
 ## Functions
 
 ### `fn default_engine`
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #4caf50; color: white;">pub</span>
-
 
 ```rust
 pub fn default_engine() -> Engine<DefaultProcessor>

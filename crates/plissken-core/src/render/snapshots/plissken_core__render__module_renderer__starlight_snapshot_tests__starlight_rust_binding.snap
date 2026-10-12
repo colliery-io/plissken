@@ -5,6 +5,7 @@ expression: "&pages[0].content"
 ---
 title: "crate::buffer"
 description: "Buffers for Python."
+editUrl: false
 sidebar:
   order: 2
   hidden: true
@@ -12,17 +13,15 @@ sidebar:
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
 
-
 Buffers for Python.
 
 ## Structs
 
-### <span id="struct.RustBuffer"></span>`class Buffer`
+### <span id="struct.RustBuffer"></span><code style="font-size: 0.85em">class Buffer</code>
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
 
-
-> **Python API**: [native.Buffer](../../../native/#class.Buffer)
+> **Python API**: [`native.Buffer`](../../../native/#class.Buffer)
 
 A byte buffer.
 
@@ -38,28 +37,23 @@ let b = RustBuffer::new();
 
 #### Methods
 
-##### <span id="RustBuffer.len"></span>`len`
+##### <span id="RustBuffer.len"></span><code>len</code>
 
 ```rust
 pub fn len(&self) -> usize
 ```
 
-> **Python API**: [native.Buffer.len](../../../native/#Buffer.len)
+> **Python API**: [`native.Buffer.len`](../../../native/#Buffer.len)
 
 Get buffer length
 
-
-
-
-
 ## Functions
 
-### <span id="fn.checksum"></span>`fn checksum`
+### <span id="fn.checksum"></span><code style="font-size: 0.85em">fn checksum</code>
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
 
-
-> **Python API**: [native.checksum](../../../native/#fn.checksum)
+> **Python API**: [`native.checksum`](../../../native/#fn.checksum)
 
 ```rust
 #[pyfunction]

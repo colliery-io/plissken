@@ -171,6 +171,10 @@ pub struct RustConfig {
     pub crates: Vec<PathBuf>,
     #[serde(default)]
     pub entry_point: Option<String>,
+    /// Document items that are not `pub` (default: only the public API;
+    /// PyO3 bindings are documented either way)
+    #[serde(default)]
+    pub include_private: bool,
 }
 
 /// Python source configuration
@@ -187,6 +191,10 @@ pub struct PythonConfig {
     /// Explicit module mappings (overrides auto-discovered modules)
     #[serde(default)]
     pub modules: HashMap<String, ModuleSourceType>,
+    /// Document names that start with `_` (default: only public names;
+    /// `__dunder__` methods are public)
+    #[serde(default)]
+    pub include_private: bool,
 }
 
 /// Source type for a Python module
@@ -534,6 +542,7 @@ mod tests {
         config.rust = Some(RustConfig {
             crates: vec![PathBuf::from("nonexistent")],
             entry_point: None,
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -556,6 +565,7 @@ mod tests {
             source: None,
             auto_discover: false,
             modules: HashMap::new(),
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -577,6 +587,7 @@ mod tests {
         config.rust = Some(RustConfig {
             crates: vec![PathBuf::from(".")],
             entry_point: None,
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -599,6 +610,7 @@ mod tests {
             source: None,
             auto_discover: false,
             modules: HashMap::new(),
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -619,6 +631,7 @@ mod tests {
         config.rust = Some(RustConfig {
             crates: vec![PathBuf::from(".")],
             entry_point: None,
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -645,6 +658,7 @@ mod tests {
             source: None,
             auto_discover: false,
             modules: HashMap::new(),
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -675,6 +689,7 @@ mod tests {
             source: None,
             auto_discover: false,
             modules: HashMap::new(),
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -705,6 +720,7 @@ mod tests {
         config.rust = Some(RustConfig {
             crates: vec![PathBuf::from(".")],
             entry_point: None,
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -766,6 +782,7 @@ mod tests {
         config.rust = Some(RustConfig {
             crates: vec![], // Empty crates to be filled
             entry_point: None,
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -801,6 +818,7 @@ version = "0.1.0"
             source: None,
             auto_discover: false,
             modules: HashMap::new(),
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();
@@ -833,6 +851,7 @@ python-source = "python"
             source: Some(PathBuf::from("src")),
             auto_discover: false,
             modules: HashMap::new(),
+            include_private: false,
         });
 
         let temp_dir = TempDir::new().unwrap();

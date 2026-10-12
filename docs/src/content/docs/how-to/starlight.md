@@ -11,7 +11,8 @@ Colliery theme [starlight-aurora](https://github.com/colliery-io/starlight-auror
 | Output | Description |
 |--------|-------------|
 | One `.md` page for each module | Python modules at the top of the output folder, Rust modules in `rust/` |
-| `_sidebar.mjs` | A Starlight sidebar group of the Python and Rust modules |
+| `index.md` | The index of the API reference: each module, with the first line of its docs |
+| `_sidebar.mjs` | A Starlight sidebar group: the index ("Overview"), then the Python and Rust modules |
 
 Each page has front matter:
 
@@ -19,6 +20,7 @@ Each page has front matter:
 ---
 title: "mycrate::config"
 description: "The first line of the module docs."
+editUrl: false
 sidebar:
   order: 3
   hidden: true
@@ -26,8 +28,15 @@ sidebar:
 ```
 
 - Starlight shows `title` as the page heading.
+- `editUrl: false`: a generated page has no file to edit, so it has no "Edit
+  page" link.
 - `sidebar.hidden` keeps the pages out of an `autogenerate` group. The pages are
   in the sidebar through `_sidebar.mjs`.
+- Each page ends with one newline, so `end-of-file-fixer` passes on the output.
+
+plissken owns the output folder. When a module goes away, `plissken render`
+deletes its page, and the folders left empty. It deletes only the pages that it
+wrote (they hold its badges); other files in the folder stay.
 
 The pages are `.md`, not `.mdx`. They contain Markdown and a small amount of HTML
 (badges, anchors and `<details>` for source code).
@@ -95,8 +104,17 @@ pages, or render them in the docs workflow before `npm run build`.
     | Python class | `#class.Name` |
     | Rust struct | `#struct.Name` |
     | Rust enum | `#enum.Name` |
+    | Rust trait | `#trait.Name` |
+    | Rust constant | `#const.NAME` |
+    | Rust type alias | `#type.Name` |
     | Function | `#fn.name` |
     | Method | `#Type.method` |
+
+- Intra-doc links in Rust doc comments (``[`Config`]``,
+  ``[`Config`](crate::config::Config)``, `[handler](super::handler)`, or a
+  reference definition) point to the page and anchor of the item. A link that
+  plissken cannot resolve (an item of another crate, or one that is not
+  documented) shows as its text.
 
 - Starlight skips a file whose name starts with `_`. plissken writes such a module
   (for example `mypackage._core`) as `mypackage/_core/index.md`. The route stays
@@ -109,5 +127,7 @@ pages, or render them in the docs workflow before `npm run build`.
   Aurora's tokens, so the badges follow the light, dark and hyper themes.
 - Signatures, examples and source code are Markdown code fences. Starlight's code
   highlighter draws them in each theme.
-- Code fences from Rust doc comments such as ```` ```ignore ```` or
-  ```` ```rust,no_run ```` get the language `rust`.
+- Code fences from Rust doc comments with no language, or with only rustdoc
+  attributes such as ```` ```ignore ```` or ```` ```rust,no_run ````, get the
+  language `rust`. The hidden lines of a doc test (`# use mycrate::Thing;`) are
+  left out.

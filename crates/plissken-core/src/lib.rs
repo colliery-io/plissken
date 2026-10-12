@@ -39,6 +39,7 @@ pub mod crossref;
 pub mod discover;
 pub mod docstring;
 pub mod error;
+pub mod filter;
 pub mod manifest;
 pub mod model;
 pub mod parser;
@@ -137,17 +138,18 @@ pub mod detail {
 
     // Cross-reference building
     pub use crate::crossref::{
-        build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust,
+        build_cross_refs, synthesize_python_api, synthesize_python_from_rust,
+        synthesize_python_modules_from_rust,
     };
 
     // Docstring parsing
-    pub use crate::docstring::{parse_docstring, parse_rust_doc};
+    pub use crate::docstring::{normalize_rust_doc, parse_docstring, parse_rust_doc};
 
     // Render utilities
     pub use crate::render::{
         CrossRefLink, Language, crossref_link, link_to_python, link_to_rust, render_docstring,
         render_examples, render_params_table, render_python_exposure_details, render_raises_table,
-        render_returns, render_rust_impl_details,
+        render_returns, render_rust_docstring, render_rust_impl_details,
     };
 }
 
@@ -171,7 +173,8 @@ pub use manifest::{CargoManifest, InferredConfig, PyProjectManifest};
 
 // Cross-reference utilities
 pub use crossref::{
-    build_cross_refs, synthesize_python_from_rust, synthesize_python_modules_from_rust,
+    build_cross_refs, synthesize_python_api, synthesize_python_from_rust,
+    synthesize_python_modules_from_rust,
 };
 
 // Docstring utilities
@@ -181,5 +184,5 @@ pub use docstring::{parse_docstring, parse_rust_doc};
 pub use render::{CrossRefLink, Language, crossref_link, link_to_python, link_to_rust};
 pub use render::{
     render_docstring, render_examples, render_params_table, render_python_exposure_details,
-    render_raises_table, render_returns, render_rust_impl_details,
+    render_raises_table, render_returns, render_rust_docstring, render_rust_impl_details,
 };

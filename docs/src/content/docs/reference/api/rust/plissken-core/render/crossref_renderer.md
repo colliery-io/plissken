@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::render::crossref_renderer"
 description: "Cross-reference link generation for Python-Rust documentation"
+editUrl: false
 sidebar:
-  order: 15
+  order: 17
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Cross-reference link generation for Python-Rust documentation
 
@@ -16,10 +16,9 @@ Python items and their Rust implementations, and vice versa.
 
 ## Structs
 
-### <span id="struct.CrossRefLink"></span>`struct CrossRefLink`
+### <span id="struct.CrossRefLink"></span><code style="font-size: 0.85em">struct CrossRefLink</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 **Derives:** `Debug`, `Clone`
 
@@ -35,13 +34,12 @@ Represents a generated cross-reference link
 
 #### Methods
 
-##### <span id="CrossRefLink.to_markdown"></span>`to_markdown`
+##### <span id="CrossRefLink.to_markdown"></span><code>to_​markdown</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn to_markdown (& self) -> String
+fn to_markdown(&self) -> String
 ```
 
 Render as a Markdown link
@@ -57,15 +55,12 @@ Render as a Markdown link
 
 </details>
 
-
-
-##### <span id="CrossRefLink.to_markdown_with_badge"></span>`to_markdown_with_badge`
+##### <span id="CrossRefLink.to_markdown_with_badge"></span><code>to_​markdown_​with_​badge</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn to_markdown_with_badge (& self) -> String
+fn to_markdown_with_badge(&self) -> String
 ```
 
 Render as a Markdown link with relationship indicator
@@ -86,16 +81,11 @@ Render as a Markdown link with relationship indicator
 
 </details>
 
-
-
-
-
 ## Enums
 
-### <span id="enum.Language"></span>`enum Language`
+### <span id="enum.Language"></span><code style="font-size: 0.85em">enum Language</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Language enum for determining link direction
 
@@ -104,17 +94,17 @@ Language enum for determining link direction
 - **`Python`**
 - **`Rust`**
 
-
-
 ## Functions
 
-### <span id="fn.link_to_rust"></span>`fn link_to_rust`
+### <span id="fn.link_to_rust"></span><code style="font-size: 0.85em">fn link_​to_​rust</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn link_to_rust (rust_ref : & RustItemRef , from_python_path : & str) -> String
+fn link_to_rust(
+    rust_ref: &RustItemRef,
+    from_python_path: &str,
+) -> String
 ```
 
 Generate a relative Markdown link from a Python page to a Rust item.
@@ -123,9 +113,8 @@ Generate a relative Markdown link from a Python page to a Rust item.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `rust_ref` | `-` | Reference to the Rust item |
-| `from_python_path` | `-` | The Python module path (e.g., "mypackage.submodule") |
-
+| `rust_ref` | `&RustItemRef` | Reference to the Rust item |
+| `from_python_path` | `&str` | The Python module path (e.g., "mypackage.submodule") |
 
 **Returns:**
 
@@ -160,15 +149,12 @@ pub fn link_to_rust(rust_ref: &RustItemRef, from_python_path: &str) -> String {
 
 </details>
 
-
-
-### <span id="fn.link_to_python"></span>`fn link_to_python`
+### <span id="fn.link_to_python"></span><code style="font-size: 0.85em">fn link_​to_​python</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn link_to_python (python_path : & str , from_rust_path : & str) -> String
+fn link_to_python(python_path: &str, from_rust_path: &str) -> String
 ```
 
 Generate a relative Markdown link from a Rust page to a Python item.
@@ -177,9 +163,8 @@ Generate a relative Markdown link from a Rust page to a Python item.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `python_path` | `-` | Full Python path (e.g., "mypackage.module.ClassName") |
-| `from_rust_path` | `-` | The Rust module path (e.g., "crate::utils") |
-
+| `python_path` | `&str` | Full Python path (e.g., "mypackage.module.ClassName") |
+| `from_rust_path` | `&str` | The Rust module path (e.g., "crate::utils") |
 
 **Returns:**
 
@@ -214,20 +199,22 @@ pub fn link_to_python(python_path: &str, from_rust_path: &str) -> String {
 
 </details>
 
-
-
-### <span id="fn.crossref_link"></span>`fn crossref_link`
+### <span id="fn.crossref_link"></span><code style="font-size: 0.85em">fn crossref_​link</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn crossref_link (xref : & CrossRef , from_path : & str , from_language : Language) -> CrossRefLink
+fn crossref_link(
+    xref: &CrossRef,
+    from_path: &str,
+    from_language: Language,
+) -> CrossRefLink
 ```
 
 Generate a cross-reference link based on the CrossRef relationship.
 
 Returns a tuple of (link_text, link_url, relationship_badge).
+
 `from_path` should be the module path without python/ or rust/ prefix.
 
 <details>
@@ -271,15 +258,15 @@ pub fn crossref_link(xref: &CrossRef, from_path: &str, from_language: Language) 
 
 </details>
 
-
-
-### <span id="fn.render_rust_impl_details"></span>`fn render_rust_impl_details`
+### <span id="fn.render_rust_impl_details"></span><code style="font-size: 0.85em">fn render_​rust_​impl_​details</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_rust_impl_details (rust_ref : & RustItemRef , from_python_path : & str) -> String
+fn render_rust_impl_details(
+    rust_ref: &RustItemRef,
+    from_python_path: &str,
+) -> String
 ```
 
 Render a collapsible details block with a link to the Rust implementation.
@@ -305,15 +292,15 @@ pub fn render_rust_impl_details(rust_ref: &RustItemRef, from_python_path: &str) 
 
 </details>
 
-
-
-### <span id="fn.render_python_exposure_details"></span>`fn render_python_exposure_details`
+### <span id="fn.render_python_exposure_details"></span><code style="font-size: 0.85em">fn render_​python_​exposure_​details</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_python_exposure_details (python_path : & str , from_rust_path : & str) -> String
+fn render_python_exposure_details(
+    python_path: &str,
+    from_rust_path: &str,
+) -> String
 ```
 
 Render a collapsible details block with a link to the Python exposure.
@@ -338,180 +325,3 @@ pub fn render_python_exposure_details(python_path: &str, from_rust_path: &str) -
 ```
 
 </details>
-
-
-
-### <span id="fn.rust_path_to_file_path"></span>`fn rust_path_to_file_path`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn rust_path_to_file_path (rust_path : & str) -> String
-```
-
-Convert a Rust module path to a file path.
-
-`crate::utils::helpers` -> `crate/utils/helpers.md`
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn rust_path_to_file_path(rust_path: &str) -> String {
-    format!("{}.md", rust_path.replace("::", "/"))
-}
-```
-
-</details>
-
-
-
-### <span id="fn.python_path_to_file_path"></span>`fn python_path_to_file_path`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn python_path_to_file_path (python_path : & str) -> String
-```
-
-Convert a Python module path to a file path.
-
-`mypackage.utils.helpers` -> `python/mypackage/utils/helpers.md`
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn python_path_to_file_path(python_path: &str) -> String {
-    format!("python/{}.md", python_path.replace('.', "/"))
-}
-```
-
-</details>
-
-
-
-### <span id="fn.split_python_path"></span>`fn split_python_path`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn split_python_path (path : & str) -> (String , String)
-```
-
-Split a Python path into module path and item name.
-
-`mypackage.utils.Config` -> ("mypackage.utils", "Config")
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn split_python_path(path: &str) -> (String, String) {
-    if let Some(pos) = path.rfind('.') {
-        (path[..pos].to_string(), path[pos + 1..].to_string())
-    } else {
-        (path.to_string(), path.to_string())
-    }
-}
-```
-
-</details>
-
-
-
-### <span id="fn.split_rust_path"></span>`fn split_rust_path`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn split_rust_path (path : & str) -> (String , String)
-```
-
-Split a Rust path into module path and item name.
-
-`crate::utils::Config` -> ("crate::utils", "Config")
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn split_rust_path(path: &str) -> (String, String) {
-    if let Some(pos) = path.rfind("::") {
-        (path[..pos].to_string(), path[pos + 2..].to_string())
-    } else {
-        (path.to_string(), path.to_string())
-    }
-}
-```
-
-</details>
-
-
-
-### <span id="fn.item_to_anchor"></span>`fn item_to_anchor`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn item_to_anchor (name : & str , item_type : & str) -> String
-```
-
-Convert an item name to a Markdown anchor.
-
-Uses the common Markdown anchor format: lowercase, spaces to hyphens.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn item_to_anchor(name: &str, item_type: &str) -> String {
-    format!("{}-{}", item_type, name.to_lowercase().replace(' ', "-"))
-}
-```
-
-</details>
-
-
-
-### <span id="fn.compute_relative_path"></span>`fn compute_relative_path`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn compute_relative_path (from_path : & str , to_path : & str) -> String
-```
-
-Compute relative path from one documentation page to another.
-
-Both paths should be relative to the docs root.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn compute_relative_path(from_path: &str, to_path: &str) -> String {
-    // Count directory depth of from_path
-    let from_depth = from_path.matches('/').count();
-
-    // Build the relative prefix (../ for each directory level)
-    let prefix = if from_depth > 0 {
-        "../".repeat(from_depth)
-    } else {
-        "./".to_string()
-    };
-
-    format!("{}{}", prefix, to_path)
-}
-```
-
-</details>
-
-
-

@@ -1,27 +1,27 @@
 ---
 title: "plissken-core::render::templates"
 description: "Template loading with user override support"
+editUrl: false
 sidebar:
-  order: 27
+  order: 30
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Template loading with user override support
 
 This module provides template loading functionality that supports:
 - Bundled default templates (embedded at compile time)
 - User overrides from `.plissken/templates/` directory
+
 User templates take precedence over bundled defaults on a per-file basis.
 
 ## Structs
 
-### <span id="struct.TemplateLoader"></span>`struct TemplateLoader`
+### <span id="struct.TemplateLoader"></span><code style="font-size: 0.85em">struct TemplateLoader</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Template loader with user override support.
 
@@ -44,22 +44,14 @@ let loader = TemplateLoader::new(Some(Path::new("/path/to/project")));
 let badge_template = loader.get("partials/badge.html").unwrap();
 ```
 
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `bundled` | `HashMap < & 'static str , & 'static str >` | Bundled templates (name -> content) |
-| `user_dir` | `Option < PathBuf >` | Optional user override directory |
-
 #### Methods
 
-##### <span id="TemplateLoader.new"></span>`new`
+##### <span id="TemplateLoader.new"></span><code>new</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn new (project_root : Option < & Path >) -> Self
+fn new(project_root: Option<&Path>) -> Self
 ```
 
 Create a new template loader.
@@ -68,8 +60,7 @@ Create a new template loader.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `project_root` | `-` | Optional path to project root. If provided, user templates will be loaded from `{project_root}/.plissken/templates/`. |
-
+| `project_root` | `Option<&Path>` | Optional path to project root. If provided, user templates will be loaded from `{project_root}/.plissken/templates/`. |
 
 <details>
 <summary>Source</summary>
@@ -94,15 +85,12 @@ Create a new template loader.
 
 </details>
 
-
-
-##### <span id="TemplateLoader.get"></span>`get`
+##### <span id="TemplateLoader.get"></span><code>get</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn get (& self , name : & str) -> crate :: error :: Result < String >
+fn get(&self, name: &str) -> crate::error::Result<String>
 ```
 
 Get a template by name.
@@ -113,8 +101,7 @@ First checks for a user override, then falls back to the bundled default.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `name` | `-` | Template name (e.g., "partials/badge.html", "module.html") |
-
+| `name` | `&str` | Template name (e.g., "partials/badge.html", "module.html") |
 
 **Returns:**
 
@@ -150,15 +137,12 @@ The template content as a string, or an error if not found.
 
 </details>
 
-
-
-##### <span id="TemplateLoader.has_user_override"></span>`has_user_override`
+##### <span id="TemplateLoader.has_user_override"></span><code>has_​user_​override</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn has_user_override (& self , name : & str) -> bool
+fn has_user_override(&self, name: &str) -> bool
 ```
 
 Check if a user override exists for the given template.
@@ -178,15 +162,12 @@ Check if a user override exists for the given template.
 
 </details>
 
-
-
-##### <span id="TemplateLoader.template_names"></span>`template_names`
+##### <span id="TemplateLoader.template_names"></span><code>template_​names</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn template_names (& self) -> Vec < & 'static str >
+fn template_names(&self) -> Vec<&'static str>
 ```
 
 List all available template names.
@@ -202,15 +183,12 @@ List all available template names.
 
 </details>
 
-
-
-##### <span id="TemplateLoader.user_override_dir"></span>`user_override_dir`
+##### <span id="TemplateLoader.user_override_dir"></span><code>user_​override_​dir</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn user_override_dir (& self) -> Option < & Path >
+fn user_override_dir(&self) -> Option<&Path>
 ```
 
 Get the user override directory, if configured and exists.
@@ -225,35 +203,3 @@ Get the user override directory, if configured and exists.
 ```
 
 </details>
-
-
-
-##### <span id="TemplateLoader.load_bundled"></span>`load_bundled`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn load_bundled () -> HashMap < & 'static str , & 'static str >
-```
-
-<details>
-<summary>Source</summary>
-
-```rust
-    fn load_bundled() -> HashMap<&'static str, &'static str> {
-        let mut map = HashMap::new();
-        map.insert("partials/badge.html", bundled::BADGE);
-        map.insert("partials/code_block.html", bundled::CODE_BLOCK);
-        map.insert("partials/signature.html", bundled::SIGNATURE);
-        map.insert("module.html", bundled::MODULE);
-        map
-    }
-```
-
-</details>
-
-
-
-
-
