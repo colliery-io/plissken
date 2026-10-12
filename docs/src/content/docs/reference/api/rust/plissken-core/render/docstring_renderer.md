@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::render::docstring_renderer"
 description: "Docstring rendering for parsed documentation"
+editUrl: false
 sidebar:
-  order: 16
+  order: 19
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Docstring rendering for parsed documentation
 
@@ -17,13 +17,12 @@ raises tables, and code examples.
 
 ## Functions
 
-### <span id="fn.render_docstring"></span>`fn render_docstring`
+### <span id="fn.render_docstring"></span><code style="font-size: 0.85em">fn render_​docstring</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_docstring (doc : & ParsedDocstring) -> String
+fn render_docstring(doc: &ParsedDocstring) -> String
 ```
 
 Render a parsed docstring to Markdown.
@@ -34,6 +33,7 @@ Produces formatted Markdown with:
 - Returns section with type and description
 - Raises table (Exception | Description)
 - Examples as fenced code blocks
+
 Empty sections are omitted entirely.
 
 **Examples:**
@@ -64,53 +64,44 @@ assert!(output.contains("| `a` | `int` |"));
 
 ```rust
 pub fn render_docstring(doc: &ParsedDocstring) -> String {
-    let mut sections = Vec::new();
-
-    // Summary
-    if let Some(ref summary) = doc.summary {
-        sections.push(summary.clone());
-    }
-
-    // Description (if different from summary)
-    if let Some(ref description) = doc.description {
-        sections.push(description.clone());
-    }
-
-    // Parameters table
-    if !doc.params.is_empty() {
-        sections.push(render_params_table(&doc.params));
-    }
-
-    // Returns section
-    if let Some(ref returns) = doc.returns {
-        sections.push(render_returns(returns));
-    }
-
-    // Raises table
-    if !doc.raises.is_empty() {
-        sections.push(render_raises_table(&doc.raises));
-    }
-
-    // Examples
-    if !doc.examples.is_empty() {
-        sections.push(render_examples(&doc.examples));
-    }
-
-    sections.join("\n\n")
+    render_docstring_as(doc, DocLanguage::Python)
 }
 ```
 
 </details>
 
-
-
-### <span id="fn.render_params_table"></span>`fn render_params_table`
+### <span id="fn.render_rust_docstring"></span><code style="font-size: 0.85em">fn render_​rust_​docstring</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
+```rust
+fn render_rust_docstring(doc: &ParsedDocstring) -> String
+```
+
+Render a parsed Rust doc comment to Markdown.
+
+As [`render_docstring`](../../../../rust/plissken-core/render/docstring_renderer/#fn.render_docstring), but in the words of Rust: an `# Errors` section
+is shown as "Errors", a `# Panics` section as "Panics", each as text or a
+list (not a table of exception types), and the examples as the Markdown
+of the doc comment.
+
+<details>
+<summary>Source</summary>
 
 ```rust
-fn render_params_table (params : & [ParamDoc]) -> String
+pub fn render_rust_docstring(doc: &ParsedDocstring) -> String {
+    render_docstring_as(doc, DocLanguage::Rust)
+}
+```
+
+</details>
+
+### <span id="fn.render_params_table"></span><code style="font-size: 0.85em">fn render_​params_​table</code>
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
+
+```rust
+fn render_params_table(params: &[ParamDoc]) -> String
 ```
 
 Render parameters as a Markdown table.
@@ -118,6 +109,7 @@ Render parameters as a Markdown table.
 Format:
 ```markdown
 **Parameters:**
+
 | Name | Type | Description |
 |------|------|-------------|
 | `param` | `type` | Description text |
@@ -145,15 +137,12 @@ pub fn render_params_table(params: &[ParamDoc]) -> String {
 
 </details>
 
-
-
-### <span id="fn.render_returns"></span>`fn render_returns`
+### <span id="fn.render_returns"></span><code style="font-size: 0.85em">fn render_​returns</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_returns (returns : & ReturnDoc) -> String
+fn render_returns(returns: &ReturnDoc) -> String
 ```
 
 Render returns section.
@@ -161,6 +150,7 @@ Render returns section.
 Format:
 ```markdown
 **Returns:** `type`
+
 Description text
 ```
 
@@ -184,15 +174,12 @@ pub fn render_returns(returns: &ReturnDoc) -> String {
 
 </details>
 
-
-
-### <span id="fn.render_raises_table"></span>`fn render_raises_table`
+### <span id="fn.render_raises_table"></span><code style="font-size: 0.85em">fn render_​raises_​table</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_raises_table (raises : & [RaisesDoc]) -> String
+fn render_raises_table(raises: &[RaisesDoc]) -> String
 ```
 
 Render raises/exceptions as a Markdown table.
@@ -200,6 +187,7 @@ Render raises/exceptions as a Markdown table.
 Format:
 ```markdown
 **Raises:**
+
 | Exception | Description |
 |-----------|-------------|
 | `ValueError` | When value is invalid |
@@ -225,15 +213,12 @@ pub fn render_raises_table(raises: &[RaisesDoc]) -> String {
 
 </details>
 
-
-
-### <span id="fn.render_examples"></span>`fn render_examples`
+### <span id="fn.render_examples"></span><code style="font-size: 0.85em">fn render_​examples</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn render_examples (examples : & [String]) -> String
+fn render_examples(examples: &[String]) -> String
 ```
 
 Render examples as fenced code blocks.
@@ -241,15 +226,16 @@ Render examples as fenced code blocks.
 Format:
 ```markdown
 **Examples:**
+
 ```python
 example code here
 ```
-```
+```rust
 
 <details>
 <summary>Source</summary>
 
-```rust
+````rust
 pub fn render_examples(examples: &[String]) -> String {
     let mut output = String::from("**Examples:**\n\n");
 
@@ -269,88 +255,41 @@ pub fn render_examples(examples: &[String]) -> String {
 
     output.trim_end().to_string()
 }
-```
+````
 
 </details>
 
+### <span id="fn.escape_table_content"></span><code style="font-size: 0.85em">fn escape_​table_​content</code>
 
-
-### <span id="fn.detect_example_language"></span>`fn detect_example_language`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
 ```rust
-fn detect_example_language (example : & str) -> & 'static str
-```
-
-Detect the programming language of an example code block.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn detect_example_language(example: &str) -> &'static str {
-    let trimmed = example.trim();
-
-    // Python indicators
-    if trimmed.starts_with(">>>")
-        || trimmed.starts_with("def ")
-        || trimmed.starts_with("class ")
-        || trimmed.starts_with("import ")
-        || trimmed.starts_with("from ")
-        || trimmed.contains("print(")
-    {
-        return "python";
-    }
-
-    // Rust indicators
-    if trimmed.starts_with("fn ")
-        || trimmed.starts_with("let ")
-        || trimmed.starts_with("use ")
-        || trimmed.starts_with("struct ")
-        || trimmed.starts_with("impl ")
-        || trimmed.contains("println!")
-    {
-        return "rust";
-    }
-
-    // Default to python for docstrings
-    "python"
-}
-```
-
-</details>
-
-
-
-### <span id="fn.escape_table_content"></span>`fn escape_table_content`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn escape_table_content (content : & str) -> String
+fn escape_table_content(content: &str) -> String
 ```
 
 Escape content for use in Markdown tables.
 
-Pipes need to be escaped and newlines replaced.
+Pipes are escaped. A table row is one line: the lines of a paragraph are
+joined with a space, and paragraphs with a line break (`<br>`).
 
 <details>
 <summary>Source</summary>
 
 ```rust
-fn escape_table_content(content: &str) -> String {
-    content
-        .replace('|', "\\|")
-        .replace('\n', " ")
-        .trim()
-        .to_string()
+pub fn escape_table_content(content: &str) -> String {
+    let paragraphs: Vec<String> = content
+        .split("\n\n")
+        .map(|p| {
+            p.lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .filter(|p| !p.is_empty())
+        .collect();
+    paragraphs.join("<br>").replace('|', "\\|")
 }
 ```
 
 </details>
-
-
-

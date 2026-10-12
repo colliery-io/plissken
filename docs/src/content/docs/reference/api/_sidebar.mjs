@@ -8,6 +8,7 @@
 export default {
   label: "API reference",
   items: [
+    { label: "Overview", slug: "reference/api" },
     {
       label: "Rust",
       items: [
@@ -22,6 +23,7 @@ export default {
             { label: "discover", slug: "reference/api/rust/plissken-core/discover" },
             { label: "docstring", slug: "reference/api/rust/plissken-core/docstring" },
             { label: "error", slug: "reference/api/rust/plissken-core/error" },
+            { label: "filter", slug: "reference/api/rust/plissken-core/filter" },
             { label: "manifest", slug: "reference/api/rust/plissken-core/manifest" },
             { label: "model", slug: "reference/api/rust/plissken-core/model" },
             {
@@ -29,6 +31,7 @@ export default {
               collapsed: true,
               items: [
                 { label: "Overview", slug: "reference/api/rust/plissken-core/parser" },
+                { label: "pymodule", slug: "reference/api/rust/plissken-core/parser/pymodule" },
                 { label: "python", slug: "reference/api/rust/plissken-core/parser/python" },
                 { label: "rust", slug: "reference/api/rust/plissken-core/parser/rust" },
                 { label: "traits", slug: "reference/api/rust/plissken-core/parser/traits" },
@@ -40,6 +43,7 @@ export default {
               items: [
                 { label: "Overview", slug: "reference/api/rust/plissken-core/render" },
                 { label: "crossref_renderer", slug: "reference/api/rust/plissken-core/render/crossref_renderer" },
+                { label: "doc_links", slug: "reference/api/rust/plissken-core/render/doc_links" },
                 { label: "docstring_renderer", slug: "reference/api/rust/plissken-core/render/docstring_renderer" },
                 {
                   label: "module",
@@ -67,7 +71,6 @@ export default {
                 { label: "theme", slug: "reference/api/rust/plissken-core/render/theme" },
               ],
             },
-            { label: "test_fixtures", slug: "reference/api/rust/plissken-core/test_fixtures" },
           ],
         },
       ],

@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-STARLIGHT_AURORA_REF="${STARLIGHT_AURORA_REF:-v0.2.0}"
+STARLIGHT_AURORA_REF="${STARLIGHT_AURORA_REF:-v0.2.1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"

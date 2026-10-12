@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::render::ssg::starlight"
 description: "Astro Starlight adapter implementation"
+editUrl: false
 sidebar:
-  order: 25
+  order: 28
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Astro Starlight adapter implementation
 
@@ -18,38 +18,32 @@ a route, and a route into a relative link that works under any `base`.
 
 ## Structs
 
-### <span id="struct.StarlightAdapter"></span>`struct StarlightAdapter`
+### <span id="struct.StarlightAdapter"></span><code style="font-size: 0.85em">struct StarlightAdapter</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Astro Starlight adapter.
 
 Generates `_sidebar.mjs`: an ES module whose default export is a
 Starlight sidebar group of the Python and Rust modules. The site's
 `astro.config.mjs` imports it:
+
 ```js
 import apiSidebar from './src/content/docs/reference/api/_sidebar.mjs';
 // ...
 sidebar: [ /* other groups */ apiSidebar ],
 ```
+
 Each link is a `slug` entry, so Starlight adds the site `base` to it.
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `route_base` | `String` |  |
 
 #### Methods
 
-##### <span id="StarlightAdapter.new"></span>`new`
+##### <span id="StarlightAdapter.new"></span><code>new</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn new (route_base : & str) -> Self
+fn new(route_base: &str) -> Self
 ```
 
 Create an adapter for pages under the given route of the site (for example `reference/api`).
@@ -67,15 +61,12 @@ Create an adapter for pages under the given route of the site (for example `refe
 
 </details>
 
-
-
-##### <span id="StarlightAdapter.for_output_path"></span>`for_output_path`
+##### <span id="StarlightAdapter.for_output_path"></span><code>for_​output_​path</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn for_output_path (output_path : & Path) -> Option < Self >
+fn for_output_path(output_path: &Path) -> Option<Self>
 ```
 
 Create an adapter for an output folder in a Starlight site.
@@ -93,15 +84,12 @@ Returns `None` if the path is not in `src/content/docs/`.
 
 </details>
 
-
-
-##### <span id="StarlightAdapter.route_base"></span>`route_base`
+##### <span id="StarlightAdapter.route_base"></span><code>route_​base</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn route_base (& self) -> & str
+fn route_base(&self) -> &str
 ```
 
 The route of the output folder in the site.
@@ -117,168 +105,14 @@ The route of the output folder in the site.
 
 </details>
 
-
-
-##### <span id="StarlightAdapter.slug"></span>`slug`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn slug (& self , file_path : & Path) -> String
-```
-
-The Starlight slug of a page (its content id).
-
-<details>
-<summary>Source</summary>
-
-```rust
-    fn slug(&self, file_path: &Path) -> String {
-        let route = page_route(&file_path.to_string_lossy().replace('\\', "/"));
-        match (self.route_base.is_empty(), route.is_empty()) {
-            (true, _) => route,
-            (false, true) => self.route_base.clone(),
-            (false, false) => format!("{}/{}", self.route_base, route),
-        }
-    }
-```
-
-</details>
-
-
-
-##### <span id="StarlightAdapter.group"></span>`group`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn group (& self , label : & str , entries : Vec < NavEntry > , separator : & str) -> String
-```
-
-The sidebar group of one language, modules nested by path.
-
-<details>
-<summary>Source</summary>
-
-```rust
-    fn group(&self, label: &str, entries: Vec<NavEntry>, separator: &str) -> String {
-        let mut root = Node::default();
-        for entry in entries {
-            let mut node = &mut root;
-            for part in entry.path.split(separator) {
-                node = node.child(part);
-            }
-            node.slug = Some(self.slug(&entry.file_path));
-        }
-        let items: Vec<String> = root.children.iter().map(|c| c.to_item(4)).collect();
-        group_item(label, false, &items, 2)
-    }
-```
-
-</details>
-
-
-
-
-
-### <span id="struct.Node"></span>`struct Node`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Default`
-
-A module in the sidebar tree.
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `name` | `String` |  |
-| `slug` | `Option < String >` |  |
-| `children` | `Vec < Node >` |  |
-
-#### Methods
-
-##### <span id="Node.child"></span>`child`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn child (& mut self , name : & str) -> & mut Node
-```
-
-<details>
-<summary>Source</summary>
-
-```rust
-    fn child(&mut self, name: &str) -> &mut Node {
-        let pos = match self.children.iter().position(|c| c.name == name) {
-            Some(pos) => pos,
-            None => {
-                self.children.push(Node {
-                    name: name.to_string(),
-                    ..Default::default()
-                });
-                self.children.len() - 1
-            }
-        };
-        &mut self.children[pos]
-    }
-```
-
-</details>
-
-
-
-##### <span id="Node.to_item"></span>`to_item`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn to_item (& self , indent : usize) -> String
-```
-
-The sidebar item of this module: a link, or a collapsed group of its own page ("Overview") and its submodules.
-
-<details>
-<summary>Source</summary>
-
-```rust
-    fn to_item(&self, indent: usize) -> String {
-        match (&self.slug, self.children.is_empty()) {
-            (Some(slug), true) => link_item(&self.name, slug),
-            (slug, _) => {
-                let mut items = Vec::new();
-                if let Some(slug) = slug {
-                    items.push(link_item("Overview", slug));
-                }
-                items.extend(self.children.iter().map(|c| c.to_item(indent + 2)));
-                group_item(&self.name, true, &items, indent)
-            }
-        }
-    }
-```
-
-</details>
-
-
-
-
-
 ## Functions
 
-### <span id="fn.github_slug"></span>`fn github_slug`
+### <span id="fn.github_slug"></span><code style="font-size: 0.85em">fn github_​slug</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn github_slug (value : & str) -> String
+fn github_slug(value: &str) -> String
 ```
 
 Slug a string as Astro does (`github-slugger`).
@@ -303,15 +137,12 @@ pub fn github_slug(value: &str) -> String {
 
 </details>
 
-
-
-### <span id="fn.page_route"></span>`fn page_route`
+### <span id="fn.page_route"></span><code style="font-size: 0.85em">fn page_​route</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn page_route (file_path : & str) -> String
+fn page_route(file_path: &str) -> String
 ```
 
 The route of a page, relative to the output folder.
@@ -341,15 +172,12 @@ pub fn page_route(file_path: &str) -> String {
 
 </details>
 
-
-
-### <span id="fn.starlight_file_path"></span>`fn starlight_file_path`
+### <span id="fn.starlight_file_path"></span><code style="font-size: 0.85em">fn starlight_​file_​path</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn starlight_file_path (path : & Path) -> PathBuf
+fn starlight_file_path(path: &Path) -> PathBuf
 ```
 
 The file path of a page in a Starlight content folder.
@@ -373,15 +201,16 @@ pub fn starlight_file_path(path: &Path) -> PathBuf {
 
 </details>
 
-
-
-### <span id="fn.route_href"></span>`fn route_href`
+### <span id="fn.route_href"></span><code style="font-size: 0.85em">fn route_​href</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn route_href (from_file : & str , to_file : & str , anchor : Option < & str >) -> String
+fn route_href(
+    from_file: &str,
+    to_file: &str,
+    anchor: Option<&str>,
+) -> String
 ```
 
 A relative link from one page to another, as a route link.
@@ -421,15 +250,12 @@ pub fn route_href(from_file: &str, to_file: &str, anchor: Option<&str>) -> Strin
 
 </details>
 
-
-
-### <span id="fn.content_route_base"></span>`fn content_route_base`
+### <span id="fn.content_route_base"></span><code style="font-size: 0.85em">fn content_​route_​base</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn content_route_base (output_path : & Path) -> Option < String >
+fn content_route_base(output_path: &Path) -> Option<String>
 ```
 
 The route of the output folder in the Starlight site.
@@ -465,45 +291,19 @@ pub fn content_route_base(output_path: &Path) -> Option<String> {
 
 </details>
 
-
-
-### <span id="fn.yaml_string"></span>`fn yaml_string`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn yaml_string (value : & str) -> String
-```
-
-Quote a string for YAML front matter (a JSON string is valid YAML).
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn yaml_string(value: &str) -> String {
-    serde_json::to_string(value).unwrap_or_else(|_| "\"\"".to_string())
-}
-```
-
-</details>
-
-
-
-### <span id="fn.front_matter"></span>`fn front_matter`
+### <span id="fn.front_matter"></span><code style="font-size: 0.85em">fn front_​matter</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn front_matter (title : & str , description : & str , order : usize) -> String
+fn front_matter(title: &str, description: &str, order: usize) -> String
 ```
 
 Front matter of a Starlight page.
 
 `sidebar.hidden` keeps the page out of an `autogenerate` sidebar group:
-the generated sidebar module lists the pages instead.
+the generated sidebar module lists the pages instead. `editUrl: false`:
+a generated page has no source file to edit.
 
 <details>
 <summary>Source</summary>
@@ -512,7 +312,7 @@ the generated sidebar module lists the pages instead.
 pub fn front_matter(title: &str, description: &str, order: usize) -> String {
     let description = description.split_whitespace().collect::<Vec<_>>().join(" ");
     format!(
-        "---\ntitle: {}\ndescription: {}\nsidebar:\n  order: {}\n  hidden: true\n---\n\n",
+        "---\ntitle: {}\ndescription: {}\neditUrl: false\nsidebar:\n  order: {}\n  hidden: true\n---\n\n",
         yaml_string(title),
         yaml_string(&description),
         order
@@ -522,15 +322,33 @@ pub fn front_matter(title: &str, description: &str, order: usize) -> String {
 
 </details>
 
-
-
-### <span id="fn.anchor_span"></span>`fn anchor_span`
+### <span id="fn.breakable_name"></span><code style="font-size: 0.85em">fn breakable_​name</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
+```rust
+fn breakable_name(text: &str) -> String
+```
+
+Heading text that a narrow column (the table of contents) can break after each `_`: a zero-width space follows it. Slugs drop the space, so anchors do not change.
+
+<details>
+<summary>Source</summary>
 
 ```rust
-fn anchor_span (id : & str) -> String
+pub fn breakable_name(text: &str) -> String {
+    text.replace('_', "_\u{200B}")
+}
+```
+
+</details>
+
+### <span id="fn.anchor_span"></span><code style="font-size: 0.85em">fn anchor_​span</code>
+
+<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
+
+```rust
+fn anchor_span(id: &str) -> String
 ```
 
 An HTML element that gives an item an explicit anchor id.
@@ -549,15 +367,12 @@ pub fn anchor_span(id: &str) -> String {
 
 </details>
 
-
-
-### <span id="fn.normalize_rustdoc_fences"></span>`fn normalize_rustdoc_fences`
+### <span id="fn.normalize_rustdoc_fences"></span><code style="font-size: 0.85em">fn normalize_​rustdoc_​fences</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn normalize_rustdoc_fences (content : & str) -> String
+fn normalize_rustdoc_fences(content: &str) -> String
 ```
 
 Give rustdoc code fences the language `rust`.
@@ -598,91 +413,10 @@ pub fn normalize_rustdoc_fences(content: &str) -> String {
 
 </details>
 
+## Constants
 
-
-### <span id="fn.js_string"></span>`fn js_string`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn js_string (value : & str) -> String
-```
-
-A JavaScript string literal.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn js_string(value: &str) -> String {
-    serde_json::to_string(value).unwrap_or_else(|_| "\"\"".to_string())
-}
-```
-
-</details>
-
-
-
-### <span id="fn.link_item"></span>`fn link_item`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn link_item (label : & str , slug : & str) -> String
-```
-
-A sidebar link to a page of the content collection.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn link_item(label: &str, slug: &str) -> String {
-    format!(
-        "{{ label: {}, slug: {} }}",
-        js_string(label),
-        js_string(slug)
-    )
-}
-```
-
-</details>
-
-
-
-### <span id="fn.group_item"></span>`fn group_item`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-```rust
-fn group_item (label : & str , collapsed : bool , items : & [String] , indent : usize) -> String
-```
-
-A sidebar group, as a JavaScript object literal.
-
-<details>
-<summary>Source</summary>
-
-```rust
-fn group_item(label: &str, collapsed: bool, items: &[String], indent: usize) -> String {
-    let pad = "  ".repeat(indent);
-    let mut out = format!("{{\n{pad}  label: {},\n", js_string(label));
-    if collapsed {
-        out.push_str(&format!("{pad}  collapsed: true,\n"));
-    }
-    out.push_str(&format!("{pad}  items: [\n"));
-    for item in items {
-        out.push_str(&format!("{pad}    {},\n", item));
-    }
-    out.push_str(&format!("{pad}  ],\n{pad}}}"));
-    out
-}
-```
-
-</details>
-
-
-
+| Name | Type | Value | Description |
+|------|------|-------|-------------|
+| <span id="const.STARLIGHT_SIDEBAR_FILE"></span>`STARLIGHT_SIDEBAR_FILE` | `&str` | `"_sidebar.mjs"` | File name of the generated sidebar module.<br>The leading `_` keeps it out of the content collection. |
+| <span id="const.STARLIGHT_DEFAULT_ROUTE_BASE"></span>`STARLIGHT_DEFAULT_ROUTE_BASE` | `&str` | `"reference/api"` | The route base used when the output path is not in `src/content/docs/`. |
+| <span id="const.STARLIGHT_INDEX_FILE"></span>`STARLIGHT_INDEX_FILE` | `&str` | `"index.md"` | The file of the index page of the API reference (item 15 of PLSKN-T-0057): the page at the route of the output folder. |

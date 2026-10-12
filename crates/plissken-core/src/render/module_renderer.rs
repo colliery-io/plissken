@@ -2395,11 +2395,14 @@ fn python_variable_type(var: &PythonVariable) -> Option<String> {
     Some(ty.to_string())
 }
 
-/// Text with `&`, `<` and `>` escaped for HTML.
+/// Text escaped for HTML: `&`, `<`, `>`, and the quotes (so that
+/// smartypants does not curl the `'` of a lifetime).
 fn html_escape(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+        .replace('\'', "&#39;")
+        .replace('"', "&quot;")
 }
 
 /// A value for a table cell: at most 60 characters.
@@ -2773,6 +2776,11 @@ mod tests {
         // Code with a fence in it gets a longer fence
         let code = "let s = r#\"\n```rust\nx\n```\n\"#;";
         assert!(code_fence("rust", code).starts_with("````rust\n"));
+    }
+
+    #[test]
+    fn test_html_escape_lifetime() {
+        assert_eq!(html_escape("struct R<'a>"), "struct R&lt;&#39;a&gt;");
     }
 
     #[test]

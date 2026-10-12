@@ -94,6 +94,30 @@ crates = [
 
 For workspaces, list each member you want documented.
 
+### `entry_point`
+
+The crate whose name the Python package replaces, for PyO3 bindings that no
+`#[pymodule]` function adds (see [Hybrid Projects](../../how-to/hybrid/)).
+Without it, the bindings of every crate are in the package.
+
+```toml
+[rust]
+entry_point = "mycrate"
+```
+
+### `include_private`
+
+plissken documents the public API: items that are `pub`, and the fields and
+methods that are `pub`. Test code (`#[cfg(test)]` modules and items, `#[test]`
+functions) is never documented. To document the other items too:
+
+```toml
+[rust]
+include_private = true
+```
+
+PyO3 bindings are documented either way: they are part of the Python API.
+
 ## Python Section
 
 ### `package`
@@ -113,6 +137,20 @@ Optional source directory override:
 [python]
 package = "mypackage"
 source = "src/mypackage"  # If not in standard location
+```
+
+`source` is the folder of the package itself (it holds `__init__.py`), or a
+folder that holds the package. Modules are named from the package either way:
+`mypackage.client`.
+
+### `include_private`
+
+Names that start with `_` (`_helper`, `_DEFAULT_TIMEOUT`) are private and not
+documented; `__dunder__` methods are. To document them too:
+
+```toml
+[python]
+include_private = true
 ```
 
 ## Validation

@@ -1,13 +1,13 @@
 ---
 title: "plissken-core::manifest"
 description: "Manifest file parsing for Cargo.toml and pyproject.toml"
+editUrl: false
 sidebar:
-  order: 8
+  order: 9
   hidden: true
 ---
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-orange-low); color: var(--sl-color-orange-high);">Rust</span>
-
 
 Manifest file parsing for Cargo.toml and pyproject.toml
 
@@ -16,10 +16,9 @@ extract metadata that can be used to infer default configuration values.
 
 ## Structs
 
-### <span id="struct.CargoManifest"></span>`struct CargoManifest`
+### <span id="struct.CargoManifest"></span><code style="font-size: 0.85em">struct CargoManifest</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 **Derives:** `Debug`, `Clone`
 
@@ -29,20 +28,19 @@ Parsed Cargo.toml manifest
 
 | Name | Type | Description |
 |------|------|-------------|
-| `name` | `Option < String >` | Package name from [package].name |
-| `version` | `Option < String >` | Package version from [package].version |
+| `name` | `Option<String>` | Package name from [package].name |
+| `version` | `Option<String>` | Package version from [package].version |
 | `is_workspace` | `bool` | Whether this is a workspace root (has [workspace] section) |
-| `workspace_members` | `Vec < String >` | Workspace members if this is a workspace root |
+| `workspace_members` | `Vec<String>` | Workspace members if this is a workspace root |
 
 #### Methods
 
-##### <span id="CargoManifest.parse"></span>`parse`
+##### <span id="CargoManifest.parse"></span><code>parse</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn parse (path : & Path) -> Result < Self , ManifestError >
+fn parse(path: &Path) -> Result<Self, ManifestError>
 ```
 
 Parse a Cargo.toml file
@@ -59,15 +57,12 @@ Parse a Cargo.toml file
 
 </details>
 
-
-
-##### <span id="CargoManifest.parse_str"></span>`parse_str`
+##### <span id="CargoManifest.parse_str"></span><code>parse_​str</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn parse_str (content : & str) -> Result < Self , ManifestError >
+fn parse_str(content: &str) -> Result<Self, ManifestError>
 ```
 
 Parse Cargo.toml content from a string
@@ -102,14 +97,9 @@ Parse Cargo.toml content from a string
 
 </details>
 
-
-
-
-
-### <span id="struct.PyProjectManifest"></span>`struct PyProjectManifest`
+### <span id="struct.PyProjectManifest"></span><code style="font-size: 0.85em">struct PyProjectManifest</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 **Derives:** `Debug`, `Clone`
 
@@ -119,19 +109,18 @@ Parsed pyproject.toml manifest
 
 | Name | Type | Description |
 |------|------|-------------|
-| `name` | `Option < String >` | Project name from [project].name |
-| `version` | `Option < String >` | Project version from [project].version |
-| `package_dir` | `Option < PathBuf >` | Package directory from [tool.setuptools.package-dir] or similar |
+| `name` | `Option<String>` | Project name from [project].name |
+| `version` | `Option<String>` | Project version from [project].version |
+| `package_dir` | `Option<PathBuf>` | Package directory from [tool.setuptools.package-dir] or similar |
 
 #### Methods
 
-##### <span id="PyProjectManifest.parse"></span>`parse`
+##### <span id="PyProjectManifest.parse"></span><code>parse</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn parse (path : & Path) -> Result < Self , ManifestError >
+fn parse(path: &Path) -> Result<Self, ManifestError>
 ```
 
 Parse a pyproject.toml file
@@ -148,15 +137,12 @@ Parse a pyproject.toml file
 
 </details>
 
-
-
-##### <span id="PyProjectManifest.parse_str"></span>`parse_str`
+##### <span id="PyProjectManifest.parse_str"></span><code>parse_​str</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn parse_str (content : & str) -> Result < Self , ManifestError >
+fn parse_str(content: &str) -> Result<Self, ManifestError>
 ```
 
 Parse pyproject.toml content from a string
@@ -204,140 +190,9 @@ Parse pyproject.toml content from a string
 
 </details>
 
-
-
-
-
-### <span id="struct.CargoToml"></span>`struct CargoToml`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `package` | `Option < CargoPackage >` |  |
-| `workspace` | `Option < CargoWorkspace >` |  |
-
-
-
-### <span id="struct.CargoPackage"></span>`struct CargoPackage`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `name` | `Option < String >` |  |
-| `version` | `Option < String >` |  |
-
-
-
-### <span id="struct.CargoWorkspace"></span>`struct CargoWorkspace`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `members` | `Option < Vec < String > >` |  |
-
-
-
-### <span id="struct.PyProjectToml"></span>`struct PyProjectToml`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `project` | `Option < PyProject >` |  |
-| `tool` | `Option < PyProjectTool >` |  |
-
-
-
-### <span id="struct.PyProject"></span>`struct PyProject`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `name` | `Option < String >` |  |
-| `version` | `Option < String >` |  |
-
-
-
-### <span id="struct.PyProjectTool"></span>`struct PyProjectTool`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `setuptools` | `Option < SetuptoolsConfig >` |  |
-| `maturin` | `Option < MaturinConfig >` |  |
-
-
-
-### <span id="struct.SetuptoolsConfig"></span>`struct SetuptoolsConfig`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `package_dir` | `Option < std :: collections :: HashMap < String , String > >` |  |
-
-
-
-### <span id="struct.MaturinConfig"></span>`struct MaturinConfig`
-
-<span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-gray-6); color: var(--sl-color-gray-2);">private</span>
-
-
-**Derives:** `Deserialize`
-
-#### Fields
-
-| Name | Type | Description |
-|------|------|-------------|
-| `python_source` | `Option < String >` |  |
-| `module_name` | `Option < String >` |  |
-
-
-
-### <span id="struct.InferredConfig"></span>`struct InferredConfig`
+### <span id="struct.InferredConfig"></span><code style="font-size: 0.85em">struct InferredConfig</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 **Derives:** `Debug`, `Default`
 
@@ -347,21 +202,20 @@ Inferred configuration values from manifest files
 
 | Name | Type | Description |
 |------|------|-------------|
-| `project_name` | `Option < String >` | Project name (from Cargo.toml or pyproject.toml) |
-| `rust_crates` | `Option < Vec < PathBuf > >` | Rust crate paths (from workspace members or current directory) |
-| `rust_entry_point` | `Option < String >` | Rust entry point (package name from Cargo.toml) |
-| `python_package` | `Option < String >` | Python package name (from pyproject.toml) |
-| `python_source` | `Option < PathBuf >` | Python source directory (from tool.maturin.python-source) |
+| `project_name` | `Option<String>` | Project name (from Cargo.toml or pyproject.toml) |
+| `rust_crates` | `Option<Vec<PathBuf>>` | Rust crate paths (from workspace members or current directory) |
+| `rust_entry_point` | `Option<String>` | Rust entry point (package name from Cargo.toml) |
+| `python_package` | `Option<String>` | Python package name (from pyproject.toml) |
+| `python_source` | `Option<PathBuf>` | Python source directory (from tool.maturin.python-source) |
 
 #### Methods
 
-##### <span id="InferredConfig.from_directory"></span>`from_directory`
+##### <span id="InferredConfig.from_directory"></span><code>from_​directory</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
 
-
 ```rust
-fn from_directory (project_root : & Path) -> Self
+fn from_directory(project_root: &Path) -> Self
 ```
 
 Infer configuration from manifest files in the given directory
@@ -418,16 +272,11 @@ Infer configuration from manifest files in the given directory
 
 </details>
 
-
-
-
-
 ## Enums
 
-### <span id="enum.ManifestError"></span>`enum ManifestError`
+### <span id="enum.ManifestError"></span><code style="font-size: 0.85em">enum ManifestError</code>
 
 <span class="plissken-badge plissken-badge-visibility" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-green-low); color: var(--sl-color-green-high);">pub</span>
-
 
 Errors that can occur when parsing manifest files
 
@@ -435,6 +284,3 @@ Errors that can occur when parsing manifest files
 
 - **`IoError`**
 - **`TomlError`**
-
-
-
