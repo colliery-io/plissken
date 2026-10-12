@@ -17,40 +17,38 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Get version from tag
         id: get_version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: plissken ${{ github.ref_name }}
-          draft: false
-          prerelease: ${{ contains(github.ref, '-') }}
-          body: |
-            ## Installation
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > notes.md <<'NOTES'
+          ## Installation
 
-            ### Quick Install (Linux/macOS)
-            ```bash
-            curl -fsSL https://raw.githubusercontent.com/colliery-io/plissken/main/install.sh | bash
-            ```
+          ### Quick Install (Linux/macOS)
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/colliery-io/plissken/main/install.sh | bash
+          ```
 
-            ### From crates.io
-            ```bash
-            cargo install plissken
-            ```
+          ### From crates.io
+          ```bash
+          cargo install plissken
+          ```
 
-            ### Manual Download
-            Download the appropriate binary for your platform below.
+          ### Manual Download
+          Download the appropriate binary for your platform below.
+          NOTES
+          prerelease=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" --title "plissken $GITHUB_REF_NAME" \
+            --notes-file notes.md $prerelease
 
   # Build binaries for all platforms
   build:
@@ -82,7 +80,7 @@ jobs:
             archive: zip
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -121,27 +119,14 @@ jobs:
           cp target/${{ matrix.target }}/release/plissken.exe dist/
           Compress-Archive -Path dist/* -DestinationPath plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
 
-      - name: Upload Release Asset (tar.gz)
-        if: matrix.archive == 'tar.gz'
-        uses: actions/upload-release-asset@v1
+      - name: Upload Release Asset
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
-          asset_name: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Asset (zip)
-        if: matrix.archive == 'zip'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
-          asset_name: plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
-          asset_content_type: application/zip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            "plissken-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.${{ matrix.archive }}" \
+            --clobber
 
   # Publish to crates.io
   publish:
@@ -149,7 +134,7 @@ jobs:
     needs: [create-release, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
