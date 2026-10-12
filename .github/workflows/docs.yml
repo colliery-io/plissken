@@ -1,0 +1,68 @@
+# Builds the docs in docs/ and publishes them to the GitHub Pages of this
+# repository. Runs on a push to main that changes docs/.
+#
+# The API reference in docs/src/content/docs/reference/api/ is committed:
+# plissken writes it (`angreal docs api`), and this workflow builds it as is.
+# The docs no longer ship with release.yml (PLSKN-T-0055).
+#
+# One-time setup: Settings → Pages → Source = "GitHub Actions".
+
+name: docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - id: pages
+        uses: actions/configure-pages@v6
+        if: github.event_name != 'pull_request'
+      # With a committed docs/package-lock.json, the build is the same each
+      # time (npm ci). Commit it after the first npm install.
+      - run: if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - run: npm run build
+        env:
+          DOCS_SITE: ${{ steps.pages.outputs.origin }}
+          DOCS_BASE: ${{ steps.pages.outputs.base_path }}
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: docs/dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

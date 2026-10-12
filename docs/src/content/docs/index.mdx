@@ -1,0 +1,100 @@
+---
+title: plissken
+description: Documentation generator for Rust-Python hybrid projects.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import logo from '../../assets/logo.png';
+
+<Image src={logo} alt="plissken logo" width={200} />
+
+**Documentation generator for Rust-Python hybrid projects**
+
+plissken generates beautiful, unified documentation for projects that combine Rust and Python code, with special support for [PyO3](https://pyo3.rs/) and [maturin](https://www.maturin.rs/) bindings.
+
+## Features
+
+- **Unified Documentation** - Single documentation site for both Python and Rust APIs
+- **Cross-Reference Links** - Automatic bidirectional links between Python classes and their Rust implementations
+- **Multiple SSG Support** - Generate docs for MkDocs Material, mdBook or Astro Starlight
+- **Smart Discovery** - Auto-detect Python packages and Rust crates
+- **Customizable Themes** - Full theme support with CSS variables for dark mode
+- **Template Overrides** - Customize any template without forking
+
+## Quick Example
+
+```bash
+# Initialize configuration
+plissken init
+
+# Generate documentation
+plissken render
+
+# Serve with MkDocs
+mkdocs serve
+```
+
+## Installation
+
+<Tabs>
+<TabItem label="Quick Install (Linux/macOS)">
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/colliery-io/plissken/main/install.sh | bash
+```
+
+</TabItem>
+<TabItem label="From crates.io">
+
+```bash
+cargo install plissken
+```
+
+</TabItem>
+<TabItem label="From Source">
+
+```bash
+git clone https://github.com/colliery-io/plissken.git
+cd plissken
+cargo install --path crates/plissken-cli
+```
+
+</TabItem>
+</Tabs>
+
+## Documentation Structure
+
+When you run `plissken render`, it generates a documentation structure like:
+
+```
+docs/
+  api/
+    python/
+      mypackage/
+        index.md           # Package overview
+        MyClass.md         # Class documentation
+        my_function.md     # Function documentation
+    rust/
+      mycrate/
+        index.md           # Module overview
+        MyStruct.md        # Struct documentation
+    _nav.yml               # Navigation for mkdocs.yml
+```
+
+## Cross-Reference Magic
+
+For PyO3 bindings, plissken automatically creates bidirectional links:
+
+**In Python docs:**
+> **Rust Implementation**: `mycrate::MyStruct` → links to Rust doc page
+
+**In Rust docs:**
+> **Python API**: `mypackage.MyClass` → links to Python doc page
+
+## Next Steps
+
+- [Installation](how-to/installation/) - Detailed installation instructions
+- [Quick Start](tutorials/quickstart/) - Get your first docs generated
+- [Configuration](reference/configuration/) - Customize plissken.toml
+- [API Reference](reference/) - Full API documentation
