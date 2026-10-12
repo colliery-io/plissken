@@ -29,7 +29,6 @@ export default defineConfig({
 			logo: { src: './src/assets/logo.png', alt: '' },
 			social: [{ icon: 'github', label: 'GitHub', href: REPO }],
 			editLink: { baseUrl: `${REPO}/edit/main/docs/` },
-			expressiveCode: { frames: { extractFileNameFromCode: false } },
 			plugins: [starlightAurora({ hyper: true })],
 			sidebar: [
 				{ label: 'Home', link: '/' },
