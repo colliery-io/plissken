@@ -415,6 +415,18 @@ impl RustDocIndex {
                 }
             }
         }
+        // A re-exported name points where its path points
+        let mut aliases = Vec::new();
+        for module in modules {
+            for r in module.reexports.iter().filter(|r| r.name != "*") {
+                if let Some(target) = index.resolve(&module.path, &r.path) {
+                    aliases.push((format!("{}::{}", key(&module.path), r.name), target.clone()));
+                }
+            }
+        }
+        for (alias, target) in aliases {
+            index.items.entry(alias).or_insert(target);
+        }
         index
     }
 

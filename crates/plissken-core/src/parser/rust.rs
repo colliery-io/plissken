@@ -51,18 +51,47 @@ impl RustParser {
         // Parse doc comment into structured form
         let parsed_doc = doc_comment.as_ref().map(|d| parse_rust_doc(d));
 
-        // Extract items
+        // Extract items; test code is not documented
         let items = syntax
             .items
             .iter()
+            .filter(|item| !is_test_only(item_attrs(item)))
             .filter_map(|item| self.extract_item(item, content, path))
             .collect();
+
+        let mut reexports = Vec::new();
+        let mut test_modules = Vec::new();
+        for item in &syntax.items {
+            match item {
+                Item::Use(u) if !matches!(u.vis, SynVisibility::Inherited) => {
+                    if is_test_only(&u.attrs) {
+                        continue;
+                    }
+                    let visibility = convert_visibility(&u.vis);
+                    let doc_comment = extract_doc_comments(&u.attrs);
+                    collect_use_tree(&u.tree, String::new(), &mut |name, path| {
+                        reexports.push(RustReexport {
+                            name,
+                            path,
+                            visibility: visibility.clone(),
+                            doc_comment: doc_comment.clone(),
+                        });
+                    });
+                }
+                Item::Mod(m) if m.content.is_none() && is_test_only(&m.attrs) => {
+                    test_modules.push(m.ident.to_string());
+                }
+                _ => {}
+            }
+        }
 
         Ok(RustModule {
             path: path.display().to_string(),
             doc_comment,
             parsed_doc,
             items,
+            reexports,
+            test_modules,
             source: SourceSpan::new(
                 path.to_path_buf(),
                 1,
@@ -329,6 +358,84 @@ impl Default for RustParser {
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/// The attributes of an item.
+fn item_attrs(item: &Item) -> &[Attribute] {
+    match item {
+        Item::Struct(i) => &i.attrs,
+        Item::Enum(i) => &i.attrs,
+        Item::Fn(i) => &i.attrs,
+        Item::Trait(i) => &i.attrs,
+        Item::Impl(i) => &i.attrs,
+        Item::Const(i) => &i.attrs,
+        Item::Type(i) => &i.attrs,
+        Item::Mod(i) => &i.attrs,
+        Item::Use(i) => &i.attrs,
+        Item::Static(i) => &i.attrs,
+        _ => &[],
+    }
+}
+
+/// Whether attributes mark test code: `#[test]`, `#[cfg(test)]`, or a
+/// `cfg` whose condition needs `test` (`#[cfg(all(test, unix))]`).
+fn is_test_only(attrs: &[Attribute]) -> bool {
+    attrs.iter().any(|attr| {
+        if attr.path().is_ident("test") {
+            return true;
+        }
+        if !attr.path().is_ident("cfg") {
+            return false;
+        }
+        let Meta::List(list) = &attr.meta else {
+            return false;
+        };
+        let tokens = list.tokens.to_string();
+        let tokens = tokens.replace(' ', "");
+        tokens == "test"
+            || tokens.starts_with("all(test,")
+            || tokens.contains(",test,")
+            || tokens.starts_with("all(") && tokens.ends_with(",test)")
+    })
+}
+
+/// The names of a `use` tree, with the path that each one stands for.
+fn collect_use_tree(tree: &syn::UseTree, prefix: String, add: &mut impl FnMut(String, String)) {
+    let join = |name: &str| {
+        if prefix.is_empty() {
+            name.to_string()
+        } else {
+            format!("{}::{}", prefix, name)
+        }
+    };
+    match tree {
+        syn::UseTree::Path(p) => collect_use_tree(&p.tree, join(&p.ident.to_string()), add),
+        syn::UseTree::Name(n) => {
+            let name = n.ident.to_string();
+            if name == "self" {
+                let last = prefix.rsplit("::").next().unwrap_or(&prefix).to_string();
+                add(last, prefix.clone());
+            } else {
+                add(name.clone(), join(&name));
+            }
+        }
+        syn::UseTree::Rename(r) => {
+            let path = if r.ident == "self" {
+                prefix.clone()
+            } else {
+                join(&r.ident.to_string())
+            };
+            if r.rename != "_" {
+                add(r.rename.to_string(), path);
+            }
+        }
+        syn::UseTree::Glob(_) => add("*".to_string(), prefix.clone()),
+        syn::UseTree::Group(g) => {
+            for t in &g.items {
+                collect_use_tree(t, prefix.clone(), add);
+            }
+        }
+    }
+}
 
 fn convert_visibility(vis: &SynVisibility) -> Visibility {
     match vis {

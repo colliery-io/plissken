@@ -907,10 +907,13 @@ fn fence_of(line: &str) -> Option<(Fence, &str)> {
         return None;
     }
     let len = trimmed.chars().take_while(|c| *c == ch).count();
-    if len < 3 {
+    let info = trimmed[len..].trim();
+    // A backtick fence has no backtick in its info string (else the line
+    // starts with a code span)
+    if len < 3 || ch == '`' && info.contains('`') {
         return None;
     }
-    Some((Fence { ch, len }, trimmed[len..].trim()))
+    Some((Fence { ch, len }, info))
 }
 
 /// Whether a line closes the open fence.
@@ -1965,6 +1968,17 @@ Fails if the file is missing.";
         );
         assert_eq!(result.raises.len(), 1);
         assert_eq!(result.raises[0].ty, RUST_ERROR_KIND);
+    }
+
+    #[test]
+    fn test_code_span_at_line_start_is_not_a_fence() {
+        let doc = "Summary.\n\n```` ```rust,no_run ```` holds Rust code.\n\n# Errors\n\nFails.";
+        let result = parse_rust_doc(doc);
+        assert_eq!(
+            result.description.as_deref(),
+            Some("```` ```rust,no_run ```` holds Rust code.")
+        );
+        assert_eq!(result.raises.len(), 1);
     }
 
     #[test]

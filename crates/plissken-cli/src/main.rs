@@ -280,6 +280,16 @@ fn render(
     let (python_modules, rust_modules, cross_refs) =
         parse_and_merge_modules(&config, &project_root, verbosity)?;
 
+    // Leave out test code and, unless configured, private items
+    let rust_modules = plissken_core::filter::documented_rust_modules(
+        rust_modules,
+        config.rust.as_ref().is_some_and(|r| r.include_private),
+    );
+    let python_modules = plissken_core::filter::documented_python_modules(
+        python_modules,
+        config.python.as_ref().is_some_and(|p| p.include_private),
+    );
+
     // Create renderer with theme and cross-references
     let renderer = create_renderer(template.as_deref(), &project_root)?;
     let module_renderer = ModuleRenderer::with_cross_refs(&renderer, cross_refs)

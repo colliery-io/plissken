@@ -570,6 +570,7 @@ mod tests {
             rust: Some(RustConfig {
                 crates: vec![".".into()],
                 entry_point: Some("test".to_string()),
+                include_private: false,
             }),
             python: Some(PythonConfig {
                 package: "test".to_string(),
@@ -581,6 +582,7 @@ mod tests {
                     m.insert("test.helpers".to_string(), ModuleSourceType::Python);
                     m
                 },
+                include_private: false,
             }),
             links: LinksConfig::default(),
             quality: QualityConfig::default(),

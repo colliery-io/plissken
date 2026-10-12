@@ -46,7 +46,25 @@ pub struct RustModule {
     pub doc_comment: Option<String>,
     pub parsed_doc: Option<ParsedDocstring>,
     pub items: Vec<RustItem>,
+    /// The `pub use` declarations of the module
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reexports: Vec<RustReexport>,
+    /// Names of the submodules declared `#[cfg(test)] mod name;`
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub test_modules: Vec<String>,
     pub source: SourceSpan,
+}
+
+/// A name that a module re-exports: `pub use crate::context::Context;`
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RustReexport {
+    /// The name in the module (`Context`, or `*` for a glob)
+    pub name: String,
+    /// The path that is re-exported (`crate::context::Context`, or
+    /// `crate::context` for a glob)
+    pub path: String,
+    pub visibility: Visibility,
+    pub doc_comment: Option<String>,
 }
 
 /// A Rust item (struct, enum, function, etc.)
@@ -443,6 +461,8 @@ impl RustModule {
             doc_comment: None,
             parsed_doc: None,
             items: Vec::new(),
+            reexports: Vec::new(),
+            test_modules: Vec::new(),
             source: SourceSpan::test("test.rs", 1, 1),
         }
     }

@@ -39,6 +39,7 @@ pub mod crossref;
 pub mod discover;
 pub mod docstring;
 pub mod error;
+pub mod filter;
 pub mod manifest;
 pub mod model;
 pub mod parser;

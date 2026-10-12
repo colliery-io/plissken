@@ -6,8 +6,8 @@
 use crate::docstring::{normalize_rust_doc, parse_docstring, parse_rust_doc};
 use crate::model::{
     CrossRef, ParamDoc, PythonClass, PythonFunction, PythonItem, PythonModule, PythonParam,
-    PythonVariable, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustParam, RustStruct,
-    SourceType, Visibility,
+    PythonVariable, RustConst, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustParam,
+    RustStruct, SourceType, Visibility,
 };
 use crate::render::doc_links::{RustDocIndex, relative_file_href, rewrite_intra_doc_links};
 use crate::render::docstring_renderer::{
@@ -86,7 +86,7 @@ impl ModulePageBuilder {
     /// Add a variables/constants table
     fn add_variables_table<T, F>(&mut self, title: &str, items: &[T], row_renderer: F)
     where
-        F: Fn(&T) -> (String, String, String), // (name, type, desc)
+        F: Fn(&T) -> (String, Option<String>, String), // (name, type, desc)
     {
         if items.is_empty() {
             return;
@@ -96,8 +96,9 @@ impl ModulePageBuilder {
         self.content.push_str("|------|------|-------------|\n");
         for item in items {
             let (name, ty, desc) = row_renderer(item);
+            let ty = ty.map(|t| format!("`{}`", t)).unwrap_or_default();
             self.content
-                .push_str(&format!("| `{}` | `{}` | {} |\n", name, ty, desc));
+                .push_str(&format!("| `{}` | {} | {} |\n", name, ty, desc));
         }
         self.content.push('\n');
     }
@@ -378,7 +379,7 @@ impl<'a> ModuleRenderer<'a> {
         builder.add_variables_table("Variables", variables, |var| {
             (
                 var.name.clone(),
-                var.ty.clone().unwrap_or_else(|| "-".to_string()),
+                python_variable_type(var),
                 var.docstring
                     .as_deref()
                     .map(escape_table_content)
@@ -1079,6 +1080,7 @@ impl<'a> ModuleRenderer<'a> {
         let mut structs = Vec::new();
         let mut enums = Vec::new();
         let mut functions = Vec::new();
+        let mut consts = Vec::new();
         let mut impls: HashMap<String, Vec<&RustImpl>> = HashMap::new();
 
         for item in &module.items {
@@ -1086,17 +1088,25 @@ impl<'a> ModuleRenderer<'a> {
                 RustItem::Struct(s) => structs.push(s),
                 RustItem::Enum(e) => enums.push(e),
                 RustItem::Function(f) => functions.push(f),
+                RustItem::Const(c) => consts.push(c),
                 RustItem::Impl(i) => {
                     // `Foo<T>` has the methods of struct `Foo`
                     let name = i.target.split('<').next().unwrap_or(&i.target).trim();
                     impls.entry(name.to_string()).or_default().push(i);
                 }
-                _ => {} // Skip traits, consts, type aliases for MVP
+                _ => {} // Skip traits and type aliases for MVP
             }
         }
 
         // Render everything into a single page
-        let page = self.render_rust_module_inline(module, &structs, &enums, &functions, &impls)?;
+        let items = RustModuleItems {
+            structs: &structs,
+            enums: &enums,
+            functions: &functions,
+            consts: &consts,
+            impls: &impls,
+        };
+        let page = self.render_rust_module_inline(module, &items)?;
 
         Ok(vec![page])
     }
@@ -1105,11 +1115,15 @@ impl<'a> ModuleRenderer<'a> {
     fn render_rust_module_inline(
         &self,
         module: &RustModule,
-        structs: &[&RustStruct],
-        enums: &[&RustEnum],
-        functions: &[&RustFunction],
-        impls: &HashMap<String, Vec<&RustImpl>>,
+        items: &RustModuleItems,
     ) -> Result<RenderedPage, tera::Error> {
+        let RustModuleItems {
+            structs,
+            enums,
+            functions,
+            consts,
+            impls,
+        } = *items;
         let mut builder = ModulePageBuilder::new();
         let layout = PageLayout::new();
 
@@ -1135,6 +1149,12 @@ impl<'a> ModuleRenderer<'a> {
             builder.add_item(&self.rust_doc(doc, &module.path, &[]));
         }
 
+        // Re-exports section
+        if !module.reexports.is_empty() {
+            builder.add_section("Re-exports");
+            builder.add_item(&self.render_rust_reexports(module));
+        }
+
         // Structs section
         if !structs.is_empty() {
             builder.add_section("Structs");
@@ -1148,7 +1168,8 @@ impl<'a> ModuleRenderer<'a> {
         if !enums.is_empty() {
             builder.add_section("Enums");
             for e in enums {
-                builder.add_item(&self.render_rust_enum_inline(e, &module.path)?);
+                let enum_impls = impls.get(&e.name).map(|v| v.as_slice()).unwrap_or(&[]);
+                builder.add_item(&self.render_rust_enum_inline(e, enum_impls, &module.path)?);
             }
         }
 
@@ -1158,6 +1179,12 @@ impl<'a> ModuleRenderer<'a> {
             for func in functions {
                 builder.add_item(&self.render_rust_function_inline(func, &module.path)?);
             }
+        }
+
+        // Constants section
+        if !consts.is_empty() {
+            builder.add_section("Constants");
+            builder.add_item(&self.render_rust_consts(consts, &module.path));
         }
 
         let path = self.page_path(layout.rust_module_page(&module.path));
@@ -1259,6 +1286,19 @@ impl<'a> ModuleRenderer<'a> {
             content.push('\n');
         }
 
+        content.push_str(&self.render_rust_methods(&s.name, impls, module_path)?);
+
+        Ok(content)
+    }
+
+    /// The methods of the inherent impl blocks of a struct or an enum.
+    fn render_rust_methods(
+        &self,
+        owner: &str,
+        impls: &[&RustImpl],
+        module_path: &str,
+    ) -> Result<String, tera::Error> {
+        let mut content = String::new();
         // Methods from impl blocks - track which are from pymethods blocks
         let mut methods: Vec<(&RustFunction, bool)> = Vec::new(); // (method, is_pymethod)
 
@@ -1276,18 +1316,14 @@ impl<'a> ModuleRenderer<'a> {
 
             for (method, is_pymethod) in methods {
                 // Pass parent struct name for method-level cross-links (use h5 for methods)
-                let parent_struct = if is_pymethod {
-                    Some(s.name.as_str())
-                } else {
-                    None
-                };
+                let parent_struct = if is_pymethod { Some(owner) } else { None };
                 content.push_str(&self.render_rust_function_with_context(
                     method,
                     5,
                     is_pymethod,
                     module_path,
                     parent_struct,
-                    Some(s.name.as_str()),
+                    Some(owner),
                 )?);
                 content.push_str("\n\n");
             }
@@ -1296,10 +1332,69 @@ impl<'a> ModuleRenderer<'a> {
         Ok(content)
     }
 
+    /// The re-exports of a module: each name, linked to its page when it is
+    /// documented, with the path it stands for.
+    fn render_rust_reexports(&self, module: &RustModule) -> String {
+        let page = self.page_file(PageLayout::new().rust_module_page(&module.path));
+        let mut lines = Vec::new();
+        for r in &module.reexports {
+            let text = if r.name == "*" {
+                format!("`{}::*`", r.path)
+            } else {
+                format!("`{}`", r.name)
+            };
+            let linked =
+                self.rust_doc_links(&format!("[{}]({})", text, r.path), &page, &module.path);
+            // The path is shown unless the linked name says it all
+            let says_all = r.name == "*"
+                || linked != text && r.path.rsplit("::").next() == Some(r.name.as_str());
+            if says_all {
+                lines.push(format!("- {}", linked));
+            } else {
+                lines.push(format!("- {} (`{}`)", linked, r.path));
+            }
+        }
+        lines.join("\n")
+    }
+
+    /// The constants of a module as a table. In Starlight each name has an
+    /// anchor (`const.NAME`) for links.
+    fn render_rust_consts(&self, consts: &[&RustConst], module_path: &str) -> String {
+        let mut content = String::from("| Name | Type | Value | Description |\n");
+        content.push_str("|------|------|-------|-------------|\n");
+        for c in consts {
+            let anchor = if self.starlight {
+                anchor_span(&format!("const.{}", c.name))
+            } else {
+                String::new()
+            };
+            let value = c
+                .value
+                .as_deref()
+                .map(|v| format!("`{}`", short_value(v).replace('|', "\\|")))
+                .unwrap_or_default();
+            let doc = c
+                .doc_comment
+                .as_deref()
+                .map(|d| escape_table_content(&self.rust_short_doc(d, module_path)))
+                .unwrap_or_default();
+            content.push_str(&format!(
+                "| {}`{}` | `{}` | {} | {} |\n",
+                anchor,
+                c.name,
+                c.ty.replace('|', "\\|"),
+                value,
+                doc
+            ));
+        }
+        content
+    }
+
     /// Render a Rust enum inline (for single-page module format).
     fn render_rust_enum_inline(
         &self,
         e: &RustEnum,
+        impls: &[&RustImpl],
         module_path: &str,
     ) -> Result<String, tera::Error> {
         let mut content = String::new();
@@ -1346,6 +1441,8 @@ impl<'a> ModuleRenderer<'a> {
             }
             content.push('\n');
         }
+
+        content.push_str(&self.render_rust_methods(&e.name, impls, module_path)?);
 
         Ok(content)
     }
@@ -2067,6 +2164,49 @@ level = 1
     }
 }
 
+/// The items of a Rust module page, by kind.
+#[derive(Clone, Copy)]
+struct RustModuleItems<'a> {
+    structs: &'a [&'a RustStruct],
+    enums: &'a [&'a RustEnum],
+    functions: &'a [&'a RustFunction],
+    consts: &'a [&'a RustConst],
+    impls: &'a HashMap<String, Vec<&'a RustImpl>>,
+}
+
+/// The type of a Python variable: its annotation, else the type of its
+/// literal value (`5` is an `int`), else none.
+fn python_variable_type(var: &PythonVariable) -> Option<String> {
+    if let Some(ref ty) = var.ty {
+        return Some(ty.clone());
+    }
+    let value = var.value.as_deref()?.trim();
+    let ty = match value {
+        "True" | "False" => "bool",
+        "None" => "None",
+        v if v.parse::<i64>().is_ok() || v.replace('_', "").parse::<i64>().is_ok() => "int",
+        v if v.parse::<f64>().is_ok() => "float",
+        v if v.starts_with(['"', '\'']) || v.starts_with("f\"") || v.starts_with("r\"") => "str",
+        v if v.starts_with("b\"") || v.starts_with("b'") => "bytes",
+        v if v.starts_with('[') => "list",
+        v if v.starts_with('{') && (v == "{}" || v.contains(':')) => "dict",
+        v if v.starts_with('{') => "set",
+        v if v.starts_with('(') && v.ends_with(')') && v.contains(',') => "tuple",
+        _ => return None,
+    };
+    Some(ty.to_string())
+}
+
+/// A value for a table cell: at most 60 characters.
+fn short_value(value: &str) -> String {
+    if value.chars().count() <= 60 {
+        value.to_string()
+    } else {
+        let cut: String = value.chars().take(57).collect();
+        format!("{}...", cut.trim_end())
+    }
+}
+
 /// Fill the types of documented Rust parameters from the signature.
 fn fill_rust_param_types(params: &mut [ParamDoc], sig_params: &[RustParam]) {
     for param in params.iter_mut().filter(|p| p.ty.is_none()) {
@@ -2416,6 +2556,33 @@ mod tests {
         // For Rust, crate root = crate_name.md, submodule = crate/submod.md
         assert!(find_page(&rs_pages, "crate/a.md").is_some());
         assert!(find_page(&rs_pages, "crate/b.md").is_some());
+    }
+
+    #[test]
+    fn test_python_variable_type() {
+        // Item 20 of PLSKN-T-0057: module variables showed type `-`
+        let var = |value: &str| PythonVariable::test("X").with_value(value);
+        assert_eq!(python_variable_type(&var("30")).as_deref(), Some("int"));
+        assert_eq!(python_variable_type(&var("1_000")).as_deref(), Some("int"));
+        assert_eq!(python_variable_type(&var("0.5")).as_deref(), Some("float"));
+        assert_eq!(
+            python_variable_type(&var("\"http://x\"")).as_deref(),
+            Some("str")
+        );
+        assert_eq!(python_variable_type(&var("True")).as_deref(), Some("bool"));
+        assert_eq!(
+            python_variable_type(&var("{\"a\": 1}")).as_deref(),
+            Some("dict")
+        );
+        assert_eq!(
+            python_variable_type(&var("(1, 2)")).as_deref(),
+            Some("tuple")
+        );
+        assert_eq!(python_variable_type(&var("make()")), None);
+        let typed = PythonVariable::test("X")
+            .with_type("Final[int]")
+            .with_value("3");
+        assert_eq!(python_variable_type(&typed).as_deref(), Some("Final[int]"));
     }
 
     #[test]
