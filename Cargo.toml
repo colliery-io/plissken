@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 authors = ["Dylan Storey <dylan.storey@gmail.com>"]
@@ -41,4 +41,4 @@ anyhow = "1"
 walkdir = "2"
 
 # Internal crates
-plissken-core = { path = "crates/plissken-core", version = "0.1.0" }
+plissken-core = { path = "crates/plissken-core", version = "0.2.0" }
