@@ -21,6 +21,7 @@
 //! ```
 
 mod crossref_renderer;
+mod doc_links;
 mod docstring_renderer;
 pub mod module;
 mod module_renderer;
@@ -32,7 +33,8 @@ mod theme;
 pub use crossref_renderer::{CrossRefLink, Language, crossref_link, link_to_python, link_to_rust};
 pub use crossref_renderer::{render_python_exposure_details, render_rust_impl_details};
 pub use docstring_renderer::{
-    render_docstring, render_examples, render_params_table, render_raises_table, render_returns,
+    escape_table_content, render_docstring, render_examples, render_params_table,
+    render_raises_table, render_returns, render_rust_docstring,
 };
 pub use module_renderer::{ModuleRenderer, RenderedPage};
 pub use renderer::Renderer;

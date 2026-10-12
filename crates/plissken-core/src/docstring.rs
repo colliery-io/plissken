@@ -216,18 +216,22 @@ fn extract_summary_and_description(lines: &[&str]) -> (Option<String>, Option<St
     }
 
     let mut summary_lines = Vec::new();
-    let mut description_lines = Vec::new();
+    let mut description_lines: Vec<&str> = Vec::new();
     let mut in_description = false;
     let mut i = 0;
 
     // Collect summary (first paragraph)
     while i < lines.len() {
-        let line = lines[i].trim();
+        let raw = lines[i];
+        let line = raw.trim();
 
-        // Empty line ends summary
+        // Empty line ends summary; in the description it ends a paragraph
         if line.is_empty() {
             if !summary_lines.is_empty() {
                 in_description = true;
+            }
+            if in_description {
+                description_lines.push("");
             }
             i += 1;
             continue;
@@ -253,7 +257,7 @@ fn extract_summary_and_description(lines: &[&str]) -> (Option<String>, Option<St
         }
 
         if in_description {
-            description_lines.push(line);
+            description_lines.push(raw);
         } else {
             summary_lines.push(line);
         }
@@ -266,6 +270,19 @@ fn extract_summary_and_description(lines: &[&str]) -> (Option<String>, Option<St
         Some(summary_lines.join(" "))
     };
 
+    // Keep the indentation of the description relative to its least
+    // indented line (code blocks, nested lists)
+    let indent = description_lines
+        .iter()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| l.len() - l.trim_start().len())
+        .min()
+        .unwrap_or(0);
+    let dedented: Vec<&str> = description_lines
+        .iter()
+        .map(|l| l.get(indent..).unwrap_or_else(|| l.trim_start()).trim_end())
+        .collect();
+    let description_lines = tidy_markdown_lines(&dedented);
     let description = if description_lines.is_empty() {
         None
     } else {
@@ -771,98 +788,77 @@ impl ParsedDocstring {
 // Rust Doc Comment Parser
 // ============================================================================
 
+/// The `RaisesDoc` kind of an entry of a Rust `# Errors` section.
+pub const RUST_ERROR_KIND: &str = "Error";
+
+/// The `RaisesDoc` kind of an entry of a Rust `# Panics` section.
+pub const RUST_PANIC_KIND: &str = "Panic";
+
 /// Parse a Rust doc comment into structured form
 ///
 /// Looks for conventional markdown sections:
 /// - `# Arguments` / `# Parameters` - function parameters
 /// - `# Returns` - return value documentation
-/// - `# Errors` - error conditions (maps to raises)
-/// - `# Panics` - panic conditions (maps to raises)
-/// - `# Safety` - safety requirements (stored in description)
+/// - `# Errors` - error conditions (raises of kind [`RUST_ERROR_KIND`])
+/// - `# Panics` - panic conditions (raises of kind [`RUST_PANIC_KIND`])
 /// - `# Examples` - code examples
 ///
-/// If parsing fails or no sections are found, returns a basic ParsedDocstring
-/// with just the summary/description extracted.
+/// Other sections (`# Safety`, `# Overview`, ...) stay in the description,
+/// with the heading as a bold line. The description keeps its Markdown:
+/// paragraphs, lists and code blocks. Code blocks hold Rust unless they name
+/// another language, as in rustdoc: they get the language `rust`, and the
+/// hidden lines of a doc test (`# use foo;`) are left out.
 pub fn parse_rust_doc(doc: &str) -> ParsedDocstring {
-    let doc = doc.trim();
-    if doc.is_empty() {
+    let doc = normalize_rust_doc_code(doc);
+    let doc = doc.trim_matches(|c: char| c == '\n' || c == '\r');
+    if doc.trim().is_empty() {
         return ParsedDocstring::empty();
     }
 
     let lines: Vec<&str> = doc.lines().collect();
 
-    // Extract summary and description (everything before first # section)
-    let (summary, description, section_start) = extract_rust_summary(&lines);
-
+    let mut text: Vec<String> = Vec::new();
     let mut params = Vec::new();
     let mut returns = None;
     let mut raises = Vec::new();
     let mut examples = Vec::new();
-    let mut safety_notes = Vec::new();
 
-    // Parse sections
-    let mut i = section_start;
-    while i < lines.len() {
-        let line = lines[i].trim();
-
-        // Check for markdown header: # Section or ## Section
-        if let Some(section_name) = parse_markdown_header(line) {
-            let section_lower = section_name.to_lowercase();
-            match section_lower.as_str() {
-                "arguments" | "parameters" | "args" | "params" => {
-                    let (parsed, next_i) = parse_rust_arguments(&lines, i + 1);
-                    params = parsed;
-                    i = next_i;
-                }
-                "returns" | "return" => {
-                    let (parsed, next_i) = parse_rust_returns(&lines, i + 1);
-                    returns = parsed;
-                    i = next_i;
-                }
-                "errors" | "error" => {
-                    let (parsed, next_i) = parse_rust_errors(&lines, i + 1, "Error");
-                    raises.extend(parsed);
-                    i = next_i;
-                }
-                "panics" | "panic" => {
-                    let (parsed, next_i) = parse_rust_errors(&lines, i + 1, "Panic");
-                    raises.extend(parsed);
-                    i = next_i;
-                }
-                "safety" => {
-                    let (notes, next_i) = parse_rust_section_text(&lines, i + 1);
-                    safety_notes.push(notes);
-                    i = next_i;
-                }
-                "examples" | "example" => {
-                    let (parsed, next_i) = parse_rust_examples(&lines, i + 1);
-                    examples = parsed;
-                    i = next_i;
-                }
-                _ => {
-                    // Unknown section, skip
-                    i += 1;
-                }
+    for (header, body) in split_rust_sections(&lines) {
+        let Some(header) = header else {
+            text.extend(body.iter().map(|l| l.to_string()));
+            continue;
+        };
+        match header.to_lowercase().as_str() {
+            "arguments" | "parameters" | "args" | "params" => {
+                params = parse_rust_arguments(body);
             }
-        } else {
-            i += 1;
+            "returns" | "return" => {
+                returns = parse_rust_returns(body);
+            }
+            "errors" | "error" => {
+                raises.extend(parse_rust_errors(body, RUST_ERROR_KIND));
+            }
+            "panics" | "panic" => {
+                raises.extend(parse_rust_errors(body, RUST_PANIC_KIND));
+            }
+            "examples" | "example" => {
+                examples = parse_rust_examples(body);
+            }
+            _ => {
+                // Any other section stays in the text, its heading in bold
+                text.push(String::new());
+                text.push(format!("**{}**", header));
+                text.push(String::new());
+                text.extend(body.iter().map(|l| l.to_string()));
+            }
         }
     }
 
-    // If we found safety notes, append to description
-    let final_description = if safety_notes.is_empty() {
-        description
-    } else {
-        let safety_text = format!("\n\n# Safety\n{}", safety_notes.join("\n"));
-        match description {
-            Some(desc) => Some(format!("{}{}", desc, safety_text)),
-            None => Some(safety_text.trim_start().to_string()),
-        }
-    };
+    let (summary, description) = split_rust_summary(&text);
 
     ParsedDocstring {
         summary,
-        description: final_description,
+        description,
         params,
         returns,
         raises,
@@ -870,39 +866,215 @@ pub fn parse_rust_doc(doc: &str) -> ParsedDocstring {
     }
 }
 
-/// Extract summary and description from Rust doc before any # sections
-fn extract_rust_summary(lines: &[&str]) -> (Option<String>, Option<String>, usize) {
-    if lines.is_empty() {
-        return (None, None, 0);
+/// Rust doc text made ready for Markdown output.
+///
+/// Code blocks get the language `rust` (see [`parse_rust_doc`]), and
+/// runs of blank lines become one. For doc comments that are not parsed into
+/// sections: fields, variants.
+pub fn normalize_rust_doc(doc: &str) -> String {
+    let doc = normalize_rust_doc_code(doc);
+    let lines: Vec<&str> = doc.lines().collect();
+    tidy_markdown_lines(&lines).join("\n")
+}
+
+/// Code fence attributes of rustdoc (`ignore`, `no_run`, ...).
+const RUSTDOC_FENCE_ATTRIBUTES: &[&str] = &[
+    "rust",
+    "ignore",
+    "no_run",
+    "should_panic",
+    "compile_fail",
+    "test_harness",
+    "allow_fail",
+    "edition2015",
+    "edition2018",
+    "edition2021",
+    "edition2024",
+];
+
+/// The open code fence of a Markdown text: its character and its length.
+#[derive(Clone, Copy)]
+struct Fence {
+    ch: char,
+    len: usize,
+}
+
+/// A fence line: its fence and its info string.
+fn fence_of(line: &str) -> Option<(Fence, &str)> {
+    let trimmed = line.trim_start();
+    let ch = trimmed.chars().next()?;
+    if ch != '`' && ch != '~' {
+        return None;
     }
+    let len = trimmed.chars().take_while(|c| *c == ch).count();
+    if len < 3 {
+        return None;
+    }
+    Some((Fence { ch, len }, trimmed[len..].trim()))
+}
 
-    let mut summary_lines = Vec::new();
-    let mut description_lines = Vec::new();
-    let mut in_description = false;
-    let mut i = 0;
+/// Whether a line closes the open fence.
+fn closes(fence: Fence, line: &str) -> bool {
+    matches!(fence_of(line), Some((f, info)) if f.ch == fence.ch && f.len >= fence.len && info.is_empty())
+}
 
-    while i < lines.len() {
-        let line = lines[i].trim();
-
-        // Check for markdown header - this starts a section
-        if parse_markdown_header(line).is_some() {
-            break;
-        }
-
-        // Empty line transitions from summary to description
-        if line.is_empty() {
-            if !summary_lines.is_empty() {
-                in_description = true;
+/// For each line of a Markdown text: whether it is in a code block
+/// (fence lines included).
+pub(crate) fn code_block_lines(lines: &[&str]) -> Vec<bool> {
+    let mut open: Option<Fence> = None;
+    lines
+        .iter()
+        .map(|line| match open {
+            Some(fence) => {
+                if closes(fence, line) {
+                    open = None;
+                }
+                true
             }
-            i += 1;
+            None => {
+                if let Some((fence, _)) = fence_of(line) {
+                    open = Some(fence);
+                    true
+                } else {
+                    false
+                }
+            }
+        })
+        .collect()
+}
+
+/// Rustdoc code blocks as Markdown: a block with no language, or with only
+/// rustdoc attributes (`ignore`, `rust,no_run`), gets the language `rust`,
+/// and the hidden lines of a doc test (`# use foo;`, `#`) are left out
+/// (`##` stands for a literal `#`).
+fn normalize_rust_doc_code(doc: &str) -> String {
+    let mut out: Vec<String> = Vec::new();
+    // The open fence, and whether it holds Rust
+    let mut open: Option<(Fence, bool)> = None;
+    for line in doc.lines() {
+        match open {
+            Some((fence, is_rust)) => {
+                if closes(fence, line) {
+                    open = None;
+                    out.push(line.to_string());
+                    continue;
+                }
+                if is_rust {
+                    let trimmed = line.trim_start();
+                    let indent = &line[..line.len() - trimmed.len()];
+                    if trimmed == "#" || trimmed.starts_with("# ") {
+                        continue;
+                    }
+                    if let Some(rest) = trimmed.strip_prefix("##") {
+                        out.push(format!("{}#{}", indent, rest));
+                        continue;
+                    }
+                }
+                out.push(line.to_string());
+            }
+            None => {
+                if let Some((fence, info)) = fence_of(line) {
+                    let is_rust = info.is_empty()
+                        || info
+                            .split(',')
+                            .map(str::trim)
+                            .all(|a| RUSTDOC_FENCE_ATTRIBUTES.contains(&a));
+                    open = Some((fence, is_rust));
+                    if is_rust && info != "rust" {
+                        let indent = &line[..line.len() - line.trim_start().len()];
+                        let marker: String = std::iter::repeat_n(fence.ch, fence.len).collect();
+                        out.push(format!("{}{}rust", indent, marker));
+                        continue;
+                    }
+                }
+                out.push(line.to_string());
+            }
+        }
+    }
+    out.join("\n")
+}
+
+/// Split Rust doc lines at the section headings (`# Errors`) outside code
+/// blocks: the text before the first heading (no heading), then each
+/// heading with its body.
+fn split_rust_sections<'a, 'b>(lines: &'b [&'a str]) -> Vec<(Option<&'a str>, &'b [&'a str])> {
+    let in_code = code_block_lines(lines);
+    let mut sections = Vec::new();
+    let mut header: Option<&'a str> = None;
+    let mut start = 0;
+    for (i, line) in lines.iter().enumerate() {
+        if in_code[i] {
             continue;
         }
-
-        if in_description {
-            description_lines.push(line);
-        } else {
-            summary_lines.push(line);
+        if let Some(name) = parse_markdown_header(line) {
+            sections.push((header, &lines[start..i]));
+            header = Some(name);
+            start = i + 1;
         }
+    }
+    sections.push((header, &lines[start..]));
+    sections
+}
+
+/// Whether a line starts a block that is not a paragraph: a list item, a
+/// code fence, a table row, a quote or an HTML block.
+fn starts_block(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    if trimmed.starts_with("- ")
+        || trimmed.starts_with("* ")
+        || trimmed.starts_with("+ ")
+        || trimmed.starts_with('|')
+        || trimmed.starts_with('>')
+        || trimmed.starts_with('<')
+        || fence_of(line).is_some()
+    {
+        return true;
+    }
+    // Ordered list item: `1. ` or `1) `
+    let digits = trimmed.chars().take_while(|c| c.is_ascii_digit()).count();
+    digits > 0 && (trimmed[digits..].starts_with(". ") || trimmed[digits..].starts_with(") "))
+}
+
+/// Blank lines trimmed at both ends, and runs of blank lines (outside
+/// code blocks) made one.
+fn tidy_markdown_lines<S: AsRef<str>>(lines: &[S]) -> Vec<String> {
+    let refs: Vec<&str> = lines.iter().map(|l| l.as_ref()).collect();
+    let in_code = code_block_lines(&refs);
+    let mut out: Vec<String> = Vec::new();
+    for (i, line) in refs.iter().enumerate() {
+        let blank = line.trim().is_empty();
+        if blank && !in_code[i] {
+            if out.last().is_none_or(|l| l.trim().is_empty()) {
+                continue;
+            }
+            out.push(String::new());
+        } else {
+            out.push(line.trim_end().to_string());
+        }
+    }
+    while out.last().is_some_and(|l| l.trim().is_empty()) {
+        out.pop();
+    }
+    out
+}
+
+/// The summary (the first paragraph, as one line) and the description (the
+/// rest, as Markdown) of Rust doc text.
+fn split_rust_summary(text: &[String]) -> (Option<String>, Option<String>) {
+    let lines = tidy_markdown_lines(text);
+
+    let mut summary_lines = Vec::new();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = &lines[i];
+        if line.trim().is_empty() {
+            i += 1;
+            break;
+        }
+        if starts_block(line) || line.starts_with("**") && line.ends_with("**") {
+            break;
+        }
+        summary_lines.push(line.trim());
         i += 1;
     }
 
@@ -912,13 +1084,14 @@ fn extract_rust_summary(lines: &[&str]) -> (Option<String>, Option<String>, usiz
         Some(summary_lines.join(" "))
     };
 
-    let description = if description_lines.is_empty() {
+    let rest = tidy_markdown_lines(&lines[i..]);
+    let description = if rest.is_empty() {
         None
     } else {
-        Some(description_lines.join("\n"))
+        Some(rest.join("\n"))
     };
 
-    (summary, description, i)
+    (summary, description)
 }
 
 /// Parse a markdown header line, returning the section name if found
@@ -937,7 +1110,7 @@ fn parse_markdown_header(line: &str) -> Option<&str> {
     }
 }
 
-/// Parse Rust-style Arguments section
+/// Parse the body of a Rust-style Arguments section
 ///
 /// Expects format like:
 /// ```text
@@ -948,33 +1121,24 @@ fn parse_markdown_header(line: &str) -> Option<&str> {
 /// ```text
 /// - `name`: Description
 /// ```
-fn parse_rust_arguments(lines: &[&str], start: usize) -> (Vec<ParamDoc>, usize) {
+fn parse_rust_arguments(lines: &[&str]) -> Vec<ParamDoc> {
     let mut params = Vec::new();
-    let mut i = start;
     let mut current_name = String::new();
     let mut current_desc = Vec::new();
 
-    while i < lines.len() {
-        let line = lines[i];
+    for line in lines {
         let trimmed = line.trim();
-
-        // Stop at next section
-        if parse_markdown_header(trimmed).is_some() {
-            break;
-        }
 
         // Empty line might end the section
         if trimmed.is_empty() {
             if !current_name.is_empty() {
                 params.push(ParamDoc {
-                    name: current_name.clone(),
+                    name: std::mem::take(&mut current_name),
                     ty: None,
                     description: current_desc.join(" ").trim().to_string(),
                 });
-                current_name.clear();
                 current_desc.clear();
             }
-            i += 1;
             continue;
         }
 
@@ -990,14 +1154,10 @@ fn parse_rust_arguments(lines: &[&str], start: usize) -> (Vec<ParamDoc>, usize) 
             }
             current_name = param.0;
             current_desc = vec![param.1];
-        } else if !current_name.is_empty()
-            && (trimmed.starts_with(' ') || !trimmed.starts_with('*') && !trimmed.starts_with('-'))
-        {
+        } else if !current_name.is_empty() {
             // Continuation line
             current_desc.push(trimmed.to_string());
         }
-
-        i += 1;
     }
 
     // Don't forget the last one
@@ -1009,7 +1169,7 @@ fn parse_rust_arguments(lines: &[&str], start: usize) -> (Vec<ParamDoc>, usize) 
         });
     }
 
-    (params, i)
+    params
 }
 
 /// Parse a single Rust parameter line
@@ -1061,194 +1221,115 @@ fn parse_rust_param_line(line: &str) -> Option<(String, String)> {
     None
 }
 
-/// Parse Rust-style Returns section
-fn parse_rust_returns(lines: &[&str], start: usize) -> (Option<ReturnDoc>, usize) {
-    let (text, next_i) = parse_rust_section_text(lines, start);
+/// Parse the body of a Rust-style Returns section (kept as Markdown)
+fn parse_rust_returns(lines: &[&str]) -> Option<ReturnDoc> {
+    let text = tidy_markdown_lines(lines).join("\n");
 
     if text.is_empty() {
-        return (None, next_i);
+        return None;
     }
 
-    (
-        Some(ReturnDoc {
-            ty: None,
-            description: text,
-        }),
-        next_i,
-    )
+    Some(ReturnDoc {
+        ty: None,
+        description: text,
+    })
 }
 
-/// Parse Rust-style Errors/Panics section
-fn parse_rust_errors(lines: &[&str], start: usize, error_kind: &str) -> (Vec<RaisesDoc>, usize) {
-    let mut raises = Vec::new();
-    let mut i = start;
-    let mut current_ty = String::new();
-    let mut current_desc = Vec::new();
-
-    while i < lines.len() {
-        let line = lines[i];
-        let trimmed = line.trim();
-
-        // Stop at next section
-        if parse_markdown_header(trimmed).is_some() {
-            break;
+/// Parse the body of a Rust-style Errors/Panics section
+///
+/// A list gives one entry per item; an item that starts with a type in
+/// backticks (``* `IoError` - when ...``) gives that type. Text that is not a
+/// list gives one entry of the kind, with its Markdown.
+fn parse_rust_errors(lines: &[&str], error_kind: &str) -> Vec<RaisesDoc> {
+    let is_item = |l: &str| {
+        let t = l.trim_start();
+        l.len() - t.len() < 2 && (t.starts_with("* ") || t.starts_with("- "))
+    };
+    if !lines.iter().any(|l| is_item(l)) {
+        let text = tidy_markdown_lines(lines).join("\n");
+        if text.is_empty() {
+            return Vec::new();
         }
+        return vec![RaisesDoc {
+            ty: error_kind.to_string(),
+            description: text,
+        }];
+    }
 
+    let mut raises = Vec::new();
+    let mut current: Option<(String, Vec<String>)> = None;
+    let push = |current: &mut Option<(String, Vec<String>)>, raises: &mut Vec<RaisesDoc>| {
+        if let Some((ty, desc)) = current.take() {
+            raises.push(RaisesDoc {
+                ty,
+                description: desc.join(" ").trim().to_string(),
+            });
+        }
+    };
+
+    for line in lines {
+        let trimmed = line.trim();
         if trimmed.is_empty() {
-            if !current_ty.is_empty() || !current_desc.is_empty() {
-                raises.push(RaisesDoc {
-                    ty: if current_ty.is_empty() {
-                        error_kind.to_string()
-                    } else {
-                        current_ty.clone()
-                    },
-                    description: current_desc.join(" ").trim().to_string(),
-                });
-                current_ty.clear();
-                current_desc.clear();
-            }
-            i += 1;
+            push(&mut current, &mut raises);
             continue;
         }
 
-        // Check for list item with error type: * `ErrorType` - when...
-        if trimmed.starts_with('*') || trimmed.starts_with('-') {
-            // Save previous
-            if !current_ty.is_empty() || !current_desc.is_empty() {
-                raises.push(RaisesDoc {
-                    ty: if current_ty.is_empty() {
-                        error_kind.to_string()
-                    } else {
-                        current_ty
-                    },
-                    description: current_desc.join(" ").trim().to_string(),
-                });
-            }
-
+        if is_item(line) {
+            push(&mut current, &mut raises);
             let rest = trimmed[1..].trim();
 
             // Try to extract error type from backticks
-            if let Some(after_tick) = rest.strip_prefix('`') {
-                if let Some(end_tick) = after_tick.find('`') {
-                    current_ty = after_tick[..end_tick].to_string();
+            let item = rest
+                .strip_prefix('`')
+                .and_then(|after_tick| {
+                    let end_tick = after_tick.find('`')?;
                     let after = after_tick[end_tick + 1..].trim();
-                    current_desc = vec![
-                        after
-                            .trim_start_matches('-')
-                            .trim_start_matches(':')
-                            .trim()
-                            .to_string(),
-                    ];
-                } else {
-                    current_ty = error_kind.to_string();
-                    current_desc = vec![rest.to_string()];
-                }
-            } else {
-                current_ty = error_kind.to_string();
-                current_desc = vec![rest.to_string()];
-            }
-        } else if !current_desc.is_empty() {
+                    // A type is followed by a separator, not by more text
+                    let desc = after
+                        .strip_prefix('-')
+                        .or_else(|| after.strip_prefix(':'))
+                        .or_else(|| after.is_empty().then_some(""))?;
+                    Some((after_tick[..end_tick].to_string(), desc.trim().to_string()))
+                })
+                .unwrap_or_else(|| (error_kind.to_string(), rest.to_string()));
+            current = Some((item.0, vec![item.1]));
+        } else if let Some((_, desc)) = current.as_mut() {
             // Continuation
-            current_desc.push(trimmed.to_string());
+            desc.push(trimmed.to_string());
         } else {
-            // Plain text, no list format
-            current_ty = error_kind.to_string();
-            current_desc.push(trimmed.to_string());
+            // Plain text before the list
+            current = Some((error_kind.to_string(), vec![trimmed.to_string()]));
         }
-
-        i += 1;
     }
 
-    // Don't forget the last one
-    if !current_ty.is_empty() || !current_desc.is_empty() {
-        raises.push(RaisesDoc {
-            ty: if current_ty.is_empty() {
-                error_kind.to_string()
-            } else {
-                current_ty
-            },
-            description: current_desc.join(" ").trim().to_string(),
-        });
-    }
-
-    (raises, i)
+    push(&mut current, &mut raises);
+    raises
 }
 
-/// Parse Rust-style Examples section
-fn parse_rust_examples(lines: &[&str], start: usize) -> (Vec<String>, usize) {
+/// Parse the body of a Rust-style Examples section
+fn parse_rust_examples(lines: &[&str]) -> Vec<String> {
     let mut examples = Vec::new();
     let mut current_example = Vec::new();
-    let mut in_code_block = false;
-    let mut i = start;
+    let in_code = code_block_lines(lines);
 
-    while i < lines.len() {
-        let line = lines[i];
-        let trimmed = line.trim();
-
-        // Stop at next section (but not if we're in a code block)
-        if !in_code_block && parse_markdown_header(trimmed).is_some() {
-            break;
-        }
-
-        // Track code fence blocks
-        if trimmed.starts_with("```") {
-            in_code_block = !in_code_block;
-            current_example.push(line.to_string());
-            i += 1;
-            continue;
-        }
-
+    for (i, line) in lines.iter().enumerate() {
         // Empty line outside code block might separate examples
-        if trimmed.is_empty() && !in_code_block {
+        if line.trim().is_empty() && !in_code[i] {
             if !current_example.is_empty() {
                 examples.push(current_example.join("\n"));
                 current_example.clear();
             }
-            i += 1;
             continue;
         }
 
         current_example.push(line.to_string());
-        i += 1;
     }
 
     if !current_example.is_empty() {
         examples.push(current_example.join("\n"));
     }
 
-    (examples, i)
-}
-
-/// Parse a section as plain text until next section
-fn parse_rust_section_text(lines: &[&str], start: usize) -> (String, usize) {
-    let mut text_lines = Vec::new();
-    let mut i = start;
-
-    while i < lines.len() {
-        let line = lines[i];
-        let trimmed = line.trim();
-
-        // Stop at next section
-        if parse_markdown_header(trimmed).is_some() {
-            break;
-        }
-
-        // Skip leading empty lines
-        if trimmed.is_empty() && text_lines.is_empty() {
-            i += 1;
-            continue;
-        }
-
-        text_lines.push(trimmed);
-        i += 1;
-    }
-
-    // Trim trailing empty lines
-    while text_lines.last().map(|s| s.is_empty()).unwrap_or(false) {
-        text_lines.pop();
-    }
-
-    (text_lines.join(" ").trim().to_string(), i)
+    examples
 }
 
 #[cfg(test)]
@@ -1802,6 +1883,117 @@ println!("{:?}", result);
         );
         assert!(result.params.is_empty());
         assert!(result.returns.is_none());
+    }
+
+    #[test]
+    fn test_parse_rust_doc_keeps_paragraphs_after_a_list() {
+        // Item 5 of PLSKN-T-0057: the paragraph after a list joined its last item
+        let doc = "Validate configuration semantically.
+
+Performs validation beyond TOML parsing:
+- At least one language section must be configured
+- Configured paths must exist
+
+Returns `Ok(ValidationResult)` with any warnings.";
+        let result = parse_rust_doc(doc);
+        assert_eq!(
+            result.summary.as_deref(),
+            Some("Validate configuration semantically.")
+        );
+        assert_eq!(
+            result.description.as_deref(),
+            Some(
+                "Performs validation beyond TOML parsing:\n\
+                 - At least one language section must be configured\n\
+                 - Configured paths must exist\n\
+                 \n\
+                 Returns `Ok(ValidationResult)` with any warnings."
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse_rust_doc_summary_stops_at_a_list() {
+        let doc = "Steps:\n- one\n- two";
+        let result = parse_rust_doc(doc);
+        assert_eq!(result.summary.as_deref(), Some("Steps:"));
+        assert_eq!(result.description.as_deref(), Some("- one\n- two"));
+    }
+
+    #[test]
+    fn test_parse_rust_doc_code_blocks_are_rust() {
+        // Item 12: a bare fence holds Rust; hidden doc test lines are left out
+        let doc = "Make one.
+
+```
+# use my_crate::Thing;
+let t = Thing::new();
+## not hidden
+```
+
+```ignore
+broken();
+```
+
+```toml
+# a TOML comment, not a section
+key = 1
+```";
+        let result = parse_rust_doc(doc);
+        let desc = result.description.unwrap();
+        assert!(desc.starts_with("```rust\nlet t = Thing::new();\n# not hidden\n```"));
+        assert!(!desc.contains("use my_crate"));
+        assert!(desc.contains("```rust\nbroken();\n```"));
+        assert!(desc.contains("```toml\n# a TOML comment, not a section\nkey = 1\n```"));
+    }
+
+    #[test]
+    fn test_parse_rust_doc_other_sections_stay() {
+        let doc = "Run it.
+
+# Overview
+
+Text of the overview.
+
+# Errors
+
+Fails if the file is missing.";
+        let result = parse_rust_doc(doc);
+        assert_eq!(
+            result.description.as_deref(),
+            Some("**Overview**\n\nText of the overview.")
+        );
+        assert_eq!(result.raises.len(), 1);
+        assert_eq!(result.raises[0].ty, RUST_ERROR_KIND);
+    }
+
+    #[test]
+    fn test_normalize_rust_doc() {
+        assert_eq!(
+            normalize_rust_doc("A field.\n\n\n```\nlet x = 1;\n```\n"),
+            "A field.\n\n```rust\nlet x = 1;\n```"
+        );
+    }
+
+    #[test]
+    fn test_parse_google_description_keeps_paragraphs() {
+        let doc = "Summary line.
+
+    First paragraph
+    continues here.
+
+    Second paragraph:
+
+        indented code
+
+Args:
+    x: A value.";
+        let result = parse_docstring(doc);
+        assert_eq!(
+            result.description.as_deref(),
+            Some("First paragraph\ncontinues here.\n\nSecond paragraph:\n\n    indented code")
+        );
+        assert_eq!(result.params.len(), 1);
     }
 
     #[test]

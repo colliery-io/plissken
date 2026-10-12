@@ -4,6 +4,7 @@
 //! structures into formatted Markdown with parameter tables, return sections,
 //! raises tables, and code examples.
 
+use crate::docstring::{RUST_ERROR_KIND, RUST_PANIC_KIND};
 use crate::model::{ParamDoc, ParsedDocstring, RaisesDoc, ReturnDoc};
 
 /// Render a parsed docstring to Markdown.
@@ -40,6 +41,27 @@ use crate::model::{ParamDoc, ParsedDocstring, RaisesDoc, ReturnDoc};
 /// assert!(output.contains("| `a` | `int` |"));
 /// ```
 pub fn render_docstring(doc: &ParsedDocstring) -> String {
+    render_docstring_as(doc, DocLanguage::Python)
+}
+
+/// Render a parsed Rust doc comment to Markdown.
+///
+/// As [`render_docstring`], but in the words of Rust: an `# Errors` section
+/// is shown as "Errors", a `# Panics` section as "Panics", each as text or a
+/// list (not a table of exception types), and the examples as the Markdown
+/// of the doc comment.
+pub fn render_rust_docstring(doc: &ParsedDocstring) -> String {
+    render_docstring_as(doc, DocLanguage::Rust)
+}
+
+/// The language of a doc comment, for the words of its sections.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DocLanguage {
+    Python,
+    Rust,
+}
+
+fn render_docstring_as(doc: &ParsedDocstring, language: DocLanguage) -> String {
     let mut sections = Vec::new();
 
     // Summary
@@ -62,17 +84,72 @@ pub fn render_docstring(doc: &ParsedDocstring) -> String {
         sections.push(render_returns(returns));
     }
 
-    // Raises table
-    if !doc.raises.is_empty() {
-        sections.push(render_raises_table(&doc.raises));
-    }
+    match language {
+        DocLanguage::Python => {
+            // Raises table
+            if !doc.raises.is_empty() {
+                sections.push(render_raises_table(&doc.raises));
+            }
 
-    // Examples
-    if !doc.examples.is_empty() {
-        sections.push(render_examples(&doc.examples));
+            // Examples
+            if !doc.examples.is_empty() {
+                sections.push(render_examples(&doc.examples));
+            }
+        }
+        DocLanguage::Rust => {
+            let (panics, errors): (Vec<&RaisesDoc>, Vec<&RaisesDoc>) =
+                doc.raises.iter().partition(|r| r.ty == RUST_PANIC_KIND);
+            if !errors.is_empty() {
+                sections.push(render_rust_conditions("Errors", &errors, RUST_ERROR_KIND));
+            }
+            if !panics.is_empty() {
+                sections.push(render_rust_conditions("Panics", &panics, RUST_PANIC_KIND));
+            }
+
+            // Examples: the Markdown of the doc comment
+            if !doc.examples.is_empty() {
+                sections.push(format!(
+                    "**Examples:**\n\n{}",
+                    doc.examples
+                        .iter()
+                        .map(|e| e.trim_matches('\n'))
+                        .collect::<Vec<_>>()
+                        .join("\n\n")
+                ));
+            }
+        }
     }
 
     sections.join("\n\n")
+}
+
+/// Render the entries of a Rust `# Errors` or `# Panics` section.
+///
+/// One entry of the plain kind is its text; more entries are a list, each
+/// led by its type when it has one.
+fn render_rust_conditions(title: &str, entries: &[&RaisesDoc], plain_kind: &str) -> String {
+    let mut output = format!("**{}:**\n\n", title);
+    if let [only] = entries
+        && only.ty == plain_kind
+    {
+        output.push_str(&only.description);
+        return output;
+    }
+    let items: Vec<String> = entries
+        .iter()
+        .map(|e| {
+            let desc = e.description.replace('\n', "\n  ");
+            if e.ty == plain_kind {
+                format!("- {}", desc)
+            } else if desc.is_empty() {
+                format!("- `{}`", e.ty)
+            } else {
+                format!("- `{}`: {}", e.ty, desc)
+            }
+        })
+        .collect();
+    output.push_str(&items.join("\n"));
+    output
 }
 
 /// Render parameters as a Markdown table.
@@ -206,13 +283,21 @@ fn detect_example_language(example: &str) -> &'static str {
 
 /// Escape content for use in Markdown tables.
 ///
-/// Pipes need to be escaped and newlines replaced.
-fn escape_table_content(content: &str) -> String {
-    content
-        .replace('|', "\\|")
-        .replace('\n', " ")
-        .trim()
-        .to_string()
+/// Pipes are escaped. A table row is one line: the lines of a paragraph are
+/// joined with a space, and paragraphs with a line break (`<br>`).
+pub fn escape_table_content(content: &str) -> String {
+    let paragraphs: Vec<String> = content
+        .split("\n\n")
+        .map(|p| {
+            p.lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .filter(|p| !p.is_empty())
+        .collect();
+    paragraphs.join("<br>").replace('|', "\\|")
 }
 
 #[cfg(test)]
@@ -364,6 +449,49 @@ mod tests {
 
         let output = render_params_table(&params);
         assert!(output.contains("| `arg` | `-` | An argument |"));
+    }
+
+    #[test]
+    fn test_render_rust_errors_and_panics() {
+        // Item 3 of PLSKN-T-0057: a Rust `# Errors` section is not "Raises"
+        let doc = crate::docstring::parse_rust_doc(
+            "Open it.\n\n# Errors\n\nFails if the file is missing.\n\n# Panics\n\nPanics if the path is empty.",
+        );
+        let output = render_rust_docstring(&doc);
+        assert!(output.contains("**Errors:**\n\nFails if the file is missing."));
+        assert!(output.contains("**Panics:**\n\nPanics if the path is empty."));
+        assert!(!output.contains("Raises"));
+        assert!(!output.contains("Exception"));
+    }
+
+    #[test]
+    fn test_render_rust_errors_list() {
+        let doc = crate::docstring::parse_rust_doc(
+            "Parse it.\n\n# Errors\n\n* `ParseError` - If the input is malformed\n* If reading fails",
+        );
+        let output = render_rust_docstring(&doc);
+        assert!(output.contains(
+            "**Errors:**\n\n- `ParseError`: If the input is malformed\n- If reading fails"
+        ));
+    }
+
+    #[test]
+    fn test_render_rust_examples_as_markdown() {
+        let doc = crate::docstring::parse_rust_doc(
+            "Run it.\n\n# Examples\n\nBasic use:\n\n```\nrun();\n```",
+        );
+        let output = render_rust_docstring(&doc);
+        assert!(output.contains("**Examples:**\n\nBasic use:\n\n```rust\nrun();\n```"));
+        assert!(!output.contains("```python"));
+    }
+
+    #[test]
+    fn test_escape_table_content_paragraphs() {
+        // Item 25: a description over several lines stays in its row
+        assert_eq!(
+            escape_table_content("First line\nsecond line.\n\nNew paragraph."),
+            "First line second line.<br>New paragraph."
+        );
     }
 
     #[test]

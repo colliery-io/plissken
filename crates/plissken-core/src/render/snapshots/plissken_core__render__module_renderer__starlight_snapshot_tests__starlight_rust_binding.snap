@@ -22,7 +22,7 @@ Buffers for Python.
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
 
 
-> **Python API**: [native.Buffer](../../../native/#class.Buffer)
+> **Python API**: [`native.Buffer`](../../../native/#class.Buffer)
 
 A byte buffer.
 
@@ -44,7 +44,7 @@ let b = RustBuffer::new();
 pub fn len(&self) -> usize
 ```
 
-> **Python API**: [native.Buffer.len](../../../native/#Buffer.len)
+> **Python API**: [`native.Buffer.len`](../../../native/#Buffer.len)
 
 Get buffer length
 
@@ -59,7 +59,7 @@ Get buffer length
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
 
 
-> **Python API**: [native.checksum](../../../native/#fn.checksum)
+> **Python API**: [`native.checksum`](../../../native/#fn.checksum)
 
 ```rust
 #[pyfunction]

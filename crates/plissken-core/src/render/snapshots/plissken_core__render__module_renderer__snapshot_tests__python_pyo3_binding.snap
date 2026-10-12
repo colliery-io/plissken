@@ -11,7 +11,7 @@ Native bindings for data processing
 
 ### `class DataProcessor`
 
-> **Rust Implementation**: [crate::data::DataProcessor](rust/crate/data.md#class-dataprocessor)
+> **Rust Implementation**: [`crate::data::DataProcessor`](rust/crate/data.md#class-dataprocessor)
 
 High-performance data processor.
 
@@ -25,7 +25,7 @@ Wraps native Rust implementation.
 <code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">process</span>(self, data: bytes) -> <span style="color: #757575;">bytes</span></code>
 </div>
 
-> **Rust Implementation**: [crate::data::DataProcessor::process](rust/crate/data.md#process)
+> **Rust Implementation**: [`crate::data::DataProcessor::process`](rust/crate/data.md#process)
 
 Process data efficiently
 

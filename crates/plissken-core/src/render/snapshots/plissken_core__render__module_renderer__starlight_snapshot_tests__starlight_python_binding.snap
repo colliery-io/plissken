@@ -21,7 +21,7 @@ Written in Rust.
 
 ### <span id="class.Buffer"></span>`class Buffer`
 
-> **Rust Implementation**: [crate::buffer::RustBuffer](../rust/crate/buffer/#struct.RustBuffer)
+> **Rust Implementation**: [`crate::buffer::RustBuffer`](../rust/crate/buffer/#struct.RustBuffer)
 
 A byte buffer.
 
@@ -33,7 +33,7 @@ A byte buffer.
 def len(self) -> int
 ```
 
-> **Rust Implementation**: [crate::buffer::RustBuffer::len](../rust/crate/buffer/#RustBuffer.len)
+> **Rust Implementation**: [`crate::buffer::RustBuffer::len`](../rust/crate/buffer/#RustBuffer.len)
 
 Get buffer length
 
@@ -56,7 +56,7 @@ Get buffer length
 def checksum(buffer: Buffer) -> int
 ```
 
-> **Rust Implementation**: [crate::buffer::checksum](../rust/crate/buffer/#fn.checksum)
+> **Rust Implementation**: [`crate::buffer::checksum`](../rust/crate/buffer/#fn.checksum)
 
 Checksum of a buffer.
 

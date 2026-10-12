@@ -3,13 +3,16 @@
 //! This module provides rendering functionality for converting `PythonModule`
 //! and `RustModule` structures into Markdown documentation files.
 
-use crate::docstring::{parse_docstring, parse_rust_doc};
+use crate::docstring::{normalize_rust_doc, parse_docstring, parse_rust_doc};
 use crate::model::{
     CrossRef, ParamDoc, PythonClass, PythonFunction, PythonItem, PythonModule, PythonParam,
-    PythonVariable, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustStruct, SourceType,
-    Visibility,
+    PythonVariable, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustParam, RustStruct,
+    SourceType, Visibility,
 };
-use crate::render::docstring_renderer::render_docstring;
+use crate::render::doc_links::rewrite_intra_doc_links;
+use crate::render::docstring_renderer::{
+    escape_table_content, render_docstring, render_rust_docstring,
+};
 use crate::render::module::{CrossRefLinker, LinkStyle, PageLayout};
 use crate::render::ssg::{
     anchor_span, front_matter, normalize_rustdoc_fences, python_nav_entries, rust_nav_entries,
@@ -240,6 +243,26 @@ impl<'a> ModuleRenderer<'a> {
             .unwrap_or(fallback)
     }
 
+    /// A Rust doc comment as Markdown: parsed into sections and rendered in
+    /// the words of Rust. Documented parameters get their types from the
+    /// signature (`sig_params`).
+    fn rust_doc(&self, doc: &str, module_path: &str, sig_params: &[RustParam]) -> String {
+        let mut parsed = parse_rust_doc(doc);
+        fill_rust_param_types(&mut parsed.params, sig_params);
+        self.rust_doc_links(&render_rust_docstring(&parsed), module_path)
+    }
+
+    /// The intra-doc links of Rust doc Markdown, rewritten for a page of
+    /// `module_path`.
+    fn rust_doc_links(&self, markdown: &str, _module_path: &str) -> String {
+        rewrite_intra_doc_links(markdown, &|_path| None)
+    }
+
+    /// A short Rust doc comment (a field, a variant) as Markdown.
+    fn rust_short_doc(&self, doc: &str, module_path: &str) -> String {
+        self.rust_doc_links(&normalize_rust_doc(doc), module_path)
+    }
+
     // =========================================================================
     // Python Module Rendering
     // =========================================================================
@@ -309,7 +332,10 @@ impl<'a> ModuleRenderer<'a> {
             (
                 var.name.clone(),
                 var.ty.clone().unwrap_or_else(|| "-".to_string()),
-                var.docstring.clone().unwrap_or_default(),
+                var.docstring
+                    .as_deref()
+                    .map(escape_table_content)
+                    .unwrap_or_default(),
             )
         });
 
@@ -393,7 +419,7 @@ impl<'a> ModuleRenderer<'a> {
                 }
                 // Add description if present
                 if let Some(ref doc) = attr.docstring {
-                    content.push_str(&format!(" - {}", doc));
+                    content.push_str(&format!(" - {}", list_item_text(doc.trim())));
                 }
                 content.push('\n');
             }
@@ -405,7 +431,11 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str("|------|------|-------------|\n");
             for attr in &class.attributes {
                 let ty = attr.ty.as_deref().unwrap_or("-");
-                let desc = attr.docstring.as_deref().unwrap_or("");
+                let desc = attr
+                    .docstring
+                    .as_deref()
+                    .map(escape_table_content)
+                    .unwrap_or_default();
                 content.push_str(&format!("| `{}` | `{}` | {} |\n", attr.name, ty, desc));
             }
             content.push('\n');
@@ -940,7 +970,8 @@ impl<'a> ModuleRenderer<'a> {
     ) -> String {
         // Use appropriate parser based on docstring style
         // Rust-style uses `# Arguments`, Python uses `Args:` or NumPy style
-        let mut parsed = if is_binding || Self::is_rust_style_docstring(docstring) {
+        let is_rust = is_binding || Self::is_rust_style_docstring(docstring);
+        let mut parsed = if is_rust {
             parse_rust_doc(docstring)
         } else {
             parse_docstring(docstring)
@@ -949,7 +980,11 @@ impl<'a> ModuleRenderer<'a> {
         // Merge signature params into docstring params
         parsed.params = Self::merge_params_with_docstring(sig_params, &parsed.params);
 
-        render_docstring(&parsed)
+        if is_rust {
+            render_rust_docstring(&parsed)
+        } else {
+            render_docstring(&parsed)
+        }
     }
 
     /// Detect if a docstring uses Rust-style markdown headers
@@ -1040,7 +1075,7 @@ impl<'a> ModuleRenderer<'a> {
 
         // Module doc comment
         if let Some(ref doc) = module.doc_comment {
-            builder.add_docstring(&parse_rust_doc(doc));
+            builder.add_item(&self.rust_doc(doc, &module.path, &[]));
         }
 
         // Structs section
@@ -1142,8 +1177,7 @@ impl<'a> ModuleRenderer<'a> {
 
         // Doc comment - parse and render properly
         if let Some(ref doc) = s.doc_comment {
-            let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&self.rust_doc(doc, module_path, &[]));
             content.push_str("\n\n");
         }
 
@@ -1153,10 +1187,16 @@ impl<'a> ModuleRenderer<'a> {
             content.push_str("| Name | Type | Description |\n");
             content.push_str("|------|------|-------------|\n");
             for field in &s.fields {
-                let doc = field.doc_comment.as_deref().unwrap_or("");
+                let doc = field
+                    .doc_comment
+                    .as_deref()
+                    .map(|d| escape_table_content(&self.rust_short_doc(d, module_path)))
+                    .unwrap_or_default();
                 content.push_str(&format!(
                     "| `{}` | `{}` | {} |\n",
-                    field.name, field.ty, doc
+                    field.name,
+                    field.ty.replace('|', "\\|"),
+                    doc
                 ));
             }
             content.push('\n');
@@ -1203,7 +1243,7 @@ impl<'a> ModuleRenderer<'a> {
     fn render_rust_enum_inline(
         &self,
         e: &RustEnum,
-        _module_path: &str,
+        module_path: &str,
     ) -> Result<String, tera::Error> {
         let mut content = String::new();
 
@@ -1230,8 +1270,7 @@ impl<'a> ModuleRenderer<'a> {
 
         // Doc comment - parse and render properly
         if let Some(ref doc) = e.doc_comment {
-            let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&self.rust_doc(doc, module_path, &[]));
             content.push_str("\n\n");
         }
 
@@ -1241,7 +1280,10 @@ impl<'a> ModuleRenderer<'a> {
             for variant in &e.variants {
                 content.push_str(&format!("- **`{}`**", variant.name));
                 if let Some(ref doc) = variant.doc_comment {
-                    content.push_str(&format!(" - {}", doc));
+                    content.push_str(&format!(
+                        " - {}",
+                        list_item_text(&self.rust_short_doc(doc, module_path))
+                    ));
                 }
                 content.push('\n');
             }
@@ -1290,8 +1332,7 @@ impl<'a> ModuleRenderer<'a> {
 
         // Docstring - parse and render properly
         if let Some(ref doc) = func.doc_comment {
-            let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&self.rust_doc(doc, module_path, &func.signature.params));
             content.push_str("\n\n");
         }
 
@@ -1324,7 +1365,7 @@ impl<'a> ModuleRenderer<'a> {
         // Module doc comment - parse and render properly
         if let Some(ref doc) = module.doc_comment {
             let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&render_rust_docstring(&parsed));
             content.push_str("\n\n");
         }
 
@@ -1463,7 +1504,7 @@ impl<'a> ModuleRenderer<'a> {
         // Doc comment - parse and render properly
         if let Some(ref doc) = s.doc_comment {
             let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&render_rust_docstring(&parsed));
             content.push_str("\n\n");
         }
 
@@ -1544,7 +1585,7 @@ impl<'a> ModuleRenderer<'a> {
         // Doc comment - parse and render properly
         if let Some(ref doc) = e.doc_comment {
             let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&render_rust_docstring(&parsed));
             content.push_str("\n\n");
         }
 
@@ -1603,7 +1644,7 @@ impl<'a> ModuleRenderer<'a> {
         // Docstring - parse and render properly
         if let Some(ref doc) = func.doc_comment {
             let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&render_rust_docstring(&parsed));
             content.push_str("\n\n");
         }
 
@@ -1692,8 +1733,7 @@ impl<'a> ModuleRenderer<'a> {
         // Doc comment - parse and render with proper tables
         // Use parse_rust_doc for Rust doc comments (uses # Headers for sections)
         if let Some(ref doc) = f.doc_comment {
-            let parsed = parse_rust_doc(doc);
-            content.push_str(&render_docstring(&parsed));
+            content.push_str(&self.rust_doc(doc, module_path, &f.signature.params));
             content.push_str("\n\n");
         }
 
@@ -1968,6 +2008,32 @@ level = 1
 "#
         .to_string()
     }
+}
+
+/// Fill the types of documented Rust parameters from the signature.
+fn fill_rust_param_types(params: &mut [ParamDoc], sig_params: &[RustParam]) {
+    for param in params.iter_mut().filter(|p| p.ty.is_none()) {
+        param.ty = sig_params
+            .iter()
+            .find(|sp| sp.name == param.name)
+            .map(|sp| sp.ty.clone());
+    }
+}
+
+/// Markdown text in a list item: lines after the first are indented, so
+/// that paragraphs, lists and code blocks stay in the item.
+fn list_item_text(text: &str) -> String {
+    text.lines()
+        .enumerate()
+        .map(|(i, l)| {
+            if i == 0 || l.is_empty() {
+                l.to_string()
+            } else {
+                format!("  {}", l)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[cfg(test)]
