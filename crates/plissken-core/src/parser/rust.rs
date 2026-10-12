@@ -804,9 +804,52 @@ fn expr_str(expr: &syn::Expr) -> String {
         .unwrap_or_else(|| one_line(&expr.to_token_stream().to_string()))
 }
 
+/// The width up to which a signature stays on one line: the code column of
+/// a documentation page is narrower than rustfmt's 100.
+const SIGNATURE_WIDTH: usize = 72;
+
 /// A function signature as Rust source. A long one has one parameter per
 /// line, as rustfmt writes it.
 fn signature_str(sig: &syn::Signature) -> String {
+    let printed = unparse_signature(sig);
+    if printed.contains('\n') || printed.len() <= SIGNATURE_WIDTH || sig.inputs.is_empty() {
+        return printed;
+    }
+    // One line, but too wide for the page: one parameter per line
+    let mut bare = sig.clone();
+    bare.inputs.clear();
+    let head = unparse_signature(&bare);
+    let params: Vec<String> = sig
+        .inputs
+        .iter()
+        .map(|arg| {
+            let mut one = bare.clone();
+            one.inputs.push(arg.clone());
+            let text = unparse_signature(&one);
+            text.split_once('(')
+                .and_then(|(_, rest)| rest.rsplit_once(')'))
+                .map(|(param, _)| param.to_string())
+                .unwrap_or_default()
+        })
+        .collect();
+    // `head` is `fn name<..>() -> R`: the parameters go between the parens
+    match head.split_once("()") {
+        Some((before, after)) if params.iter().all(|p| !p.is_empty()) => format!(
+            "{}(\n{}\n){}",
+            before,
+            params
+                .iter()
+                .map(|p| format!("    {},", p))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            after
+        ),
+        _ => printed,
+    }
+}
+
+/// A signature printed by prettyplease (an empty body left out).
+fn unparse_signature(sig: &syn::Signature) -> String {
     let item = syn::Item::Fn(syn::ItemFn {
         attrs: Vec::new(),
         vis: SynVisibility::Inherited,
@@ -925,6 +968,20 @@ impl<T: Into<String>, const N: usize> Holder<T, N> {
         assert_eq!(
             f.signature_str,
             "fn new(\n    field: impl Into<String>,\n    items: &[Option<String>],\n) -> Result<Self, Box<dyn std::error::Error>>"
+        );
+    }
+
+    #[test]
+    fn test_signature_wider_than_the_page_wraps() {
+        let parser = RustParser::new();
+        let code = "impl Config { pub fn validate(&self, project_root: &Path) -> Result<ValidationResult, ConfigError> { todo!() } }";
+        let module = parser.parse_str(code, Path::new("test.rs")).unwrap();
+        let RustItem::Impl(i) = &module.items[0] else {
+            panic!("Expected impl");
+        };
+        assert_eq!(
+            i.methods[0].signature_str,
+            "fn validate(\n    &self,\n    project_root: &Path,\n) -> Result<ValidationResult, ConfigError>"
         );
     }
 
