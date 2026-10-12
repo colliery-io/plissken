@@ -16,6 +16,7 @@ readme = "../../README.md"
 syn = { workspace = true }
 quote = { workspace = true }
 proc-macro2 = { workspace = true }
+prettyplease = { workspace = true }
 tree-sitter = { workspace = true }
 tree-sitter-python = { workspace = true }
 tera = { workspace = true }

@@ -5,9 +5,9 @@ use crate::model::*;
 use quote::ToTokens;
 use std::path::Path;
 use syn::{
-    Attribute, Fields, FnArg, GenericParam, Generics, ImplItem, Item, ItemConst, ItemEnum, ItemFn,
-    ItemImpl, ItemStruct, ItemTrait, ItemType, Meta, Pat, ReturnType, TraitItem,
-    Visibility as SynVisibility, spanned::Spanned,
+    Attribute, Fields, FnArg, Generics, ImplItem, Item, ItemConst, ItemEnum, ItemFn, ItemImpl,
+    ItemStruct, ItemTrait, ItemType, Meta, Pat, ReturnType, TraitItem, Visibility as SynVisibility,
+    spanned::Spanned,
 };
 
 pub struct RustParser;
@@ -172,7 +172,7 @@ impl RustParser {
             Some(
                 t.supertraits
                     .iter()
-                    .map(|b| b.to_token_stream().to_string())
+                    .map(bound_str)
                     .collect::<Vec<_>>()
                     .join(" + "),
             )
@@ -193,7 +193,7 @@ impl RustParser {
                             Some(
                                 ty.bounds
                                     .iter()
-                                    .map(|b| b.to_token_stream().to_string())
+                                    .map(bound_str)
                                     .collect::<Vec<_>>()
                                     .join(" + "),
                             )
@@ -254,16 +254,9 @@ impl RustParser {
             path,
         );
 
-        let trait_ = i
-            .trait_
-            .as_ref()
-            .map(|(_, path, _)| path.to_token_stream().to_string());
+        let trait_ = i.trait_.as_ref().map(|(_, path, _)| path_str(path));
 
-        let where_clause = i
-            .generics
-            .where_clause
-            .as_ref()
-            .map(|w| w.to_token_stream().to_string());
+        let where_clause = i.generics.where_clause.as_ref().map(where_str);
 
         let pymethods = i.attrs.iter().any(|attr| attr.path().is_ident("pymethods"));
 
@@ -291,7 +284,7 @@ impl RustParser {
 
         RustImpl {
             generics: extract_generics(&i.generics),
-            target: i.self_ty.to_token_stream().to_string(),
+            target: type_str(&i.self_ty),
             trait_,
             where_clause,
             methods,
@@ -307,8 +300,8 @@ impl RustParser {
             name: c.ident.to_string(),
             visibility: convert_visibility(&c.vis),
             doc_comment: extract_doc_comments(&c.attrs),
-            ty: c.ty.to_token_stream().to_string(),
-            value: Some(c.expr.to_token_stream().to_string()),
+            ty: type_str(&c.ty),
+            value: Some(expr_str(&c.expr)),
             source: span,
         }
     }
@@ -321,7 +314,7 @@ impl RustParser {
             visibility: convert_visibility(&t.vis),
             doc_comment: extract_doc_comments(&t.attrs),
             generics: extract_generics(&t.generics),
-            ty: t.ty.to_token_stream().to_string(),
+            ty: type_str(&t.ty),
             source: span,
         }
     }
@@ -415,32 +408,15 @@ fn extract_generics(generics: &Generics) -> Option<String> {
         return None;
     }
 
-    let params: Vec<String> = generics
-        .params
-        .iter()
-        .map(|p| match p {
-            GenericParam::Type(t) => {
-                let mut s = t.ident.to_string();
-                if !t.bounds.is_empty() {
-                    s.push_str(": ");
-                    s.push_str(
-                        &t.bounds
-                            .iter()
-                            .map(|b| b.to_token_stream().to_string())
-                            .collect::<Vec<_>>()
-                            .join(" + "),
-                    );
-                }
-                s
-            }
-            GenericParam::Lifetime(l) => l.to_token_stream().to_string(),
-            GenericParam::Const(c) => {
-                format!("const {}: {}", c.ident, c.ty.to_token_stream())
-            }
-        })
-        .collect();
-
-    Some(format!("<{}>", params.join(", ")))
+    // The parameters only: `<T: Into<String>, 'a, const N: usize>`
+    let params = &generics.params;
+    let text = unparse_item(syn::parse_quote!(struct __S<#params>;));
+    let printed = text
+        .trim()
+        .strip_prefix("struct __S")
+        .and_then(|t| t.strip_suffix(';'))
+        .map(one_line);
+    Some(printed.unwrap_or_else(|| one_line(&format!("<{}>", params.to_token_stream()))))
 }
 
 fn extract_fields(fields: &Fields) -> Vec<RustField> {
@@ -450,7 +426,7 @@ fn extract_fields(fields: &Fields) -> Vec<RustField> {
             .iter()
             .map(|f| RustField {
                 name: f.ident.as_ref().map(|i| i.to_string()).unwrap_or_default(),
-                ty: f.ty.to_token_stream().to_string(),
+                ty: type_str(&f.ty),
                 visibility: convert_visibility(&f.vis),
                 doc_comment: extract_doc_comments(&f.attrs),
             })
@@ -461,7 +437,7 @@ fn extract_fields(fields: &Fields) -> Vec<RustField> {
             .enumerate()
             .map(|(i, f)| RustField {
                 name: format!("{}", i),
-                ty: f.ty.to_token_stream().to_string(),
+                ty: type_str(&f.ty),
                 visibility: convert_visibility(&f.vis),
                 doc_comment: extract_doc_comments(&f.attrs),
             })
@@ -477,13 +453,12 @@ fn extract_derives(attrs: &[Attribute]) -> Vec<String> {
             if attr.path().is_ident("derive")
                 && let Meta::List(list) = &attr.meta
             {
-                let tokens = list.tokens.to_string();
-                return Some(
-                    tokens
-                        .split(',')
-                        .map(|s| s.trim().to_string())
-                        .collect::<Vec<_>>(),
-                );
+                let paths = list
+                    .parse_args_with(
+                        syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
+                    )
+                    .ok()?;
+                return Some(paths.iter().map(path_str).collect::<Vec<_>>());
             }
             None
         })
@@ -565,7 +540,7 @@ fn extract_function_common(
     content: &str,
     path: &Path,
 ) -> RustFunction {
-    let signature_str = sig.to_token_stream().to_string();
+    let signature_str = signature_str(sig);
 
     let params: Vec<RustParam> = sig
         .inputs
@@ -590,7 +565,7 @@ fn extract_function_common(
                 };
                 RustParam {
                     name,
-                    ty: t.ty.to_token_stream().to_string(),
+                    ty: type_str(&t.ty),
                     default: None,
                 }
             }
@@ -599,7 +574,7 @@ fn extract_function_common(
 
     let return_type = match &sig.output {
         ReturnType::Default => None,
-        ReturnType::Type(_, ty) => Some(ty.to_token_stream().to_string()),
+        ReturnType::Type(_, ty) => Some(type_str(ty)),
     };
 
     // Get span from fn keyword to end of block (or signature if no block)
@@ -626,6 +601,100 @@ fn extract_function_common(
         pyfunction: extract_pyfunction(attrs),
         source: span,
     }
+}
+
+// ============================================================================
+// Rust source text
+// ============================================================================
+//
+// `to_token_stream().to_string()` puts a space between all tokens
+// (`Option < String >`, `serde :: Serialize`). These print the source as
+// rustfmt would, with prettyplease.
+
+/// The source text of one item, printed by prettyplease.
+fn unparse_item(item: syn::Item) -> String {
+    prettyplease::unparse(&syn::File {
+        shebang: None,
+        attrs: Vec::new(),
+        items: vec![item],
+    })
+}
+
+/// Printed source text on one line: runs of whitespace become one space,
+/// with none just inside brackets and no trailing comma before a closing one.
+fn one_line(text: &str) -> String {
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .replace("< ", "<")
+        .replace(" >", ">")
+        .replace("( ", "(")
+        .replace(" )", ")")
+        .replace("[ ", "[")
+        .replace(" ]", "]")
+        .replace(",>", ">")
+        .replace(",)", ")")
+        .replace(",]", "]")
+}
+
+/// A type as Rust source: `Option<String>`.
+pub(crate) fn type_str(ty: &syn::Type) -> String {
+    let text = unparse_item(syn::parse_quote!(type __T = #ty;));
+    text.trim()
+        .strip_prefix("type __T = ")
+        .and_then(|t| t.strip_suffix(';'))
+        .map(one_line)
+        .unwrap_or_else(|| one_line(&ty.to_token_stream().to_string()))
+}
+
+/// A path as Rust source: `serde::Serialize`, `Iterator<Item = u8>`.
+fn path_str(path: &syn::Path) -> String {
+    type_str(&syn::parse_quote!(#path))
+}
+
+/// A bound as Rust source: `Into<String>`, `'a`.
+fn bound_str(bound: &syn::TypeParamBound) -> String {
+    let printed = type_str(&syn::parse_quote!(impl #bound));
+    printed
+        .strip_prefix("impl ")
+        .map(str::to_string)
+        .unwrap_or(printed)
+}
+
+/// A where clause as Rust source, on one line: `where T: Clone`.
+fn where_str(where_clause: &syn::WhereClause) -> String {
+    let text = unparse_item(syn::parse_quote!(fn __f() #where_clause {}));
+    text.trim()
+        .strip_prefix("fn __f()")
+        .and_then(|t| t.strip_suffix("{}"))
+        .map(|t| one_line(t).trim_end_matches(',').to_string())
+        .unwrap_or_else(|| one_line(&where_clause.to_token_stream().to_string()))
+}
+
+/// An expression as Rust source, on one line.
+fn expr_str(expr: &syn::Expr) -> String {
+    let text = unparse_item(syn::parse_quote!(const __C: () = #expr;));
+    text.trim()
+        .strip_prefix("const __C: () = ")
+        .and_then(|t| t.strip_suffix(';'))
+        .map(one_line)
+        .unwrap_or_else(|| one_line(&expr.to_token_stream().to_string()))
+}
+
+/// A function signature as Rust source. A long one has one parameter per
+/// line, as rustfmt writes it.
+fn signature_str(sig: &syn::Signature) -> String {
+    let item = syn::Item::Fn(syn::ItemFn {
+        attrs: Vec::new(),
+        vis: SynVisibility::Inherited,
+        sig: sig.clone(),
+        block: Box::new(syn::parse_quote!({})),
+    });
+    let text = unparse_item(item);
+    text.trim_end()
+        .strip_suffix("{}")
+        .map(|t| t.trim_end().to_string())
+        .unwrap_or_else(|| one_line(&sig.to_token_stream().to_string()))
 }
 
 fn get_source_span(
@@ -688,6 +757,67 @@ impl super::traits::Parser for RustParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_rust_source_spacing() {
+        // Item 2 of PLSKN-T-0057: no token-stream spacing
+        let parser = RustParser::new();
+        let code = r#"
+#[derive(Debug, serde::Serialize)]
+pub struct Holder<T: Into<String>, const N: usize> {
+    pub name: Option<String>,
+    pub map: std::collections::HashMap<String, Vec<u8>>,
+    pub tag: T,
+}
+
+impl<T: Into<String>, const N: usize> Holder<T, N> {
+    pub fn new(field: impl Into<String>, items: &[Option<String>]) -> Result<Self, Box<dyn std::error::Error>> {
+        todo!()
+    }
+}
+"#;
+        let module = parser.parse_str(code, Path::new("test.rs")).unwrap();
+        let RustItem::Struct(s) = &module.items[0] else {
+            panic!("Expected struct");
+        };
+        assert_eq!(s.derives, vec!["Debug", "serde::Serialize"]);
+        assert_eq!(s.generics.as_deref(), Some("<T: Into<String>, const N: usize>"));
+        assert_eq!(s.fields[0].ty, "Option<String>");
+        assert_eq!(
+            s.fields[1].ty,
+            "std::collections::HashMap<String, Vec<u8>>"
+        );
+        let RustItem::Impl(i) = &module.items[1] else {
+            panic!("Expected impl");
+        };
+        assert_eq!(i.target, "Holder<T, N>");
+        let f = &i.methods[0];
+        assert_eq!(f.signature.params[0].ty, "impl Into<String>");
+        assert_eq!(f.signature.params[1].ty, "&[Option<String>]");
+        assert_eq!(
+            f.signature.return_type.as_deref(),
+            Some("Result<Self, Box<dyn std::error::Error>>")
+        );
+        // Item 11: a long signature has one parameter per line
+        assert_eq!(
+            f.signature_str,
+            "fn new(\n    field: impl Into<String>,\n    items: &[Option<String>],\n) -> Result<Self, Box<dyn std::error::Error>>"
+        );
+    }
+
+    #[test]
+    fn test_short_signature_is_one_line() {
+        let parser = RustParser::new();
+        let code = "fn with_hint<'a>(mut self, hint: &'a str) -> Self where Self: Sized { self }";
+        let module = parser.parse_str(code, Path::new("test.rs")).unwrap();
+        let RustItem::Function(f) = &module.items[0] else {
+            panic!("Expected function");
+        };
+        assert_eq!(
+            f.signature_str,
+            "fn with_hint<'a>(mut self, hint: &'a str) -> Self\nwhere\n    Self: Sized,"
+        );
+    }
 
     #[test]
     fn test_parse_empty() {

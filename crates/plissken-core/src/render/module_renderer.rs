@@ -1032,7 +1032,9 @@ impl<'a> ModuleRenderer<'a> {
                 RustItem::Enum(e) => enums.push(e),
                 RustItem::Function(f) => functions.push(f),
                 RustItem::Impl(i) => {
-                    impls.entry(i.target.clone()).or_default().push(i);
+                    // `Foo<T>` has the methods of struct `Foo`
+                    let name = i.target.split('<').next().unwrap_or(&i.target).trim();
+                    impls.entry(name.to_string()).or_default().push(i);
                 }
                 _ => {} // Skip traits, consts, type aliases for MVP
             }

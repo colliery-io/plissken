@@ -761,7 +761,9 @@ mod tests {
         // Item 18: the name is code, so `__call__` is not bold
         assert!(link.contains("[`angreal.integrations.git.PyGit.__call__`]"));
         assert!(link.contains("#PyGit.__call__"));
-        let link = linker.python_link_for_rust_struct("angreal", "PyGit").unwrap();
+        let link = linker
+            .python_link_for_rust_struct("angreal", "PyGit")
+            .unwrap();
         assert!(link.contains("[`angreal.Git`]"));
         // Neither is taken for a third module by name alone
         assert!(
