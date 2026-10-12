@@ -10,6 +10,7 @@ use plissken_core::{
     TEMPLATE_STARLIGHT, VERSION_SOURCE_CARGO, VERSION_SOURCE_PYPROJECT, build_cross_refs,
     get_theme_adapter, synthesize_python_api, synthesize_python_from_rust,
 };
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
@@ -303,13 +304,27 @@ fn render(
     let content_dir = resolve_content_directory(&output_dir, template.as_deref());
 
     // Write output
-    let files_written = write_rendered_pages(
+    let mut written = write_rendered_pages(
         &module_renderer,
         &python_modules,
         &rust_modules,
         &content_dir,
         verbosity,
     )?;
+    if get_theme_adapter(template.as_deref()).name() == TEMPLATE_STARLIGHT {
+        // The index page of the API reference
+        let index = module_renderer.render_starlight_index(&python_modules, &rust_modules);
+        let index_path = content_dir.join(&index.path);
+        std::fs::write(&index_path, &index.content)
+            .with_context(|| format!("Failed to write: {}", index_path.display()))?;
+        verbose!(2, verbosity, "  Wrote: {}", index_path.display());
+        written.insert(index_path);
+    }
+    let files_written = written.len();
+    let removed = remove_stale_pages(&content_dir, &written, verbosity)?;
+    if removed > 0 {
+        verbose!(1, verbosity, "Removed {} stale page(s)", removed);
+    }
 
     let ssg_files = generate_ssg_files(
         &module_renderer,
@@ -569,15 +584,15 @@ fn build_cross_references(
     (python_modules, cross_refs)
 }
 
-/// Write rendered module pages to disk
+/// Write rendered module pages to disk; returns the paths written
 fn write_rendered_pages(
     module_renderer: &ModuleRenderer,
     python_modules: &[PythonModule],
     rust_modules: &[RustModule],
     content_dir: &Path,
     verbosity: u8,
-) -> Result<usize> {
-    let mut files_written = 0;
+) -> Result<HashSet<PathBuf>> {
+    let mut written = HashSet::new();
 
     // Render Python modules
     for module in python_modules {
@@ -600,7 +615,7 @@ fn write_rendered_pages(
                 .with_context(|| format!("Failed to write: {}", output_path.display()))?;
 
             verbose!(2, verbosity, "  Wrote: {}", output_path.display());
-            files_written += 1;
+            written.insert(output_path);
         }
     }
 
@@ -625,11 +640,54 @@ fn write_rendered_pages(
                 .with_context(|| format!("Failed to write: {}", output_path.display()))?;
 
             verbose!(2, verbosity, "  Wrote: {}", output_path.display());
-            files_written += 1;
+            written.insert(output_path);
         }
     }
 
-    Ok(files_written)
+    Ok(written)
+}
+
+/// Delete the pages that plissken wrote in an earlier run and did not write
+/// now (a module that went away), then the folders left empty.
+///
+/// Only Markdown pages that plissken made are deleted: they hold its badge
+/// (`plissken-badge`). Other files in the folder stay.
+fn remove_stale_pages(
+    content_dir: &Path,
+    written: &HashSet<PathBuf>,
+    verbosity: u8,
+) -> Result<usize> {
+    fn walk(
+        dir: &Path,
+        written: &HashSet<PathBuf>,
+        removed: &mut usize,
+        verbosity: u8,
+    ) -> Result<()> {
+        for entry in std::fs::read_dir(dir)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                walk(&path, written, removed, verbosity)?;
+                // A folder that is empty now goes too
+                if std::fs::read_dir(&path)?.next().is_none() {
+                    std::fs::remove_dir(&path)?;
+                }
+            } else if path.extension().is_some_and(|e| e == "md")
+                && !written.contains(&path)
+                && std::fs::read_to_string(&path).is_ok_and(|c| c.contains("plissken-badge"))
+            {
+                std::fs::remove_file(&path)
+                    .with_context(|| format!("Failed to remove: {}", path.display()))?;
+                verbose!(2, verbosity, "  Removed: {}", path.display());
+                *removed += 1;
+            }
+        }
+        Ok(())
+    }
+    let mut removed = 0;
+    if content_dir.is_dir() {
+        walk(content_dir, written, &mut removed, verbosity)?;
+    }
+    Ok(removed)
 }
 
 /// Generate SSG-specific files (navigation, config, CSS)

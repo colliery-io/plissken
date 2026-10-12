@@ -4,7 +4,6 @@ expression: "&pages[0].content"
 ---
 # models <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #1976d2; color: white;">Python</span>
 
-
 ## Classes
 
 ### `class User`
@@ -30,8 +29,6 @@ Represents a system user with authentication.
 <code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">__init__</span>(self, name: str, id: int = 0)</code>
 </div>
 
-
-
 ##### `get_display_name`
 
 <div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
@@ -46,11 +43,7 @@ Get formatted display name
 |------|------|-------------|
 | `self` | `-` |  |
 
-
-
-
 ##### `from_dict` <span class="plissken-badge plissken-badge-classmethod" style="display: inline-block; padding: 0.1em 0.35em; font-size: 0.55em; font-weight: 600; border-radius: 0.2em; vertical-align: middle; background: #757575; color: white;">classmethod</span>
-
 
 <div style="background: #f5f5f5; padding: 0.75em 1em; border-radius: 0.375em; border-left: 3px solid #1976d2; margin-bottom: 1em;">
 <code style="color: #333333; font-family: monospace;"><span style="color: #1976d2; font-weight: 600;">from_dict</span>(cls, data: dict) -> <span style="color: #757575;">User</span></code>

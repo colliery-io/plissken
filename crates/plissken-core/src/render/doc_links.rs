@@ -398,6 +398,28 @@ impl RustDocIndex {
                             format!("fn-{}", f.name.to_lowercase()),
                         );
                     }
+                    RustItem::Trait(t) => {
+                        let lower = t.name.to_lowercase();
+                        add(
+                            &t.name,
+                            format!("trait.{}", t.name),
+                            format!("trait-{}", lower),
+                        );
+                        for m in &t.methods {
+                            add(
+                                &format!("{}::{}", t.name, m.name),
+                                format!("{}.{}", t.name, m.name),
+                                m.name.to_lowercase(),
+                            );
+                        }
+                    }
+                    RustItem::TypeAlias(t) => {
+                        add(
+                            &t.name,
+                            format!("type.{}", t.name),
+                            "type-aliases".to_string(),
+                        );
+                    }
                     RustItem::Const(c) => {
                         add(&c.name, format!("const.{}", c.name), c.name.to_lowercase());
                     }

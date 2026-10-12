@@ -1040,7 +1040,7 @@ fn starts_block(line: &str) -> bool {
 
 /// Blank lines trimmed at both ends, and runs of blank lines (outside
 /// code blocks) made one.
-fn tidy_markdown_lines<S: AsRef<str>>(lines: &[S]) -> Vec<String> {
+pub(crate) fn tidy_markdown_lines<S: AsRef<str>>(lines: &[S]) -> Vec<String> {
     let refs: Vec<&str> = lines.iter().map(|l| l.as_ref()).collect();
     let in_code = code_block_lines(&refs);
     let mut out: Vec<String> = Vec::new();

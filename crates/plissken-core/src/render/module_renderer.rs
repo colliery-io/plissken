@@ -3,11 +3,12 @@
 //! This module provides rendering functionality for converting `PythonModule`
 //! and `RustModule` structures into Markdown documentation files.
 
+use crate::docstring::tidy_markdown_lines;
 use crate::docstring::{normalize_rust_doc, parse_docstring, parse_rust_doc};
 use crate::model::{
     CrossRef, ParamDoc, PythonClass, PythonFunction, PythonItem, PythonModule, PythonParam,
     PythonVariable, RustConst, RustEnum, RustFunction, RustImpl, RustItem, RustModule, RustParam,
-    RustStruct, SourceType, Visibility,
+    RustStruct, RustTrait, RustTypeAlias, SourceType, Visibility,
 };
 use crate::render::doc_links::{RustDocIndex, relative_file_href, rewrite_intra_doc_links};
 use crate::render::docstring_renderer::{
@@ -15,8 +16,8 @@ use crate::render::docstring_renderer::{
 };
 use crate::render::module::{CrossRefLinker, LinkStyle, PageLayout};
 use crate::render::ssg::{
-    anchor_span, front_matter, normalize_rustdoc_fences, python_nav_entries, route_href,
-    rust_nav_entries, starlight_file_path,
+    STARLIGHT_INDEX_FILE, anchor_span, breakable_name, front_matter, normalize_rustdoc_fences,
+    python_nav_entries, route_href, rust_nav_entries, starlight_file_path,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -198,23 +199,109 @@ impl<'a> ModuleRenderer<'a> {
     }
 
     /// Last pass over a page. For Starlight, rustdoc code fences get the
-    /// language `rust`.
+    /// language `rust`. Runs of blank lines become one, and the page ends
+    /// with one newline (as `end-of-file-fixer` wants).
     fn finish_page(&self, content: String) -> String {
-        if self.starlight {
+        let content = if self.starlight {
             normalize_rustdoc_fences(&content)
         } else {
             content
-        }
+        };
+        let lines: Vec<&str> = content.lines().collect();
+        let mut page = tidy_markdown_lines(&lines).join("\n");
+        page.push('\n');
+        page
     }
 
     /// An item heading. For Starlight, it starts with an explicit anchor id,
-    /// which the cross-reference links use.
+    /// which the cross-reference links use. An item heading in code (an h3
+    /// below an h2 section) is set smaller than the section heading, and a
+    /// long name can break after `_` in the table of contents.
     fn item_heading(&self, level: usize, id: &str, text: &str) -> String {
         let hashes = "#".repeat(level);
-        if self.starlight {
-            format!("{} {}{}", hashes, anchor_span(id), text)
-        } else {
-            format!("{} {}", hashes, text)
+        if !self.starlight {
+            return format!("{} {}", hashes, text);
+        }
+        let code = text
+            .strip_prefix('`')
+            .and_then(|t| t.strip_suffix('`'))
+            .filter(|t| !t.contains('`'));
+        let text = match code {
+            Some(code) => {
+                let style = if level == 3 {
+                    " style=\"font-size: 0.85em\""
+                } else {
+                    ""
+                };
+                format!(
+                    "<code{}>{}</code>",
+                    style,
+                    breakable_name(&html_escape(code))
+                )
+            }
+            None => text.to_string(),
+        };
+        format!("{} {}{}", hashes, anchor_span(id), text)
+    }
+
+    /// The index page of a Starlight API reference: each module, linked to
+    /// its page, with the summary of its doc comment.
+    pub fn render_starlight_index(
+        &self,
+        python_modules: &[PythonModule],
+        rust_modules: &[RustModule],
+    ) -> RenderedPage {
+        let index = STARLIGHT_INDEX_FILE;
+        let mut content = front_matter(
+            "API reference",
+            "The API reference, written by plissken from the source.",
+            0,
+        );
+        let link = |page: PathBuf, label: &str, summary: Option<String>| {
+            let href = route_href(index, &self.page_file(page), None);
+            match summary
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+            {
+                Some(s) => format!("- [`{}`]({}): {}", label, href, s),
+                None => format!("- [`{}`]({})", label, href),
+            }
+        };
+        let layout = PageLayout::new();
+        if !python_modules.is_empty() {
+            content.push_str("## Python\n\n");
+            let mut modules: Vec<&PythonModule> = python_modules.iter().collect();
+            modules.sort_by(|a, b| a.path.cmp(&b.path));
+            for m in modules {
+                let summary = m.docstring.as_deref().and_then(|d| {
+                    if m.source_type == SourceType::PyO3Binding {
+                        parse_rust_doc(d).summary
+                    } else {
+                        parse_docstring(d).summary
+                    }
+                });
+                content.push_str(&link(layout.python_module_page(&m.path), &m.path, summary));
+                content.push('\n');
+            }
+            content.push('\n');
+        }
+        if !rust_modules.is_empty() {
+            content.push_str("## Rust\n\n");
+            let mut modules: Vec<&RustModule> = rust_modules.iter().collect();
+            modules.sort_by(|a, b| a.path.cmp(&b.path));
+            for m in modules {
+                let summary = m
+                    .doc_comment
+                    .as_deref()
+                    .and_then(|d| parse_rust_doc(d).summary);
+                let summary = summary.map(|s| self.rust_doc_links(&s, index, &m.path));
+                content.push_str(&link(layout.rust_module_page(&m.path), &m.path, summary));
+                content.push('\n');
+            }
+        }
+        RenderedPage {
+            path: PathBuf::from(index),
+            content: self.finish_page(content),
         }
     }
 
@@ -1066,6 +1153,8 @@ impl<'a> ModuleRenderer<'a> {
         let mut enums = Vec::new();
         let mut functions = Vec::new();
         let mut consts = Vec::new();
+        let mut traits = Vec::new();
+        let mut type_aliases = Vec::new();
         let mut impls: HashMap<String, Vec<&RustImpl>> = HashMap::new();
 
         for item in &module.items {
@@ -1074,12 +1163,13 @@ impl<'a> ModuleRenderer<'a> {
                 RustItem::Enum(e) => enums.push(e),
                 RustItem::Function(f) => functions.push(f),
                 RustItem::Const(c) => consts.push(c),
+                RustItem::Trait(t) => traits.push(t),
+                RustItem::TypeAlias(t) => type_aliases.push(t),
                 RustItem::Impl(i) => {
                     // `Foo<T>` has the methods of struct `Foo`
                     let name = i.target.split('<').next().unwrap_or(&i.target).trim();
                     impls.entry(name.to_string()).or_default().push(i);
                 }
-                _ => {} // Skip traits and type aliases for MVP
             }
         }
 
@@ -1089,6 +1179,8 @@ impl<'a> ModuleRenderer<'a> {
             enums: &enums,
             functions: &functions,
             consts: &consts,
+            traits: &traits,
+            type_aliases: &type_aliases,
             impls: &impls,
         };
         let page = self.render_rust_module_inline(module, &items)?;
@@ -1107,6 +1199,8 @@ impl<'a> ModuleRenderer<'a> {
             enums,
             functions,
             consts,
+            traits,
+            type_aliases,
             impls,
         } = *items;
         let mut builder = ModulePageBuilder::new();
@@ -1158,12 +1252,26 @@ impl<'a> ModuleRenderer<'a> {
             }
         }
 
+        // Traits section
+        if !traits.is_empty() {
+            builder.add_section("Traits");
+            for t in traits {
+                builder.add_item(&self.render_rust_trait_inline(t, &module.path)?);
+            }
+        }
+
         // Functions section
         if !functions.is_empty() {
             builder.add_section("Functions");
             for func in functions {
                 builder.add_item(&self.render_rust_function_inline(func, &module.path)?);
             }
+        }
+
+        // Type aliases section
+        if !type_aliases.is_empty() {
+            builder.add_section("Type aliases");
+            builder.add_item(&self.render_rust_type_aliases(type_aliases, &module.path));
         }
 
         // Constants section
@@ -1315,6 +1423,103 @@ impl<'a> ModuleRenderer<'a> {
         }
 
         Ok(content)
+    }
+
+    /// Render a Rust trait inline: its supertraits, associated types and
+    /// methods.
+    fn render_rust_trait_inline(
+        &self,
+        t: &RustTrait,
+        module_path: &str,
+    ) -> Result<String, tera::Error> {
+        let mut content = String::new();
+        let generics = t.generics.as_deref().unwrap_or("");
+        let bounds = t
+            .bounds
+            .as_deref()
+            .map(|b| format!(": {}", b))
+            .unwrap_or_default();
+        content.push_str(&self.item_heading(
+            3,
+            &format!("trait.{}", t.name),
+            &format!("`trait {}{}`", t.name, generics),
+        ));
+        content.push_str("\n\n");
+        content.push_str(&self.visibility_badge(&t.visibility)?);
+        content.push_str("\n\n");
+        if !bounds.is_empty() {
+            content.push_str(&format!(
+                "**Supertraits:** `{}`\n\n",
+                bounds.trim_start_matches(": ")
+            ));
+        }
+        if let Some(ref doc) = t.doc_comment {
+            content.push_str(&self.rust_doc(doc, module_path, &[]));
+            content.push_str("\n\n");
+        }
+        if !t.associated_types.is_empty() {
+            content.push_str("#### Associated types\n\n");
+            for a in &t.associated_types {
+                let mut decl = format!("type {}{}", a.name, a.generics.as_deref().unwrap_or(""));
+                if let Some(ref b) = a.bounds {
+                    decl.push_str(": ");
+                    decl.push_str(b);
+                }
+                content.push_str(&format!("- `{}`", decl));
+                if let Some(ref doc) = a.doc_comment {
+                    content.push_str(&format!(
+                        " - {}",
+                        list_item_text(&self.rust_short_doc(doc, module_path))
+                    ));
+                }
+                content.push('\n');
+            }
+            content.push('\n');
+        }
+        if !t.methods.is_empty() {
+            content.push_str("#### Methods\n\n");
+            let owner = format!("trait {}", t.name);
+            for method in &t.methods {
+                content.push_str(&self.render_rust_function_with_context(
+                    method,
+                    5,
+                    false,
+                    module_path,
+                    None,
+                    Some(&owner),
+                )?);
+                content.push_str("\n\n");
+            }
+        }
+        Ok(content)
+    }
+
+    /// The type aliases of a module as a table. In Starlight each name has
+    /// an anchor (`type.NAME`) for links.
+    fn render_rust_type_aliases(&self, aliases: &[&RustTypeAlias], module_path: &str) -> String {
+        let mut content = String::from("| Name | Type | Description |\n");
+        content.push_str("|------|------|-------------|\n");
+        for t in aliases {
+            let anchor = if self.starlight {
+                anchor_span(&format!("type.{}", t.name))
+            } else {
+                String::new()
+            };
+            let doc = t
+                .doc_comment
+                .as_deref()
+                .map(|d| escape_table_content(&self.rust_short_doc(d, module_path)))
+                .unwrap_or_default();
+            content.push_str(&format!(
+                "| {}`{}{}` | `{}` | {} |\n",
+                anchor,
+                t.name,
+                t.generics.as_deref().unwrap_or(""),
+                t.ty.replace('|', "\\|"),
+                doc
+            ));
+        }
+        content
     }
 
     /// The re-exports of a module: each name, linked to its page when it is
@@ -1805,9 +2010,11 @@ impl<'a> ModuleRenderer<'a> {
         let is_binding = f.pyfunction.is_some() || is_pymethod;
 
         // For bindings, no badge at method level (evident from cross-ref link)
-        // For pure Rust methods, show visibility
+        // For pure Rust methods, show visibility; trait methods have none
+        let in_trait = owner_struct.is_some_and(|o| o.starts_with("trait "));
+        let owner_struct = owner_struct.map(|o| o.trim_start_matches("trait "));
         let mut badges = Vec::new();
-        if !is_binding {
+        if !is_binding && !in_trait {
             badges.push(self.visibility_badge(&f.visibility)?);
         }
         if f.is_async {
@@ -2138,6 +2345,8 @@ struct RustModuleItems<'a> {
     enums: &'a [&'a RustEnum],
     functions: &'a [&'a RustFunction],
     consts: &'a [&'a RustConst],
+    traits: &'a [&'a RustTrait],
+    type_aliases: &'a [&'a RustTypeAlias],
     impls: &'a HashMap<String, Vec<&'a RustImpl>>,
 }
 
@@ -2184,6 +2393,13 @@ fn python_variable_type(var: &PythonVariable) -> Option<String> {
         _ => return None,
     };
     Some(ty.to_string())
+}
+
+/// Text with `&`, `<` and `>` escaped for HTML.
+fn html_escape(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 /// A value for a table cell: at most 60 characters.
@@ -3302,8 +3518,11 @@ mod starlight_snapshot_tests {
 
         let pages = module_renderer.render_rust_module(&module).unwrap();
         let content = &pages[0].content;
-        // Generics stay in the code span: a bare `<T, E>` would be an HTML tag
-        assert!(content.contains("`enum Outcome<T, E>`"));
+        // Generics are escaped in the code element: a bare `<T, E>` would be
+        // an HTML tag
+        assert!(
+            content.contains("<code style=\"font-size: 0.85em\">enum Outcome&lt;T, E&gt;</code>")
+        );
         assert_snapshot!("starlight_rust_generics", content);
     }
 

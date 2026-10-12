@@ -281,6 +281,73 @@ fn test_render_starlight_template() {
 }
 
 #[test]
+fn test_starlight_index_stale_pages_and_file_ends() {
+    // Items 15, 19 and 27 of PLSKN-T-0057
+    let bin = plissken_bin();
+    let hybrid_binary = fixtures_path().join("hybrid_binary");
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let output_dir = temp_dir.path().join("docs/src/content/docs/reference/api");
+    let render = || {
+        let output = Command::new(&bin)
+            .args([
+                "render",
+                &hybrid_binary.to_string_lossy(),
+                "-o",
+                &output_dir.to_string_lossy(),
+                "-t",
+                "starlight",
+            ])
+            .output()
+            .expect("Failed to execute plissken render");
+        assert!(
+            output.status.success(),
+            "Render command failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    };
+    render();
+
+    // An index page lists the modules; the sidebar links it
+    let index = fs::read_to_string(output_dir.join("index.md")).unwrap();
+    assert!(index.contains("title: \"API reference\""));
+    assert!(index.contains("](rust/hybrid_binary/)"));
+    let sidebar = fs::read_to_string(output_dir.join("_sidebar.mjs")).unwrap();
+    assert!(sidebar.contains("{ label: \"Overview\", slug: \"reference/api\" }"));
+
+    // Each page ends with one newline and has no edit link
+    for entry in walkdir(&output_dir) {
+        if entry.extension().is_some_and(|e| e == "md") {
+            let content = fs::read_to_string(&entry).unwrap();
+            assert!(content.ends_with('\n'), "{}", entry.display());
+            assert!(!content.ends_with("\n\n"), "{}", entry.display());
+            assert!(!content.contains("\n\n\n"), "{}", entry.display());
+            assert!(
+                content.contains("\neditUrl: false\n"),
+                "{}",
+                entry.display()
+            );
+        }
+    }
+
+    // A page of a module that went away is deleted, with its folder; a page
+    // that plissken did not write stays
+    let stale = output_dir.join("rust/hybrid_binary/gone/old.md");
+    fs::create_dir_all(stale.parent().unwrap()).unwrap();
+    fs::write(
+        &stale,
+        "---\ntitle: old\n---\n\n<span class=\"plissken-badge\">Rust</span>\n",
+    )
+    .unwrap();
+    let own = output_dir.join("notes.md");
+    fs::write(&own, "---\ntitle: Notes\n---\n\nMine.\n").unwrap();
+    render();
+    assert!(!stale.exists());
+    assert!(!stale.parent().unwrap().exists());
+    assert!(own.exists());
+    assert!(output_dir.join("rust/hybrid_binary.md").exists());
+}
+
+#[test]
 fn test_init_starlight_template() {
     let bin = plissken_bin();
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");

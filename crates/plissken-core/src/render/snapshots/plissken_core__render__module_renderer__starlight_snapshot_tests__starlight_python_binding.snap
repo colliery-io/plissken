@@ -5,6 +5,7 @@ expression: "&pages[0].content"
 ---
 title: "native"
 description: "Native buffers."
+editUrl: false
 sidebar:
   order: 1
   hidden: true
@@ -12,14 +13,13 @@ sidebar:
 
 <span class="plissken-badge plissken-badge-source" style="display: inline-block; padding: 0.05em 0.6em; font-family: var(--sl-font-mono); font-size: var(--sl-text-xs); line-height: 1.6; border-radius: var(--radius-pill, 1rem); vertical-align: middle; background: var(--sl-color-purple-low); color: var(--sl-color-purple-high);">Binding</span>
 
-
 Native buffers.
 
 Written in Rust.
 
 ## Classes
 
-### <span id="class.Buffer"></span>`class Buffer`
+### <span id="class.Buffer"></span><code style="font-size: 0.85em">class Buffer</code>
 
 > **Rust Implementation**: [`crate::buffer::RustBuffer`](../rust/crate/buffer/#struct.RustBuffer)
 
@@ -27,7 +27,7 @@ A byte buffer.
 
 #### Methods
 
-##### <span id="Buffer.len"></span>`len`
+##### <span id="Buffer.len"></span><code>len</code>
 
 ```python
 def len(self) -> int
@@ -43,13 +43,9 @@ Get buffer length
 |------|------|-------------|
 | `self` | `-` |  |
 
-
-
-
-
 ## Functions
 
-### <span id="fn.checksum"></span>`checksum`
+### <span id="fn.checksum"></span><code style="font-size: 0.85em">checksum</code>
 
 ```python
 def checksum(buffer: Buffer) -> int
