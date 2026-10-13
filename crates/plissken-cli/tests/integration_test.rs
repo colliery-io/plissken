@@ -383,6 +383,60 @@ fn test_init_starlight_template() {
     assert!(!output.status.success());
 }
 
+/// An intra-doc link resolves by its whole path, not by its last segment:
+/// a path into another crate, or a name that only an enum variant has,
+/// shows as code.
+#[test]
+fn test_intra_doc_links_resolve_by_whole_path() {
+    let bin = plissken_bin();
+    let fixture = fixtures_path().join("intra_doc_links");
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let output_dir = temp_dir.path();
+
+    let output = Command::new(&bin)
+        .args([
+            "render",
+            &fixture.to_string_lossy(),
+            "-o",
+            &output_dir.to_string_lossy(),
+        ])
+        .output()
+        .expect("Failed to execute plissken render");
+    assert!(
+        output.status.success(),
+        "Render command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let pages = output_dir.join("rust").join("intra_doc_links");
+    let sockets = fs::read_to_string(pages.join("sockets.md")).unwrap();
+    // Paths into other crates are code
+    assert!(
+        sockets.contains("Fails with `std::io::Error` or `core::fmt::Error`"),
+        "{sockets}"
+    );
+    // A bare name that only a variant has is code
+    assert!(sockets.contains("a bare `Error` (only"), "{sockets}");
+    // Type::Variant and full paths still link
+    assert!(
+        sockets.contains("[`Frame::Error`](frame.md#enum-frame)"),
+        "{sockets}"
+    );
+    assert!(
+        sockets.contains("[`crate::frame::Frame`](frame.md#enum-frame)"),
+        "{sockets}"
+    );
+
+    let handle = fs::read_to_string(pages.join("handle.md")).unwrap();
+    // A private item is not documented: its name is code, not a variant
+    assert!(handle.contains("A handle to a `Backend`."), "{handle}");
+    assert!(
+        handle.contains("[`CallError`](handle.md#enum-callerror)"),
+        "{handle}"
+    );
+    assert!(handle.contains("[`CallError::Plugin`]("), "{handle}");
+}
+
 /// All files under a directory.
 fn walkdir(dir: &std::path::Path) -> Vec<PathBuf> {
     let mut files = Vec::new();

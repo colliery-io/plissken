@@ -1,0 +1,12 @@
+[project]
+name = "intra_doc_links"
+version_from = "cargo"
+
+[output]
+format = "markdown"
+path = "docs/api"
+template = "mkdocs-material"
+
+[rust]
+crates = ["."]
+entry_point = "intra_doc_links"

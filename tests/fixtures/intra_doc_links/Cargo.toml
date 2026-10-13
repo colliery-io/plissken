@@ -1,0 +1,7 @@
+[package]
+name = "intra_doc_links"
+version = "0.1.0"
+edition = "2021"
+description = "Intra-doc links that must not resolve by their last segment"
+
+[dependencies]

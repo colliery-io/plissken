@@ -35,6 +35,10 @@ const DISAMBIGUATORS: &[&str] = &[
     "value",
 ];
 
+/// Crates of the Rust distribution: a path into them is never an item of
+/// the project.
+const EXTERNAL_CRATES: &[&str] = &["std", "core", "alloc", "proc_macro", "test"];
+
 /// The Rust path of an intra-doc link target, without its disambiguator
 /// (`struct@`) and suffix (`()`, `!`). `None` if the target is not a Rust
 /// path (a URL, a file, an anchor).
@@ -329,7 +333,13 @@ pub struct DocTarget {
 pub struct RustDocIndex {
     items: HashMap<String, DocTarget>,
     modules: HashSet<String>,
+    /// The `pub use` of each module: the name (`*` for a glob) and the
+    /// path as written
+    reexports: HashMap<String, Vec<(String, String)>>,
 }
+
+/// How many `pub use` steps a path may follow.
+const MAX_REEXPORT_DEPTH: usize = 8;
 
 /// A Rust path for comparison: a crate name has `_` where Cargo allows `-`.
 fn key(path: &str) -> String {
@@ -437,17 +447,12 @@ impl RustDocIndex {
                 }
             }
         }
-        // A re-exported name points where its path points
-        let mut aliases = Vec::new();
+        // A re-exported name points where its path points (see `lookup`)
         for module in modules {
-            for r in module.reexports.iter().filter(|r| r.name != "*") {
-                if let Some(target) = index.resolve(&module.path, &r.path) {
-                    aliases.push((format!("{}::{}", key(&module.path), r.name), target.clone()));
-                }
+            let reexports = index.reexports.entry(key(&module.path)).or_default();
+            for r in &module.reexports {
+                reexports.push((r.name.clone(), r.path.clone()));
             }
-        }
-        for (alias, target) in aliases {
-            index.items.entry(alias).or_insert(target);
         }
         index
     }
@@ -466,29 +471,137 @@ impl RustDocIndex {
 
     /// Resolve an intra-doc link path written in the module `scope`.
     ///
-    /// `crate`, `self` and `super` are taken from the scope. A path is tried
-    /// in the scope, as written, and from the root of the crate; then, by its
-    /// last segments, as the only item of that name in the crate, then in
-    /// all crates (for re-exports and `use` imports, which plissken does not
-    /// follow).
+    /// The rules of rustdoc, within what plissken knows. `crate`, `self` and
+    /// `super` are taken from the scope. A path is tried in the scope (with
+    /// its `pub use` names), as written, and from the root of the crate.
+    /// Then, for private `use` imports, which plissken does not see, the
+    /// whole path is looked up after any module: the one item of the crate,
+    /// else of the project. So `Frame::Error` finds the variant `Error` of
+    /// `Frame`, but a bare `Error` finds no variant or method.
+    ///
+    /// A path into a crate outside the project (`std::io::Error`), a path
+    /// from a crate root (`::x::Y`), and a name that is ambiguous or not
+    /// found give `None`: the link shows as its text.
     pub fn resolve(&self, scope: &str, path: &str) -> Option<&DocTarget> {
+        let written = WrittenPath::new(scope, path)?;
+        if let Some(found) = written
+            .candidates()
+            .iter()
+            .find_map(|c| self.lookup(c, MAX_REEXPORT_DEPTH))
+        {
+            return self.items.get(&found);
+        }
+
+        // Paths from a crate root or into the standard crates are not ours
+        let rest = written.rest();
+        if written.absolute || rest.is_empty() {
+            return None;
+        }
+        if written.base.is_none()
+            && written.parts.len() > 1
+            && EXTERNAL_CRATES.contains(&written.parts[0])
+        {
+            return None;
+        }
+
+        // By name: the item whose path is a module and then the whole path
+        // as written; the one in the crate, else the one in the project.
+        // `crate::`, `self::` and `super::` paths stay in the crate.
+        let in_crate = format!("{}::", written.krate);
+        for restrict in [true, false] {
+            if !restrict && written.base.is_some() {
+                break;
+            }
+            let mut found: Vec<&DocTarget> = Vec::new();
+            for (k, target) in &self.items {
+                let after_module = k
+                    .strip_suffix(rest.as_str())
+                    .and_then(|m| m.strip_suffix("::"))
+                    .is_some_and(|m| self.modules.contains(m));
+                if after_module
+                    && !self.modules.contains(k.as_str())
+                    && (!restrict || k.starts_with(&in_crate))
+                    && !found.contains(&target)
+                {
+                    found.push(target);
+                }
+            }
+            match found.as_slice() {
+                [] => {}
+                [target] => return Some(target),
+                _ => return None,
+            }
+        }
+        None
+    }
+
+    /// The key of the item that a path names exactly, written in `scope`.
+    fn exact(&self, scope: &str, path: &str, depth: usize) -> Option<String> {
+        let written = WrittenPath::new(scope, path)?;
+        written
+            .candidates()
+            .iter()
+            .find_map(|c| self.lookup(c, depth))
+    }
+
+    /// The key of the item at an absolute path, through the `pub use` of
+    /// its modules (`a::b::C` where `a` re-exports the module `b`).
+    fn lookup(&self, path: &str, depth: usize) -> Option<String> {
+        if self.items.contains_key(path) {
+            return Some(path.to_string());
+        }
+        if depth == 0 {
+            return None;
+        }
+        let (parent, name) = path.rsplit_once("::")?;
+        let parent = self.lookup(parent, depth - 1)?;
+        let direct = format!("{}::{}", parent, name);
+        if self.items.contains_key(&direct) {
+            return Some(direct);
+        }
+        let reexports = self.reexports.get(&parent)?;
+        reexports
+            .iter()
+            .filter(|(n, _)| n == name)
+            .find_map(|(_, p)| self.exact(&parent, p, depth - 1))
+            .or_else(|| {
+                reexports
+                    .iter()
+                    .filter(|(n, _)| n == "*")
+                    .find_map(|(_, p)| self.exact(&parent, &format!("{}::{}", p, name), depth - 1))
+            })
+    }
+}
+
+/// A Rust path as written in a module, with `crate`, `self` and `super`
+/// taken from the module.
+struct WrittenPath<'a> {
+    scope_parts: Vec<String>,
+    krate: String,
+    parts: Vec<&'a str>,
+    absolute: bool,
+    base: Option<Vec<String>>,
+}
+
+impl<'a> WrittenPath<'a> {
+    fn new(scope: &str, path: &'a str) -> Option<Self> {
         let scope = key(scope);
-        let scope_parts: Vec<&str> = if scope.is_empty() {
+        let scope_parts: Vec<String> = if scope.is_empty() {
             Vec::new()
         } else {
-            scope.split("::").collect()
+            scope.split("::").map(String::from).collect()
         };
-        let krate = scope_parts.first().copied().unwrap_or("");
+        let krate = scope_parts.first().cloned().unwrap_or_default();
 
         let mut parts: Vec<&str> = path.split("::").collect();
         let absolute = parts.first() == Some(&"");
         if absolute {
             parts.remove(0);
         }
-        let mut base: Option<Vec<&str>> = None;
+        let mut base: Option<Vec<String>> = None;
         match parts.first().copied() {
             Some("crate") => {
-                base = Some(vec![krate]);
+                base = Some(vec![krate.clone()]);
                 parts.remove(0);
             }
             Some("self") => {
@@ -509,42 +622,40 @@ impl RustDocIndex {
         if parts.is_empty() && base.is_none() {
             return None;
         }
-        let rest = parts.join("::");
-        let join = |b: &[&str]| -> String {
-            let mut all: Vec<&str> = b.to_vec();
+        Some(Self {
+            scope_parts,
+            krate,
+            parts,
+            absolute,
+            base,
+        })
+    }
+
+    /// The path after `crate`, `self` and `super`.
+    fn rest(&self) -> String {
+        self.parts.join("::")
+    }
+
+    /// The absolute paths it may name: in the scope, as written, and from
+    /// the root of the crate.
+    fn candidates(&self) -> Vec<String> {
+        let rest = self.rest();
+        let join = |b: &[String]| -> String {
+            let mut all: Vec<&str> = b.iter().map(String::as_str).collect();
             if !rest.is_empty() {
                 all.push(&rest);
             }
             key(&all.join("::"))
         };
-
-        let candidates: Vec<String> = match base {
-            Some(b) => vec![join(&b)],
-            None if absolute => vec![key(&rest)],
-            None => vec![join(&scope_parts), key(&rest), join(&[krate])],
-        };
-        for candidate in &candidates {
-            if let Some(target) = self.items.get(candidate) {
-                return Some(target);
-            }
+        match &self.base {
+            Some(b) => vec![join(b)],
+            None if self.absolute => vec![key(&rest)],
+            None => vec![
+                join(&self.scope_parts),
+                key(&rest),
+                join(std::slice::from_ref(&self.krate)),
+            ],
         }
-
-        // By name: the only item whose path ends with the last segments
-        for n in (1..=parts.len().min(2)).rev() {
-            let suffix = format!("::{}", parts[parts.len() - n..].join("::"));
-            let in_crate = format!("{}::", krate);
-            for restrict in [true, false] {
-                let mut found = self.items.iter().filter(|(k, _)| {
-                    k.ends_with(&suffix)
-                        && !self.modules.contains(k.as_str())
-                        && (!restrict || k.starts_with(&in_crate))
-                });
-                if let (Some((_, target)), None) = (found.next(), found.next()) {
-                    return Some(target);
-                }
-            }
-        }
-        None
     }
 }
 
@@ -693,6 +804,116 @@ mod tests {
         assert_eq!(target.id.as_deref(), Some("struct.Config"));
         assert!(index.resolve("my-crate::server", "Missing").is_none());
         assert!(index.resolve("my-crate::server", "Self").is_none());
+    }
+
+    /// A crate with an enum `Frame` that has the variants `Error` and
+    /// `Backend`, and a second crate with its own `Config`.
+    fn variant_index() -> RustDocIndex {
+        let mut frame = RustModule::test("guest::frame");
+        let variant = |name: &str| crate::model::RustVariant {
+            name: name.to_string(),
+            doc_comment: None,
+            fields: Vec::new(),
+        };
+        frame.items = vec![RustItem::Enum(crate::model::RustEnum {
+            name: "Frame".to_string(),
+            visibility: crate::model::Visibility::Public,
+            doc_comment: None,
+            parsed_doc: None,
+            generics: None,
+            variants: vec![variant("Error"), variant("Backend")],
+            source: crate::model::SourceSpan::test("frame.rs", 1, 1),
+        })];
+        let sockets = RustModule::test("guest::sockets");
+        let mut config = RustModule::test("guest::config");
+        config.items = vec![RustItem::Struct(crate::model::RustStruct::test("Config"))];
+        let mut other = RustModule::test("host::config");
+        other.items = vec![RustItem::Struct(crate::model::RustStruct::test("Config"))];
+        let host = RustModule::test("host");
+        let guest = RustModule::test("guest");
+        RustDocIndex::new(&[guest, frame, sockets, config, host, other], |m| {
+            format!("rust/{}.md", m.replace("::", "/"))
+        })
+    }
+
+    #[test]
+    fn test_external_paths_do_not_resolve_locally() {
+        // `std::io::Error` linked to `Frame`, which has a variant `Error`
+        let index = variant_index();
+        for path in [
+            "std::io::Error",
+            "core::fmt::Error",
+            "alloc::string::String",
+            "::std::io::Error",
+            "serde_json::Error",
+            "io::Error",
+        ] {
+            assert!(
+                index.resolve("guest::sockets", path).is_none(),
+                "{path} must not resolve"
+            );
+        }
+    }
+
+    #[test]
+    fn test_bare_names_do_not_resolve_to_variants() {
+        // `Backend` linked to the enum that has a variant `Backend`
+        let index = variant_index();
+        assert!(index.resolve("guest::sockets", "Backend").is_none());
+        assert!(index.resolve("guest::sockets", "Error").is_none());
+        // Written as Type::Variant, it resolves
+        let target = index.resolve("guest::sockets", "Frame::Error").unwrap();
+        assert_eq!(target.page, "rust/guest/frame.md");
+        let target = index.resolve("guest::sockets", "Frame").unwrap();
+        assert_eq!(target.id.as_deref(), Some("enum.Frame"));
+    }
+
+    #[test]
+    fn test_bare_names_prefer_the_own_crate() {
+        let index = variant_index();
+        let target = index.resolve("guest::sockets", "Config").unwrap();
+        assert_eq!(target.page, "rust/guest/config.md");
+        let target = index.resolve("host", "Config").unwrap();
+        assert_eq!(target.page, "rust/host/config.md");
+    }
+
+    #[test]
+    fn test_paths_follow_reexports() {
+        // `core` re-exports the module `frame` of `guest`, and globs it;
+        // `facade` re-exports a name through `core`
+        let mut frame = RustModule::test("guest::frame");
+        frame.items = vec![RustItem::Struct(crate::model::RustStruct::test("Frame"))];
+        let reexport = |name: &str, path: &str| crate::model::RustReexport {
+            name: name.to_string(),
+            path: path.to_string(),
+            visibility: crate::model::Visibility::Public,
+            doc_comment: None,
+        };
+        let mut core = RustModule::test("core-api");
+        core.reexports = vec![reexport("frame", "guest::frame"), reexport("*", "frame")];
+        let mut facade = RustModule::test("facade");
+        facade.reexports = vec![reexport("Frame", "core_api::frame::Frame")];
+        let index = RustDocIndex::new(&[RustModule::test("guest"), frame, core, facade], |m| {
+            format!("rust/{}.md", m.replace("::", "/"))
+        });
+        for (scope, path) in [
+            ("facade", "core_api::frame::Frame"),
+            ("facade", "core_api::Frame"),
+            ("facade", "Frame"),
+            ("guest", "facade::Frame"),
+        ] {
+            let target = index.resolve(scope, path);
+            assert_eq!(
+                target.map(|t| t.page.as_str()),
+                Some("rust/guest/frame.md"),
+                "{path} in {scope}"
+            );
+        }
+        assert!(
+            index
+                .resolve("facade", "core_api::frame::Missing")
+                .is_none()
+        );
     }
 
     #[test]
